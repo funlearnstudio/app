@@ -264,19 +264,7 @@
                     <button onclick="selectCount(30)" class="count-btn py-2 md:py-3 border-2 border-slate-200 rounded-xl font-bold text-slate-600 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition text-sm md:text-base" data-val="30">30 題</button>
                 </div>
             </div>
-            <div class="space-y-4 mb-8">
-                <div class="flex justify-between items-center mb-2">
-                    <label class="block text-sm font-bold text-slate-400 uppercase tracking-wider">作答時間 (分鐘)</label>
-                    <span id="timeDisplay" class="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-bold">20 分鐘</span>
-                </div>
-                <input type="range" id="timeSlider" min="1" max="20" value="20" 
-                       class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                       oninput="updateTimeLabel(this.value)">
-                <div class="flex justify-between text-[10px] text-slate-400 font-bold px-1">
-                    <span>1 分</span>
-                    <span id="maxTimeLabel">MAX</span>
-                </div>
-            </div>
+
             <button onclick="confirmSetup()" class="w-full py-3 md:py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold text-base md:text-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition flex items-center justify-center gap-2">
                 開始測驗 <i class="fas fa-arrow-right"></i>
             </button>
@@ -377,40 +365,22 @@
             document.getElementById('setupModal').classList.remove('hidden');
         }
 
-        let selectedTime = 20; // 全域變數
-
-function selectCount(val) {
-    selectedCount = val;
-    // 更新按鈕樣式
-    document.querySelectorAll('.count-btn').forEach(btn => {
-        if(parseInt(btn.dataset.val) === val) {
-            btn.classList.add('bg-blue-50', 'border-blue-500', 'text-blue-600');
-        } else {
-            btn.classList.remove('bg-blue-50', 'border-blue-500', 'text-blue-600');
+        function selectCount(val) {
+            selectedCount = val;
+            document.querySelectorAll('.count-btn').forEach(btn => {
+                if(parseInt(btn.dataset.val) === val) {
+                    btn.classList.add('bg-blue-50', 'border-blue-500', 'text-blue-600');
+                } else {
+                    btn.classList.remove('bg-blue-50', 'border-blue-500', 'text-blue-600');
+                }
+            });
         }
-    });
 
-    // 動態調整時間滑桿的最大值 (題數 * 2)
-    const slider = document.getElementById('timeSlider');
-    const maxTime = val * 2;
-    slider.max = maxTime;
-    
-    // 如果目前選擇的時間超過新最大值，就降下來
-    if (parseInt(slider.value) > maxTime || selectedTime === (val/val*0)) { 
-        slider.value = maxTime;
-    }
-    document.getElementById('maxTimeLabel').textContent = maxTime + " 分";
-    updateTimeLabel(slider.value);
-}
+        function confirmSetup() {
+            document.getElementById('setupModal').classList.add('hidden');
+            prepareExam(selectedCount);
+        }
 
-function updateTimeLabel(val) {
-    selectedTime = parseInt(val);
-    document.getElementById('timeDisplay').textContent = val + " 分鐘";
-}
-       function confirmSetup() {
-    document.getElementById('setupModal').classList.add('hidden');
-    prepareExam(selectedCount, selectedTime); // 傳入選擇的時間
-}
         function prepareExam(count) {
     const urlParams = new URLSearchParams(window.location.search);
     let subject = urlParams.get('subject') || 'math';
@@ -455,13 +425,14 @@ function updateTimeLabel(val) {
 
     // 3. 初始化時間與紀錄陣列
     timeLog = new Array(mockQuestions.length).fill(0);
-   examInfo = { 
+    examInfo = { 
         subject: subject.toUpperCase(), 
         title: title, 
-        timeLimit: timeMin * 60  // 這裡改用傳入的分鐘數
+        timeLimit: mockQuestions.length * 60
     };
     timeLeft = examInfo.timeLimit;
 
+    // 4. 啟動遊戲/測驗介面
     initGame(); 
 }
         function initGame() {
