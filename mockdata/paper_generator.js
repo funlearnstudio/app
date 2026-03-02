@@ -1,7 +1,7 @@
 (function(global){
     'use strict';
 
-    // 1. 陣列隨機工具
+    // 1. 陣列隨機工具 (原地洗牌)
     if (!Array.prototype.shuffle) {
         Array.prototype.shuffle = function() {
             let arr = this.slice();
@@ -26,7 +26,6 @@
         const requestTags = normalizeTags(config.tags || []);
         const totalTarget = config.total || 10; 
         
-        // 科目對照表 (確保網址參數能對應到 Repo 內的 subject 欄位)
         const subjectAlias = {
             'science': 'physics', '理化': 'physics', '物理': 'physics', '化學': 'chemistry',
             'social': 'history', '歷史': 'history', 'history': 'history',
@@ -34,9 +33,8 @@
         };
         const mappedSub = subjectAlias[inputSub] || inputSub;
 
-        // 準備分類池 (僅存放符合篩選條件的題目)
-        let groupPool = [];  
-        let normalPool = []; 
+        // 單一候選池：所有符合條件的題目都進這裡
+        let masterPool = []; 
 
         const repos = [
             window.__MATH_REPO__, window.__PHYSICS_REPO__, window.__CHEMISTRY_REPO__,
@@ -44,65 +42,50 @@
             window.__ENGLISH_REPO__, window.__HISTORY_REPO__, window.__CIVICS_REPO__, window.__GEOGRAPHY_REPO__
         ].filter(Boolean);
 
-        // --- 核心篩選邏輯 ---
+        // --- 核心篩選 ---
         repos.forEach(repo => {
             Object.keys(repo).forEach(tid => {
                 const t = repo[tid];
                 if (!t) return;
 
                 const tSub = String(t.subject || "").toLowerCase();
-                // 第一關：科目匹配
+                // 科目匹配
                 let isMatch = (tSub === inputSub || tSub === mappedSub || tSub.includes(inputSub));
                 if (!isMatch) return;
 
-                // 第二關：標籤匹配 (嚴格區域鎖定)
+                // 標籤嚴格匹配
                 const itemTags = normalizeTags(t.tags || t.meta || []);
                 let score = 0;
+                
                 if (requestTags.length === 0) {
-                    score = 1; // 若沒選標籤，則包含該科目所有題目
+                    score = 1; // 若沒選標籤，則包含該科目所有題
                 } else {
-                    // 必須「命中」使用者要求的標籤之一
                     const hitCount = requestTags.filter(rt => itemTags.includes(rt)).length;
-                    if (hitCount > 0) score = 10 + hitCount;
+                    if (hitCount > 0) score = 10 + hitCount; 
+                    // 若 hitCount 為 0，score 保持為 0，此題會被排除
                 }
 
-                // 只有符合條件 (score > 0) 的題目才會進池子
                 if (score > 0) {
-                    const candidate = { tid, score: score + Math.random(), rawData: t };
-                    if (t.type === 'group' || (t.questions && Array.isArray(t.questions))) {
-                        groupPool.push(candidate);
-                    } else {
-                        normalPool.push(candidate);
-                    }
+                    masterPool.push({ tid, score: score + Math.random(), rawData: t });
                 }
             });
         });
 
-        // --- 比例與取題邏輯 ---
-        // 1:2 比例計算
-        let groupTarget = Math.floor(totalTarget / 3);
-        let normalTarget = totalTarget - groupTarget;
+        // --- 取題邏輯 ---
+        // 依照分數排序（優先出標籤匹配度高的）並截取
+        masterPool.sort((a, b) => b.score - a.score);
+        
+        // 💡 關鍵：slice 多少是多少，池子不足額絕不補位
+        let finalSelection = masterPool.slice(0, totalTarget).shuffle();
 
-        // 排序候選池
-        groupPool.sort((a, b) => b.score - a.score);
-        normalPool.sort((a, b) => b.score - a.score);
-
-        // 💡 關鍵：嚴格取題，不足額不補位 (No Fallback)
-        // 僅從符合該標籤池中選取，若池子只有 1 題，selected 就只有 1 題
-        let selectedGroups = groupPool.slice(0, groupTarget);
-        let selectedNormals = normalPool.slice(0, normalTarget);
-
-        // 合併結果並打亂順序
-        const finalSelection = [...selectedGroups, ...selectedNormals].shuffle();
-
-        console.log(`🎯 嚴格篩選: 題組 ${selectedGroups.length} 題, 單題 ${selectedNormals.length} 題 (不符區域題目已排除)`);
+        console.log(`🎯 嚴格篩選：符合條件總數 ${masterPool.length} 題，實際出題 ${finalSelection.length} 題。`);
 
         if (finalSelection.length === 0) {
-            console.error("❌ 該範圍內找不到符合標籤的題目！");
+            console.error("❌ 找不到符合標籤的題目，不進行出題。");
             return [];
         }
 
-        // --- 格式化渲染輸出 ---
+        // --- 格式化輸出 ---
         return finalSelection.map(c => {
             const t = c.rawData;
             const isGroup = (t.type === 'group' || t.questions);
@@ -142,6 +125,6 @@
     }
 
     global.generatePaper = generatePaper;
-    console.log("✅ Paper Generator V14.0 (嚴格區域鎖定 & 1:2 題組版) 已就緒");
+    console.log("✅ Paper Generator V15.0 (單一池嚴格篩選版) 已就緒");
 
 })(window);
