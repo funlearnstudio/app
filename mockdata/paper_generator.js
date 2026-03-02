@@ -20,18 +20,22 @@
 
     function generatePaper(config) {
         const inputSub = (config.subject || '').toLowerCase();
-        const requestTags = normalizeTags(config.tags || []);
+        let requestTags = normalizeTags(config.tags || []);
         const totalTarget = config.total || 10; 
         
         const subjectAlias = {
             'science': 'physics', '理化': 'physics', '物理': 'physics', '化學': 'chemistry',
-            'social': 'history', '歷史': 'history', '地科': 'earth_science', 'biology': 'biology'
+            'social': 'history', '歷史': 'history', '地科': 'earth_science', 'biology': 'biology',
+            '公民': 'civics', '地理': 'geography'
         };
         const mappedSub = subjectAlias[inputSub] || inputSub;
 
-        let qualifiedPool = []; 
+        // 💡 關鍵：定義「背景標籤」，這些標籤不參與精確單元過濾
+        const backgroundTags = ['國七', '國八', '國九', '公民', '歷史', '地理', '理化', '數學', '生物', '地科', '英文', '國文'];
+        
+        // 取得真正的「知識點標籤」(例如：性別、媒體素養)
+        const coreKnowledgeTags = requestTags.filter(t => !backgroundTags.includes(t));
 
-        // 根據科目動態選擇 Repo，避免跨科目亂抓
         const repoMap = {
             'math': window.__MATH_REPO__,
             'physics': window.__PHYSICS_REPO__,
@@ -45,34 +49,35 @@
             'geography': window.__GEOGRAPHY_REPO__
         };
 
-        // 只檢查目標科目 Repo，徹底防止單元亂跳
         const targetRepo = repoMap[mappedSub];
-        if (!targetRepo) {
-            console.error(`❌ 找不到科目 Repo: ${mappedSub}`);
-            return [];
-        }
+        if (!targetRepo) return [];
 
-        // --- 嚴格過濾邏輯 ---
+        let qualifiedPool = []; 
+
         Object.keys(targetRepo).forEach(tid => {
             const t = targetRepo[tid];
             if (!t) return;
 
             const itemTags = normalizeTags(t.tags || t.meta || []);
             
-            // 💡 關鍵：必須包含「所有」使用者要求的標籤 (AND 邏輯)
-            // 這樣就不會因為標籤重疊而抓到隔壁單元的題目
-            if (requestTags.length > 0) {
-                const isStrictMatch = requestTags.every(rt => itemTags.includes(rt));
-                if (!isStrictMatch) return; 
+            // --- 嚴格過濾邏輯 ---
+            // 1. 如果有指定「知識點」，則必須命中知識點（忽略年級標籤的干擾）
+            if (coreKnowledgeTags.length > 0) {
+                const hasCoreMatch = coreKnowledgeTags.some(rt => itemTags.includes(rt));
+                if (!hasCoreMatch) return; // 沒中關鍵單元，直接剔除
+            } else if (requestTags.length > 0) {
+                // 如果只傳了 ['國七', '公民'] 這種背景標籤，就退回通用篩選
+                const hasAnyMatch = requestTags.some(rt => itemTags.includes(rt));
+                if (!hasAnyMatch) return;
             }
 
             qualifiedPool.push(t);
         });
 
-        // --- 隨機抽樣 ---
+        // --- 隨機抽樣：有多少出多少，絕不硬湊 ---
         const finalSelection = qualifiedPool.shuffle().slice(0, totalTarget);
 
-        console.log(`🎯 精確鎖定：單元符合數 ${qualifiedPool.length} 題，隨機抽出 ${finalSelection.length} 題。`);
+        console.log(`🎯 精確單元過濾：符合關鍵字的題目共 ${qualifiedPool.length} 題，導出 ${finalSelection.length} 題。`);
 
         if (finalSelection.length === 0) return [];
 
@@ -106,13 +111,13 @@
                     question: data.question,
                     options: data.options,
                     answer: data.answer,
-                    concept: (t.tags && t.tags.length > 0) ? t.tags[t.tags.length - 1] : "一般題型"
+                    concept: (t.tags && t.tags.length > 0) ? t.tags[t.tags.length - 1] : "單元重點"
                 };
             }
         });
     }
 
     global.generatePaper = generatePaper;
-    console.log("✅ Paper Generator V17.0 (嚴格標籤交集版) 已就緒");
+    console.log("✅ Paper Generator V19.0 (核心單元鎖定版) 已就緒");
 
 })(window);
