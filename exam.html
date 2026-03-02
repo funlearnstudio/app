@@ -408,11 +408,12 @@ function updateTimeLabel(val) {
     selectedTime = parseInt(val);
     document.getElementById('timeDisplay').textContent = val + " 分鐘";
 }
-       function confirmSetup() {
+     // --- 請修正為 ---
+function confirmSetup() {
     document.getElementById('setupModal').classList.add('hidden');
-    prepareExam(selectedCount, selectedTime); // 傳入選擇的時間
-}
-        // --- 修正後的 prepareExam ---
+    // ⬇️ 這裡要確保傳入 selectedTime
+    prepareExam(selectedCount, selectedTime); 
+}   // --- 修正後的 prepareExam ---
 function prepareExam(count, timeMin) {
     const urlParams = new URLSearchParams(window.location.search);
     let subject = urlParams.get('subject') || 'math';
