@@ -1,7 +1,7 @@
 (function(global){
     'use strict';
 
-    // 1. 陣列隨機工具 (原地洗牌)
+    // 1. 陣列隨機工具
     if (!Array.prototype.shuffle) {
         Array.prototype.shuffle = function() {
             let arr = this.slice();
@@ -13,14 +13,12 @@
         };
     }
 
-    // 2. 標籤清洗
     function normalizeTags(raw) {
         if (!raw) return [];
         let tags = Array.isArray(raw) ? raw : String(raw).split(/[,，\s]+/).filter(Boolean);
         return tags.map(t => String(t).trim().toLowerCase());
     }
 
-    // 3. 核心生成函數
     function generatePaper(config) {
         const inputSub = (config.subject || '').toLowerCase();
         const requestTags = normalizeTags(config.tags || []);
@@ -33,8 +31,8 @@
         };
         const mappedSub = subjectAlias[inputSub] || inputSub;
 
-        // 單一候選池：所有符合條件的題目都進這裡
-        let masterPool = []; 
+        // 所有的「合格題目」池
+        let qualifiedPool = []; 
 
         const repos = [
             window.__MATH_REPO__, window.__PHYSICS_REPO__, window.__CHEMISTRY_REPO__,
@@ -42,54 +40,41 @@
             window.__ENGLISH_REPO__, window.__HISTORY_REPO__, window.__CIVICS_REPO__, window.__GEOGRAPHY_REPO__
         ].filter(Boolean);
 
-        // --- 核心篩選 ---
+        // --- 第一步：嚴格篩選 (Filtering) ---
         repos.forEach(repo => {
             Object.keys(repo).forEach(tid => {
                 const t = repo[tid];
                 if (!t) return;
 
                 const tSub = String(t.subject || "").toLowerCase();
-                // 科目匹配
-                let isMatch = (tSub === inputSub || tSub === mappedSub || tSub.includes(inputSub));
-                if (!isMatch) return;
+                if (!(tSub === inputSub || tSub === mappedSub || tSub.includes(inputSub))) return;
 
-                // 標籤嚴格匹配
                 const itemTags = normalizeTags(t.tags || t.meta || []);
-                let score = 0;
                 
-                if (requestTags.length === 0) {
-                    score = 1; // 若沒選標籤，則包含該科目所有題
-                } else {
-                    const hitCount = requestTags.filter(rt => itemTags.includes(rt)).length;
-                    if (hitCount > 0) score = 10 + hitCount; 
-                    // 若 hitCount 為 0，score 保持為 0，此題會被排除
+                // 標籤檢查：如果有指定標籤，必須命中至少一個
+                if (requestTags.length > 0) {
+                    const hasTag = requestTags.some(rt => itemTags.includes(rt));
+                    if (!hasTag) return; // 不符合標籤，直接剔除，不予補位
                 }
 
-                if (score > 0) {
-                    masterPool.push({ tid, score: score + Math.random(), rawData: t });
-                }
+                qualifiedPool.push(t);
             });
         });
 
-        // --- 取題邏輯 ---
-        // 依照分數排序（優先出標籤匹配度高的）並截取
-        masterPool.sort((a, b) => b.score - a.score);
+        // --- 第二步：隨機抽樣 (Sampling) ---
+        // 先將所有合格的題目打亂順序
+        const shuffledPool = qualifiedPool.shuffle();
         
-        // 💡 關鍵：slice 多少是多少，池子不足額絕不補位
-        let finalSelection = masterPool.slice(0, totalTarget).shuffle();
+        // 從打亂後的池子取出要求的數量 (若池子不足 10 題，slice 會自動只取現有的數量)
+        const finalSelection = shuffledPool.slice(0, totalTarget);
 
-        console.log(`🎯 嚴格篩選：符合條件總數 ${masterPool.length} 題，實際出題 ${finalSelection.length} 題。`);
+        console.log(`📊 篩選報告：符合標籤的總數為 ${qualifiedPool.length} 題，隨機抽選出 ${finalSelection.length} 題。`);
 
-        if (finalSelection.length === 0) {
-            console.error("❌ 找不到符合標籤的題目，不進行出題。");
-            return [];
-        }
+        if (finalSelection.length === 0) return [];
 
-        // --- 格式化輸出 ---
-        return finalSelection.map(c => {
-            const t = c.rawData;
+        // --- 第三步：格式化輸出 ---
+        return finalSelection.map(t => {
             const isGroup = (t.type === 'group' || t.questions);
-
             if (isGroup) {
                 return {
                     type: 'group',
@@ -125,6 +110,6 @@
     }
 
     global.generatePaper = generatePaper;
-    console.log("✅ Paper Generator V15.0 (單一池嚴格篩選版) 已就緒");
+    console.log("✅ Paper Generator V16.0 (公平隨機抽樣版) 已就緒");
 
 })(window);
