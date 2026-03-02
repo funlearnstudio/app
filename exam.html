@@ -315,6 +315,7 @@
         let timeLog = [], tabLog = [], tabLeaveStart = null, questionStartTime = 0;
         let selectedCount = 10;
         let isSubmitting = false; 
+        let selectedTime = 20;
 
         window.onload = function() {
             if (window.Auth && !Auth.requireLogin()) return;
@@ -411,13 +412,15 @@ function updateTimeLabel(val) {
     document.getElementById('setupModal').classList.add('hidden');
     prepareExam(selectedCount, selectedTime); // 傳入選擇的時間
 }
-        function prepareExam(count) {
+        // --- 修正後的 prepareExam ---
+function prepareExam(count, timeMin) {
     const urlParams = new URLSearchParams(window.location.search);
     let subject = urlParams.get('subject') || 'math';
     const rawTitle = decodeURIComponent(urlParams.get('title') || '綜合測驗');
     const title = rawTitle.trim();
     const urlGrade = decodeURIComponent(urlParams.get('grade') || '');
 
+    // 地科與社會科對應邏輯
     if (subject === 'earth_science') subject = 'earth';
     if (subject === 'social') subject = 'history';
 
@@ -441,27 +444,34 @@ function updateTimeLabel(val) {
 
     if (!mockQuestions || mockQuestions.length === 0) {
         alert(`⚠️ 找不到符合「${targetTags.join(', ')}」的題目！`);
+        showSetupModal(); // 重新顯示設定視窗
         return;
     }
 
-    // 🚀 2. 關鍵修正：初始化答案結構 (解決題組沒反應的問題)
-    // 如果是 group，答案必須是 [null, null...] 陣列；單題則是 null
+    // 🚀 2. 關鍵修正：初始化答案結構 (解決題組或單選題沒反應的問題)
     userAnswers = mockQuestions.map(item => {
-        if (item.type === 'group') {
+        // 如果是題組 (Group)，初始化一個對應長度的空數組
+        if (item.type === 'group' || item.questions) {
             return new Array(item.questions.length).fill(null);
         }
+        // 如果是單選題 (Normal)，初始化為 null
         return null;
     });
-
-    // 3. 初始化時間與紀錄陣列
-    timeLog = new Array(mockQuestions.length).fill(0);
-   examInfo = { 
+    
+    // 3. 設定計時器時間 (關鍵修正)
+    examInfo = { 
         subject: subject.toUpperCase(), 
         title: title, 
-        timeLimit: timeMin * 60  // 這裡改用傳入的分鐘數
+        timeLimit: timeMin * 60 // 使用滑桿選擇的分鐘數轉換為秒
     };
     timeLeft = examInfo.timeLimit;
-
+    
+    // 4. 重置遊戲狀態
+    currentQIndex = 0;
+    timeLog = [];
+    tabLog = [];
+    
+    // 5. 初始化遊戲 UI
     initGame(); 
 }
         function initGame() {
