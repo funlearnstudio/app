@@ -1321,62 +1321,65 @@ const group_river_profile = {
                 { q: "河流搬運的泥沙量大於海浪侵蝕時，海岸線會如何變化？", a: "向海延伸 (前移)", o: ["向陸退縮", "保持不變", "消失"], t: ["地科", "九年級", "海岸變化"] }
             ]
         }
-    ];// --- [這裡是你的題組定義，確保它們存在] ---
-    const allGroups = [
-        ...(typeof group_river_profile !== 'undefined' ? [group_river_profile] : []),
-        ...(typeof group_rock_cycle !== 'undefined' ? [group_rock_cycle] : []),
-        ...(typeof group_geo_history !== 'undefined' ? [group_geo_history] : []),
-        ...(typeof group_plate_tectonics !== 'undefined' ? [group_plate_tectonics] : []),
-        ...(typeof group_seasons !== 'undefined' ? [group_seasons] : []),
-        ...(typeof group_tides !== 'undefined' ? [group_tides] : [])
-    ];
+    ];// ==========================================
+    // 🚀 修正後的註冊邏輯：確保所有題組都能被搜尋到
+    // ==========================================
 
-    // 2. 處理題組註冊
-    allGroups.forEach(g => {
+    // 統一處理函數：確保題組帶有與一般題相同的搜尋身分證
+    const registerGroup = (g) => {
         if (!g || !g.id) return;
         
-        window.__EARTH_SCI_REPO__[g.id] = {
-            id: g.id,
-            type: "group", // 標記為題組
-            subject: "science",
-            content: g.content || "", // 題組共同引文
-            questions: g.questions, // 內含的小題
-            tags: ["地科", "題組", "國九"],
-            // 這裡保留 func 以防後台需要統一調用
-            func: () => {
-                return {
-                    ...g,
-                    type: "group",
-                    subject: "science"
-                };
-            }
+        // 💡 關鍵修正：補上產生器需要的欄位
+        g.subject = "earth_science"; 
+        
+        // 抓取子題目的標籤作為題組標籤 (如：國九、地質、天文)
+        const baseTags = (g.questions && g.questions[0].t) ? g.questions[0].t : ["地科"];
+        g.tags = ["earth_science", "閱讀題組", ...baseTags];
+        
+        // 標註類型
+        g.type = "group";
+        
+        window.__EARTH_SCI_REPO__[g.id] = g;
+    };
+
+    // 註冊至全域庫
+    conceptGroups.forEach(registerGroup);
+    visualGroups.forEach(registerGroup);
+
+    const allGroups = [
+        group_river_profile, 
+        group_rock_cycle, 
+        group_geo_history, 
+        group_plate_tectonics, 
+        group_seasons, 
+        group_tides
+    ];
+
+    allGroups.forEach(registerGroup);
+
+    // ==========================================
+    // 生成一般題 (維持原本邏輯)
+    // ==========================================
+    earthDB.forEach((item, idx) => {
+        const id = `earth_core_${idx}`;
+        const tags = ["earth_science", "地科", ...item.t]; 
+        
+        const func = () => {
+            const opts = Utils.shuffle([item.a, ...item.o]);
+            return {
+                question: `【${item.t[0]}】${item.q}`, 
+                options: opts,
+                answer: opts.indexOf(item.a),
+                explanation: [
+                    `✅ 正確答案：${item.a}`, 
+                    `🏷️ 範圍：${item.t.join(" / ")}`
+                ],
+                subject: "earth_science", 
+                tags: tags
+            };
         };
+        window.__EARTH_SCI_REPO__[id] = { func, tags, subject: "earth_science" };
     });
 
-    // 3. 處理一般單題 (earthDB)
-    if (typeof earthDB !== 'undefined') {
-        earthDB.forEach((item, idx) => {
-            const id = `earth_core_${idx}`;
-            window.__EARTH_SCI_REPO__[id] = {
-                subject: "science",
-                type: "single",
-                func: () => {
-                    const opts = U.shuffle([item.a, ...item.o]);
-                    return {
-                        id: id,
-                        question: `【${item.t[0]}】${item.q}`,
-                        options: opts,
-                        answer: opts.indexOf(item.a),
-                        correctValue: item.a,
-                        explanation: [`✅ 正確答案：${item.a}`],
-                        subject: "science",
-                        tags: item.t
-                    };
-                }
-            };
-        });
-    }
-
-    console.log(`🚀 地科倉庫更新完畢！單題: ${Object.keys(window.__EARTH_SCI_REPO__).filter(k=>!k.includes('group')).length} | 題組: ${allGroups.length}`);
-
-})(window);
+    console.log(`✅ 地科題庫載入完成！共 ${Object.keys(window.__EARTH_SCI_REPO__).length} 題 (含閱讀題組)。`);
+    })(window);
