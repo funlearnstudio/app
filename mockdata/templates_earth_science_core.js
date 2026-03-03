@@ -1321,43 +1321,8 @@ const group_river_profile = {
                 { q: "河流搬運的泥沙量大於海浪侵蝕時，海岸線會如何變化？", a: "向海延伸 (前移)", o: ["向陸退縮", "保持不變", "消失"], t: ["地科", "九年級", "海岸變化"] }
             ]
         }
-    ];// ==========================================
-    // 🚀 修正後的註冊邏輯：確保所有題組都能被搜尋到
-    // ==========================================
-
-   // ==========================================
-    // 🚀 旗艦修復版：確保地科題目「每一題」都能被掌握
-    // ==========================================
-
-    // 確保所有可能的倉庫都已初始化
-    window.__EARTH_SCI_REPO__ = window.__EARTH_SCI_REPO__ || {};
-    window.__SCIENCE_REPO__ = window.__SCIENCE_REPO__ || {};
-
-    // 統一標籤飽和函數：增加搜尋命中率
-    const getSaturatedTags = (originalTags) => {
-        const mandatory = ["地科", "自然", "理化", "science", "earth_science", "國九"];
-        return Array.from(new Set([...(originalTags || []), ...mandatory]));
-    };
-
-    // 1. 修復題組註冊邏輯
-    const registerGroup = (g) => {
-        if (!g || !g.id) return;
-        
-        // 強制對齊科目與標籤
-        g.subject = "science"; // 統一改為大科目 science
-        const baseTags = (g.questions && g.questions[0].t) ? g.questions[0].t : ["地科"];
-        g.tags = getSaturatedTags(["閱讀題組", ...baseTags]);
-        g.type = "group";
-        
-        // 雙向掛載：讓後台不管搜哪邊都找得到
-        window.__EARTH_SCI_REPO__[g.id] = g;
-        window.__SCIENCE_REPO__[g.id] = g;
-    };
-
-    // 2. 註冊所有題組 (岩石循環、板塊、季節、潮汐)
+    ];// --- [這裡是你的題組定義，確保它們存在] ---
     const allGroups = [
-        ...(typeof conceptGroups !== 'undefined' ? conceptGroups : []),
-        ...(typeof visualGroups !== 'undefined' ? visualGroups : []),
         ...(typeof group_river_profile !== 'undefined' ? [group_river_profile] : []),
         ...(typeof group_rock_cycle !== 'undefined' ? [group_rock_cycle] : []),
         ...(typeof group_geo_history !== 'undefined' ? [group_geo_history] : []),
@@ -1365,47 +1330,53 @@ const group_river_profile = {
         ...(typeof group_seasons !== 'undefined' ? [group_seasons] : []),
         ...(typeof group_tides !== 'undefined' ? [group_tides] : [])
     ];
-    allGroups.forEach(registerGroup);
 
-    // 3. 修復一般題註冊 (對齊歷史科成功邏輯)
-    earthDB.forEach((item, idx) => {
-        const id = `earth_core_${idx}`;
-        const saturatedTags = getSaturatedTags(item.t);
+    // 2. 處理題組註冊
+    allGroups.forEach(g => {
+        if (!g || !g.id) return;
         
-        const entry = {
+        window.__EARTH_SCI_REPO__[g.id] = {
+            id: g.id,
+            type: "group", // 標記為題組
             subject: "science",
-            tags: saturatedTags,
-            type: "single",
+            content: g.content || "", // 題組共同引文
+            questions: g.questions, // 內含的小題
+            tags: ["地科", "題組", "國九"],
+            // 這裡保留 func 以防後台需要統一調用
             func: () => {
-                const opts = Utils.shuffle([item.a, ...item.o]);
                 return {
-                    id: id,
-                    question: `【${item.t[0]}】${item.q}`, 
-                    options: opts,
-                    answer: opts.indexOf(item.a), // 核心：數字索引
-                    correctValue: item.a,
-                    explanation: [
-                        `✅ 正確答案：${item.a}`, 
-                        `🏷️ 範圍：${item.t.join(" / ")}`
-                    ],
-                    subject: "science",
-                    tags: saturatedTags
+                    ...g,
+                    type: "group",
+                    subject: "science"
                 };
             }
         };
-        
-        // 雙向同步
-        window.__EARTH_SCI_REPO__[id] = entry;
-        window.__SCIENCE_REPO__[id] = entry;
     });
 
-    // 4. 定時檢查補丁 (防止被系統其他程式碼覆蓋)
-    setInterval(() => {
-        if (Object.keys(window.__EARTH_SCI_REPO__).length === 0) {
-            console.log("⚠️ 地科倉庫異常清空，正在自動重新掛載...");
-            allGroups.forEach(registerGroup);
-        }
-    }, 5000);
+    // 3. 處理一般單題 (earthDB)
+    if (typeof earthDB !== 'undefined') {
+        earthDB.forEach((item, idx) => {
+            const id = `earth_core_${idx}`;
+            window.__EARTH_SCI_REPO__[id] = {
+                subject: "science",
+                type: "single",
+                func: () => {
+                    const opts = U.shuffle([item.a, ...item.o]);
+                    return {
+                        id: id,
+                        question: `【${item.t[0]}】${item.q}`,
+                        options: opts,
+                        answer: opts.indexOf(item.a),
+                        correctValue: item.a,
+                        explanation: [`✅ 正確答案：${item.a}`],
+                        subject: "science",
+                        tags: item.t
+                    };
+                }
+            };
+        });
+    }
 
-    console.log(`🎉 [地科強化完成] 目前倉庫總數：${Object.keys(window.__EARTH_SCI_REPO__).length} 題。`);
-    })(window);
+    console.log(`🚀 地科倉庫更新完畢！單題: ${Object.keys(window.__EARTH_SCI_REPO__).filter(k=>!k.includes('group')).length} | 題組: ${allGroups.length}`);
+
+})(window);
