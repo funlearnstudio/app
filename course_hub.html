@@ -9,6 +9,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
     <style>
+        /* 當螢幕寬度小於 300px (通常是手錶) 時隱藏 */
+@media (max-width: 400px) {
+    .watch-hidden {
+        display: none !important;
+    }
+}
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
         .fade-in { animation: fadeIn 0.5s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -62,19 +68,18 @@
             <span class="text-lg font-bold text-slate-800">雲端學院</span>
         </div>
 
-        <div class="p-6">
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
-                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
-                    <i class="fas fa-user-graduate"></i>
-                </div>
-                <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
-                <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
-                <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
-                    <i class="fas fa-pen mr-1"></i> 編輯年級
-                </button>
-            </div>
+      <div class="p-6 lg:block watch-hidden">
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+        <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
+            <i class="fas fa-user-graduate"></i>
         </div>
-
+        <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
+        <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
+        <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
+            <i class="fas fa-pen mr-1"></i> 編輯年級
+        </button>
+    </div>
+</div>
          <nav class="flex-grow px-3 space-y-1 overflow-y-auto no-scrollbar">
             <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 課程總覽</a>
             <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 錯題補救</a>
