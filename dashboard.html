@@ -9,6 +9,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
     <style>
+        /* 當螢幕寬度小於 300px (通常是手錶) 時隱藏 */
+@media (max-width: 400px) {
+    .watch-hidden {
+        display: none !important;
+    }
+}
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; }
         .course-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #e2e8f0; }
         .course-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); border-color: #cbd5e1; }
@@ -60,7 +66,7 @@
             <span class="text-lg font-bold text-slate-800">雲端學院</span>
         </div>
 
-        <div class="p-6 hidden lg:block">
+       <div class="p-6 lg:block watch-hidden">
     <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
         <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
             <i class="fas fa-user-graduate"></i>
