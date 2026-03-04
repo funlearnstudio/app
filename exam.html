@@ -339,7 +339,7 @@
         // 關鍵字高亮功能
         function highlightKeywords(text) {
             if (!text) return "";
-            const keywords = ["不正確", "錯誤", "正確", "何者為非", "最快", "最小", "最大", "主要", "完全", "不包括"];
+            const keywords = ["！＠＃＄％＾＆＊＃＄％＾％＾"];
             let processed = text;
             keywords.forEach(word => {
                 const reg = new RegExp(word, 'g');
