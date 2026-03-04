@@ -86,7 +86,20 @@
         </div>
     </aside>
 
- 
+   <div class="bg-white border-b border-gray-200 p-3 sm:p-6 z-10 shadow-sm sticky top-0">
+    <div class="max-w-7xl mx-auto flex flex-col xs:flex-row justify-between items-start xs:items-center gap-3">
+        <div>
+            <h1 class="text-lg md:text-2xl font-bold text-gray-800 leading-tight">課程總覽</h1>
+            <p class="hidden sm:block text-sm text-gray-500 mt-1">選擇科目，進入單元式學習</p>
+        </div>
+        
+        <div class="bg-gray-100 p-1 rounded-lg flex text-xs font-bold self-end xs:self-center">
+            <button onclick="setStage('high_school')" id="btnHigh" class="px-2 py-1 sm:px-4 sm:py-1.5 rounded-md transition bg-white text-gray-800 shadow-sm">高中</button>
+            <button onclick="setStage('junior_high')" id="btnJunior" class="px-2 py-1 sm:px-4 sm:py-1.5 rounded-md transition text-gray-500 hover:text-gray-700">國中</button>
+        </div>
+    </div>
+</div>
+
         <div class="flex-grow overflow-y-auto p-6 md:p-8" id="mainScroll">
             <div class="max-w-7xl mx-auto pb-20">
                 <div id="courseContainer" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
