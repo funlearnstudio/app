@@ -11,6 +11,12 @@
     <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
     
     <style>
+        /* 當螢幕寬度小於 300px (通常是手錶) 時隱藏 */
+@media (max-width: 400px) {
+    .watch-hidden {
+        display: none !important;
+    }
+}
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; color: #334155; }
         
         /* 側邊欄統一配色 */
@@ -88,7 +94,7 @@
             <span class="text-lg font-bold text-slate-800">雲端學院</span>
         </div>
 
-       <div class="p-6 hidden lg:block">
+      <div class="p-6 lg:block watch-hidden">
     <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
         <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
             <i class="fas fa-user-graduate"></i>
