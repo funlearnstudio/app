@@ -397,6 +397,53 @@
 
         function closeModal() { document.getElementById('detailModal').classList.add('hidden'); }
         function logout() { localStorage.removeItem('currentUser'); window.location.href = 'index.html'; }
+        async function saveQuestionToCloud() {
+    // 1. 取得表單輸入值 (請確保你的 HTML id 對應正確)
+    const questionData = {
+        action: "create_question",
+        teacher: document.getElementById('teacherName').value || "未知教師",
+        subject: document.getElementById('subjectSelect').value,
+        question: document.getElementById('qText').value,
+        optA: document.getElementById('optA').value,
+        optB: document.getElementById('optB').value,
+        optC: document.getElementById('optC').value,
+        optD: document.getElementById('optD').value,
+        answer: document.getElementById('correctAnswer').value // 這裡填入正確答案的文字內容
+    };
+
+    // 檢查必填
+    if (!questionData.question || !questionData.answer) {
+        alert("請填寫完整的題目與正確答案！");
+        return;
+    }
+
+    try {
+        // 顯示載入狀態
+        const btn = document.getElementById('saveBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 儲存中...';
+
+        const response = await fetch(GAS_URL, {
+            method: "POST",
+            mode: "no-cors", // 跨網域傳送
+            body: JSON.stringify(questionData)
+        });
+
+        // 因為 no-cors 無法讀取 response 內容，我們假設成功或延遲提示
+        alert("✅ 題目已送出！請檢查試算表是否更新。");
+        
+        // 清空表單
+        document.getElementById('questionForm').reset();
+
+    } catch (error) {
+        console.error("儲存失敗:", error);
+        alert("❌ 儲存失敗，請檢查網路或 GAS 設定。");
+    } finally {
+        const btn = document.getElementById('saveBtn');
+        btn.disabled = false;
+        btn.innerHTML = "確認出題並存入雲端";
+    }
+}
     </script>
 </body>
 </html>
