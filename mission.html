@@ -126,69 +126,75 @@
             }
         };
 
-        // 抓取任務核心邏輯
-        async function fetchAssignments() {
-            const loadingState = document.getElementById('loadingState');
-            const emptyState = document.getElementById('emptyState');
-            const taskList = document.getElementById('taskList');
-            const badge = document.getElementById('taskCountBadge');
+      // 抓取任務核心邏輯 (修正版)
+async function fetchAssignments() {
+    const loadingState = document.getElementById('loadingState');
+    const emptyState = document.getElementById('emptyState');
+    const taskList = document.getElementById('taskList');
+    const user = Auth.getCurrentUser(); // 取得當前學生資訊
 
-            try {
-                const res = await fetch(`${GAS_URL}?action=get_assignments`);
-                const tasks = await res.json();
-                
-                // 隱藏載入動畫
-                loadingState.classList.add('hidden');
+    try {
+        // ✨ 修正點 1：必須傳入 username 參數，GAS 才知道要把 lin 的任務給誰
+        const res = await fetch(`${GAS_URL}?action=get_dispatches&username=${encodeURIComponent(user.username)}`);
+        const tasks = await res.json();
+        
+        loadingState.classList.add('hidden');
 
-                if (!tasks || tasks.length === 0) {
-                    // 若無任務，顯示空狀態
-                    emptyState.classList.remove('hidden');
-                    badge.classList.add('hidden');
+        if (!tasks || tasks.length === 0) {
+            emptyState.classList.remove('hidden');
+            taskList.classList.add('hidden');
+        } else {
+            emptyState.classList.add('hidden');
+            taskList.classList.remove('hidden');
+
+            taskList.innerHTML = tasks.map((task, idx) => {
+                // ✨ 修正點 2：處理「訊息類型」與「考卷類型」的差異
+                let title, subject, link, icon, theme;
+
+                if (task.type === 'message') {
+                    // 這是老師發的「記得寫題目」
+                    title = task.content; 
+                    subject = "系統公告";
+                    theme = { bg: 'bg-amber-100', text: 'text-amber-600', icon: 'fa-comment-dots' };
+                    link = "#"; // 訊息純讀取，不跳轉
                 } else {
-                    // 若有任務，顯示卡片網格並更新紅點數量
-                    taskList.classList.remove('hidden');
-                    badge.classList.remove('hidden');
-                    badge.textContent = tasks.length;
-
-                    taskList.innerHTML = tasks.map((task, idx) => {
-                        // 根據科目決定卡片的主題顏色與圖示
-                        const theme = getSubjectTheme(task.subject);
-                        
-                        return `
-                            <div class="task-card bg-white p-6 rounded-3xl shadow-sm flex flex-col h-full fade-in" style="animation-delay: ${idx * 0.1}s">
-                                <div class="flex justify-between items-start mb-4">
-                                    <div class="w-12 h-12 ${theme.bg} ${theme.text} rounded-2xl flex items-center justify-center text-xl shadow-sm">
-                                        <i class="fas ${theme.icon}"></i>
-                                    </div>
-                                    <span class="text-[10px] font-black bg-red-100 text-red-600 px-3 py-1 rounded-full uppercase tracking-wider animate-pulse">
-                                        未完成
-                                    </span>
-                                </div>
-                                <div class="flex-grow">
-                                    <h3 class="font-black text-gray-800 text-lg mb-2 line-clamp-2">${task.title}</h3>
-                                    <p class="text-xs font-bold text-gray-400 mb-2 px-2 py-1 bg-gray-50 rounded-md inline-block">科目：${theme.name}</p>
-                                    <p class="text-xs text-gray-400 mt-2"><i class="far fa-calendar-plus mr-1"></i>派送時間：${task.date.split(' ')[0]}</p>
-                                </div>
-                                <div class="mt-6 pt-4 border-t border-gray-50">
-                                    <a href="course_hub.html?subject=${task.subject}&grade=${encodeURIComponent(userGrade)}" 
-                                       class="block w-full text-center bg-gray-800 text-white py-3 rounded-xl text-sm font-bold hover:bg-orange-500 transition shadow-md hover:shadow-lg">
-                                        <i class="fas fa-play mr-2"></i>立即挑戰
-                                    </a>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
+                    // 這是考試類型
+                    const contentObj = typeof task.content === 'string' ? JSON.parse(task.content) : task.content;
+                    title = contentObj.title || "新測驗任務";
+                    subject = contentObj.subject || "math";
+                    theme = getSubjectTheme(subject);
+                    link = `course_hub.html?subject=${subject}&grade=${encodeURIComponent(userGrade)}`;
                 }
-            } catch (err) {
-                console.warn("載入任務失敗", err);
-                loadingState.innerHTML = `
-                    <div class="text-red-500 text-4xl mb-4"><i class="fas fa-exclamation-triangle"></i></div>
-                    <h3 class="text-lg font-bold text-slate-700">連線發生錯誤</h3>
-                    <p class="text-slate-400 text-sm mt-2">請檢查網路連線或稍後再試</p>
-                `;
-            }
-        }
 
+                return `
+                    <div class="task-card bg-white p-6 rounded-3xl shadow-sm flex flex-col h-full fade-in" style="animation-delay: ${idx * 0.1}s">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-12 h-12 ${theme.bg} ${theme.text} rounded-2xl flex items-center justify-center text-xl shadow-sm">
+                                <i class="fas ${theme.icon}"></i>
+                            </div>
+                            <span class="text-[10px] font-black bg-red-100 text-red-600 px-3 py-1 rounded-full uppercase tracking-wider animate-pulse">
+                                NEW
+                            </span>
+                        </div>
+                        <div class="flex-grow">
+                            <h3 class="font-black text-gray-800 text-lg mb-2 line-clamp-2">${title}</h3>
+                            <p class="text-xs font-bold text-gray-400 mb-2 px-2 py-1 bg-gray-50 rounded-md inline-block">類型：${task.type === 'message' ? '老師留言' : '課程任務'}</p>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-gray-50">
+                            <a href="${link}" class="block w-full text-center ${task.type === 'message' ? 'bg-slate-200 text-slate-500 cursor-default' : 'bg-gray-800 text-white hover:bg-orange-500'} py-3 rounded-xl text-sm font-bold transition shadow-md">
+                                <i class="fas ${task.type === 'message' ? 'fa-check' : 'fa-play'} mr-2"></i>
+                                ${task.type === 'message' ? '已閱讀' : '立即挑戰'}
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    } catch (err) {
+        console.error("載入任務失敗", err);
+        loadingState.innerHTML = `<p class="text-red-500">系統連線失敗，請檢查網路</p>`;
+    }
+}
         // 輔助函數：取得科目的顏色與圖示設定
         function getSubjectTheme(subjectKey) {
             const themes = {
