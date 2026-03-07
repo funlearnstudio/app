@@ -80,9 +80,16 @@
                         <p class="text-blue-100 text-xs mb-4">發送指定練習任務給全班學生。</p>
                         <input type="text" id="assignTitle" placeholder="任務標題 (例:地科第一單元)" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:bg-white/20 outline-none mb-3 text-sm">
                         <select id="assignSubject" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white outline-none mb-4 text-sm">
-                            <option value="earth_science" class="text-slate-800">地球科學</option>
-                            <option value="biology" class="text-slate-800">生物科學</option>
-                            <option value="chemistry" class="text-slate-800">理化學科</option>
+                             <option value="chinese">國文</option>
+                                <option value="math">數學</option>
+                                <option value="english">英文</option>
+                                <option value="biology">生物</option>
+                                <option value="physics">理化(物理)</option>
+                                <option value="chemistry">理化(化學)</option>
+                                <option value="earth_science">地球科學</option>
+                                <option value="history">歷史</option>
+                                <option value="geography">地理</option>
+                                <option value="civics">公民</option>
                         </select>
                     </div>
                     <button onclick="createAssignment(this)" class="w-full bg-white text-blue-700 font-black py-3 rounded-xl shadow-lg hover:bg-yellow-400 hover:text-blue-900 transition flex justify-center items-center">
