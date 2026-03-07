@@ -9,12 +9,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
     <style>
+        /* 當螢幕寬度小於 300px (通常是手錶) 時隱藏 */
+@media (max-width: 300px) {
+    .watch-hidden {
+        display: none !important;
+    }
+}
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; }
         .course-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #e2e8f0; }
         .course-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); border-color: #cbd5e1; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         /* 請加入這行 CSS */
-        .sidebar-transition { transition: transform 0.3s ease-in-out; }
+.sidebar-transition { transition: transform 0.3s ease-in-out; }
     </style>
     <script src="mockdata/users.js"></script>
     <script src="assets/js/auth.js"></script>
@@ -60,24 +66,21 @@
             <span class="text-lg font-bold text-slate-800">雲端學院</span>
         </div>
 
-        <div class="p-6">
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
-                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
-                    <i class="fas fa-user-graduate"></i>
-                </div>
-                <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
-                <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
-                <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
-                    <i class="fas fa-pen mr-1"></i> 編輯年級
-                </button>
-            </div>
+       <div class="p-6 lg:block watch-hidden">
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+        <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
+            <i class="fas fa-user-graduate"></i>
         </div>
+        <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
+        <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
+        <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
+            <i class="fas fa-pen mr-1"></i> 編輯年級
+        </button>
+    </div>
+</div>
 
         <nav class="flex-grow px-3 space-y-1 overflow-y-auto no-scrollbar">
-            <a href="#mission-section" class="flex items-center justify-between px-4 py-3 rounded-xl text-orange-600 bg-orange-50 font-bold hover:bg-orange-100 transition">
-                <div class="flex items-center gap-3"><i class="fas fa-bullseye w-5 text-center"></i> 任務中心</div>
-                <span id="taskCountBadge" class="hidden bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">0</span>
-            </a>
+            <a href="mission.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 課程總覽</a>
             <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 課程總覽</a>
             <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 錯題補救</a>
             <a href="study.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 重點複習</a>
@@ -91,7 +94,7 @@
     </aside>
 
     <main class="flex-grow flex flex-col h-full relative">
-        <div class="bg-white border-b border-gray-200 p-6 z-10 shadow-sm sticky top-0">
+      <div class="hidden sm:block bg-white border-b border-gray-200 p-6 z-10 shadow-sm sticky top-0">
             <div class="max-w-7xl mx-auto flex justify-between items-center mb-6">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-800">課程總覽</h1>
@@ -106,66 +109,52 @@
 
         <div class="flex-grow overflow-y-auto p-6 md:p-8" id="mainScroll">
             <div class="max-w-7xl mx-auto pb-20">
-                
-                <section id="mission-section" class="mb-10 hidden">
-                    <div class="flex items-center space-x-2 mb-4">
-                        <div class="w-2 h-6 bg-orange-500 rounded-full"></div>
-                        <h2 class="text-xl font-bold text-gray-800">老師指派任務</h2>
-                    </div>
-                    <div id="taskList" class="flex overflow-x-auto space-x-4 pb-4 no-scrollbar">
-                        </div>
-                </section>
-
                 <div id="courseContainer" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
             </div>
         </div>
-        
         <div id="profileModal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm fade-in">
-            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100">
-                <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
-                    <h3 class="text-white font-bold text-lg"><i class="fas fa-user-edit mr-2"></i> 修改年級</h3>
-                    <button onclick="closeProfileModal()" class="text-white/80 hover:text-white transition">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                
-                <div class="p-6">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">請選擇目前的年級：</label>
-                    <div class="relative">
-                        <select id="editGradeSelect" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white appearance-none transition text-gray-700 font-bold">
-                            <option value="國一">國一</option>
-                            <option value="國二">國二</option>
-                            <option value="國三">國三</option>
-                            <hr>
-                            <option value="高一">高一</option>
-                            <option value="高二">高二</option>
-                            <option value="高三">高三</option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                    </div>
-                    <p class="text-xs text-gray-400 mt-3">※ 修改後，系統將會優先推薦該年級的題目。</p>
-                </div>
-
-                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
-                    <button onclick="closeProfileModal()" class="px-4 py-2 text-gray-500 hover:text-gray-700 font-bold text-sm">取消</button>
-                    <button onclick="saveProfile()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-md hover:shadow-lg transition">
-                        確認修改
-                    </button>
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100">
+        <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+            <h3 class="text-white font-bold text-lg"><i class="fas fa-user-edit mr-2"></i> 修改年級</h3>
+            <button onclick="closeProfileModal()" class="text-white/80 hover:text-white transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="p-6">
+            <label class="block text-gray-700 text-sm font-bold mb-2">請選擇目前的年級：</label>
+            <div class="relative">
+                <select id="editGradeSelect" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white appearance-none transition text-gray-700 font-bold">
+                    <option value="國一">國一</option>
+                    <option value="國二">國二</option>
+                    <option value="國三">國三</option>
+                    <hr>
+                    <option value="高一">高一</option>
+                    <option value="高二">高二</option>
+                    <option value="高三">高三</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                    <i class="fas fa-chevron-down"></i>
                 </div>
             </div>
+            <p class="text-xs text-gray-400 mt-3">※ 修改後，系統將會優先推薦該年級的題目。</p>
         </div>
+
+        <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
+            <button onclick="closeProfileModal()" class="px-4 py-2 text-gray-500 hover:text-gray-700 font-bold text-sm">取消</button>
+            <button onclick="saveProfile()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-md hover:shadow-lg transition">
+                確認修改
+            </button>
+        </div>
+    </div>
+</div>
     </main>
 
     <input type="hidden" id="currentStage" value="high_school">
 
    <script>
-        // ✨ 新增：替換成你的 GAS 網址
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
-
         window.onload = function() {
-            // 確保 Auth 物件存在
+            // 確保 Auth 物件存在，避免報錯 (如果只測試前端 UI，可以註解掉這塊)
             if (typeof Auth !== 'undefined') {
                 const user = Auth.getCurrentUser();
                 if(user) {
@@ -173,9 +162,6 @@
                     document.getElementById('sideUserRole').textContent = user.grade;
                     if(user.grade && user.grade.includes('國')) setStage('junior_high');
                     else setStage('high_school');
-
-                    // ✨ 新增：載入完畢後，去抓老師派的任務
-                    fetchAssignments(user.grade);
                 } else {
                     setStage('high_school');
                 }
@@ -184,96 +170,70 @@
                 setStage('high_school');
             }
         };
+// ==========================================
+// ✏️ 個人資料編輯功能
+// ==========================================
+// 手機側邊欄開關
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    if (sidebar.classList.contains('-translate-x-full')) {
+        // 開啟
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+    } else {
+        // 關閉
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+    }
+}
+// 1. 開啟編輯視窗
+function openProfileModal() {
+    const user = Auth.getCurrentUser();
+    if (!user) {
+        alert("請先登入！");
+        return;
+    }
 
-        // ✨ 新增：抓取任務的專屬函式
-        async function fetchAssignments(userGrade) {
-            const section = document.getElementById('mission-section');
-            const container = document.getElementById('taskList');
-            const badge = document.getElementById('taskCountBadge');
+    // 設定下拉選單為目前的年級
+    const select = document.getElementById('editGradeSelect');
+    if (user.grade) {
+        select.value = user.grade;
+    }
+    
+    // 顯示視窗
+    document.getElementById('profileModal').classList.remove('hidden');
+}
 
-            try {
-                // 呼叫 GAS 取得派案資料
-                const res = await fetch(`${GAS_URL}?action=get_assignments`);
-                const tasks = await res.json();
+// 2. 關閉編輯視窗
+function closeProfileModal() {
+    document.getElementById('profileModal').classList.add('hidden');
+}
 
-                if (tasks && tasks.length > 0) {
-                    // 如果有任務，顯示任務區塊和通知紅點
-                    section.classList.remove('hidden');
-                    badge.classList.remove('hidden');
-                    badge.textContent = tasks.length;
-
-                    // 渲染任務卡片，採用橫向滾動設計
-                    container.innerHTML = tasks.map(task => {
-                        return `
-                            <div class="min-w-[280px] bg-white border border-orange-100 p-5 rounded-2xl shadow-sm hover:shadow-md transition">
-                                <div class="flex items-center justify-between mb-3">
-                                    <div class="w-10 h-10 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center text-lg">
-                                        <i class="fas fa-star"></i>
-                                    </div>
-                                    <span class="text-[10px] font-bold bg-orange-500 text-white px-2 py-1 rounded-md uppercase animate-pulse">New Task</span>
-                                </div>
-                                <h4 class="font-bold text-gray-800 mb-1 truncate">${task.title}</h4>
-                                <p class="text-xs text-gray-400 mb-4"><i class="far fa-clock mr-1"></i>派送日期: ${task.date.split(' ')[0]}</p>
-                                <a href="course_hub.html?subject=${task.subject}&grade=${encodeURIComponent(userGrade)}" class="block w-full text-center bg-gray-800 text-white py-2 rounded-xl text-sm font-bold hover:bg-orange-500 transition shadow-sm">
-                                    立即挑戰
-                                </a>
-                            </div>
-                        `;
-                    }).join('');
-                }
-            } catch (err) {
-                console.warn("尚未設定 GAS URL 或載入任務失敗", err);
-            }
-        }
-
-        // ==========================================
-        // ✏️ 個人資料編輯功能
-        // ==========================================
-        // 手機側邊欄開關
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            
-            if (sidebar.classList.contains('-translate-x-full')) {
-                sidebar.classList.remove('-translate-x-full');
-                overlay.classList.remove('hidden');
-            } else {
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
-            }
-        }
-        // 1. 開啟編輯視窗
-        function openProfileModal() {
-            const user = Auth.getCurrentUser();
-            if (!user) {
-                alert("請先登入！");
-                return;
-            }
-            const select = document.getElementById('editGradeSelect');
-            if (user.grade) { select.value = user.grade; }
-            document.getElementById('profileModal').classList.remove('hidden');
-        }
-
-        // 2. 關閉編輯視窗
-        function closeProfileModal() {
-            document.getElementById('profileModal').classList.add('hidden');
-        }
-
-        // 3. 儲存修改
-        function saveProfile() {
-            const newGrade = document.getElementById('editGradeSelect').value;
-            if (Auth.updateUser) {
-                Auth.updateUser('grade', newGrade);
-                const roleEl = document.getElementById('sideUserRole');
-                if (roleEl) roleEl.innerText = newGrade;
-                alert(`修改成功！目前年級已更新為：${newGrade}`);
-                closeProfileModal();
-            } else {
-                console.error("Auth.updateUser 函式不存在，請檢查 auth.js");
-                alert("系統錯誤：無法儲存資料");
-            }
-        }
-
+// 3. 儲存修改
+function saveProfile() {
+    const newGrade = document.getElementById('editGradeSelect').value;
+    
+    // 呼叫 Auth 模組更新資料庫 (這會同時更新 LocalStorage 和 mockdata)
+    if (Auth.updateUser) {
+        Auth.updateUser('grade', newGrade);
+        
+        // 更新畫面上的文字
+        const roleEl = document.getElementById('sideUserRole');
+        if (roleEl) roleEl.innerText = newGrade;
+        
+        // 提示成功
+        alert(`修改成功！目前年級已更新為：${newGrade}`);
+        closeProfileModal();
+        
+        // 如果是在 dashboard，可能需要重新整理頁面以套用新題庫設定
+        // location.reload(); 
+    } else {
+        console.error("Auth.updateUser 函式不存在，請檢查 auth.js");
+        alert("系統錯誤：無法儲存資料");
+    }
+}
         function setStage(stage) {
             document.getElementById('currentStage').value = stage;
             const btnHigh = document.getElementById('btnHigh');
@@ -297,19 +257,24 @@
             
             container.innerHTML = '';
 
+            // ✨ 1. 抓取使用者目前的具體年級 (例如：國七)
             const user = (typeof Auth !== 'undefined') ? Auth.getCurrentUser() : null;
+            // 如果使用者的年級符合當前階段 (例如他是國七，現在在看國中區)，就用他的年級
+            // 否則 (例如他是高一，但切換去看國中區)，就用該階段的統稱 (junior_high)
             let targetGrade = stage;
             if (user && user.grade) {
                 if (stage === 'junior_high' && user.grade.includes('國')) targetGrade = user.grade;
                 if (stage === 'high_school' && user.grade.includes('高')) targetGrade = user.grade;
             }
 
+            // 定義基礎科目
             let subjects = [
                 { id: 'chinese', name: '國文', icon: 'fa-book-open', color: 'red' },
                 { id: 'math', name: '數學', icon: 'fa-calculator', color: 'blue' },
                 { id: 'english', name: '英文', icon: 'fa-language', color: 'purple' },
             ];
 
+            // 依據階段加入不同自然科
             if (stage === 'junior_high') {
                 subjects.push(
                     { id: 'biology', name: '生物', icon: 'fa-leaf', color: 'green' }, 
@@ -325,13 +290,16 @@
                 );
             }
 
+            // 加入社會科
             subjects.push(
-                { id: 'history', name: '歷史', icon: 'fa-landmark', color: 'amber' },
                 { id: 'geography', name: '地理', icon: 'fa-globe-americas', color: 'cyan' },
+                { id: 'history', name: '歷史', icon: 'fa-landmark', color: 'amber' },
                 { id: 'civics', name: '公民', icon: 'fa-balance-scale', color: 'teal' }
             );
 
+            // 生成卡片
             subjects.forEach((sub, idx) => {
+                // ✨ 2. 在連結中傳遞具體的 targetGrade
                 const linkHref = `course_hub.html?subject=${sub.id}&grade=${encodeURIComponent(targetGrade)}&title=${encodeURIComponent(sub.name)}`;
                 
                 const html = `
