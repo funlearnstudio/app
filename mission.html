@@ -157,13 +157,21 @@ async function fetchAssignments() {
                     subject = "系統公告";
                     theme = { bg: 'bg-amber-100', text: 'text-amber-600', icon: 'fa-comment-dots' };
                     link = "#"; // 訊息純讀取，不跳轉
+              // ... 在 fetchAssignments 的迴圈內 ...
                 } else {
                     // 這是考試類型
                     const contentObj = typeof task.content === 'string' ? JSON.parse(task.content) : task.content;
                     title = contentObj.title || "新測驗任務";
                     subject = contentObj.subject || "math";
+                    
+                    // 取得老師設定的標籤 (Tags)，這會決定要從 templates 抓哪些題目
+                    const tags = contentObj.tags || ""; 
+                    
                     theme = getSubjectTheme(subject);
-                    link = `course_hub.html?subject=${subject}&grade=${encodeURIComponent(userGrade)}`;
+                    
+                    // ✨ 修改點：在 URL 加入 tags 參數
+                    // 這樣 course_hub.html 才能知道要篩選 templates 裡的哪些題目
+                    link = `course_hub.html?subject=${subject}&grade=${encodeURIComponent(userGrade)}&tags=${encodeURIComponent(tags)}&missionId=${task.id}`;
                 }
 
                 return `
