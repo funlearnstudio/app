@@ -193,7 +193,7 @@
         // ==========================================
         // 🚀 初始化
         // ==========================================
-        window.onload = function() {
+window.onload = function() {
             if (window.Auth && !Auth.requireLogin()) return;
             
             // 1. 初始化使用者顯示
@@ -215,12 +215,14 @@
             document.getElementById('linkArcade').href = `arcade.html?subject=${subject}`;
             document.getElementById('linkExamAll').href = `exam.html?subject=${subject}&title=${encodeURIComponent(title + "總複習")}&count=20&grade=${encodeURIComponent(gradeParam)}`;
 
-            // 4. 載入課程資料
+            // 4. 載入課程資料 (確保對應到你的 curriculum_integrated.js 結構)
             if(window.initCurriculumData) window.initCurriculumData();
-            const data = window.CurriculumLibrary.data[subject] || [];
+            
+            // 這裡修正為直接從 CurriculumLibrary 取值，因為你的檔案結構看起來是 global 的
+            const rawData = (window.CurriculumLibrary.data ? window.CurriculumLibrary.data[subject] : window.CurriculumLibrary[subject]) || [];
             
             // 5. 過濾與排序
-            currentBooks = data.filter(book => book.stage === stage);
+            currentBooks = rawData.filter(book => book.stage === stage);
             
             if (currentBooks.length === 0) {
                 document.getElementById('unitContainer').innerHTML = `
@@ -232,7 +234,7 @@
                 return;
             }
 
-            // 智能排序：嘗試解析 "Book 1", "第一冊", "七年級"
+            // 智能排序：嘗試解析 "Book 1", "第一冊" 等
             currentBooks.sort((a, b) => {
                 const getNum = (item) => {
                     const str = (item.book || item.name || "").toString();
@@ -245,9 +247,38 @@
                 return getNum(a) - getNum(b);
             });
 
-            // 6. 渲染畫面
+            // 🌟 6. 智慧單元定位 (核心新增)
+            const targetUnit = urlParams.get('unit'); // 接收來自任務中心的單元名稱
+            let targetBookIdx = 0; // 預設顯示第一冊
+
+            if (targetUnit) {
+                // 在所有冊別中搜尋哪一冊包含這個單元
+                const foundIdx = currentBooks.findIndex(book => 
+                    book.units.some(u => u.name === targetUnit)
+                );
+                if (foundIdx !== -1) {
+                    targetBookIdx = foundIdx;
+                    activeBookIndex = foundIdx;
+                }
+            }
+
+            // 7. 渲染畫面
             renderTabs();
-            renderUnits(0);
+            renderUnits(targetBookIdx);
+
+            // 🌟 8. 自動捲動並高亮目標單元 (進階優化)
+            if (targetUnit) {
+                setTimeout(() => {
+                    const unitElements = document.querySelectorAll('#unitContainer .fade-in');
+                    unitElements.forEach(el => {
+                        if (el.innerText.includes(targetUnit)) {
+                            // 加上亮藍色外框標示
+                            el.classList.add('ring-4', 'ring-blue-400', 'ring-opacity-50', 'bg-blue-50/50');
+                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    });
+                }, 600);
+            }
         };
 
         // ==========================================
