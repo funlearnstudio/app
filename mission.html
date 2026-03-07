@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任務中心 - 雲端學院</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f1f5f9; }
+        .task-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #ffedd5; }
+        .task-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.15); border-color: #fdba74; }
+        .sidebar-transition { transition: transform 0.3s ease-in-out; }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+    <script src="mockdata/users.js"></script>
+    <script src="assets/js/auth.js"></script>
+</head>
+<body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden">
+
+    <header class="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-30">
+        <div class="flex items-center gap-2">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm shadow-sm">學</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+        </div>
+        <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-lg">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+    </header>
+
+    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden backdrop-blur-sm"></div>
+
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-100 flex flex-col z-50 transform -translate-x-full lg:translate-x-0 lg:static lg:h-full sidebar-transition shadow-2xl lg:shadow-none">
+        <div class="h-16 hidden lg:flex items-center px-6 border-b border-slate-50">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+        </div>
+
+        <div class="p-6">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
+                <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
+            </div>
+        </div>
+
+        <nav class="flex-grow px-3 space-y-1 overflow-y-auto">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition">
+                <i class="fas fa-th-large w-5 text-center"></i> 課程總覽
+            </a>
+            <a href="mission.html" class="flex items-center justify-between px-4 py-3 rounded-xl text-orange-600 bg-orange-50 font-bold hover:bg-orange-100 transition">
+                <div class="flex items-center gap-3"><i class="fas fa-bullseye w-5 text-center"></i> 任務中心</div>
+                <span id="taskCountBadge" class="hidden bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">0</span>
+            </a>
+            <a href="mission.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 課程總覽</a>
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 課程總覽</a>
+            <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 錯題補救</a>
+            <a href="study.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 重點複習</a>
+            <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 遊戲場</a>
+            <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 解題論壇</a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-50">
+            <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs"><i class="fas fa-sign-out-alt"></i> 登出系統</button>
+        </div>
+    </aside>
+
+    <main class="flex-grow flex flex-col h-full relative bg-slate-50/50">
+        
+        <div class="bg-white border-b border-gray-200 p-6 z-10 shadow-sm sticky top-0">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-black text-gray-800 flex items-center">
+                        <i class="fas fa-bullseye text-orange-500 mr-3"></i>我的任務中心
+                    </h1>
+                    <p class="text-sm text-gray-500 mt-1">完成老師指派的任務，累積學習經驗值！</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-grow overflow-y-auto p-6 md:p-8">
+            <div class="max-w-7xl mx-auto pb-20">
+                
+                <div id="loadingState" class="text-center py-20 fade-in">
+                    <div class="inline-block w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-500 text-2xl mb-4 shadow-sm animate-bounce">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-700">正在同步雲端任務...</h3>
+                    <p class="text-slate-400 text-sm mt-2">請稍候，正在向老師索取最新的任務單</p>
+                </div>
+
+                <div id="emptyState" class="hidden text-center py-20 bg-white rounded-3xl shadow-sm border border-slate-100 fade-in">
+                    <div class="w-24 h-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-inner">
+                        <i class="fas fa-check-double"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-800 mb-2">太棒了！目前沒有待辦任務</h3>
+                    <p class="text-slate-500 mb-6">你已經完成了所有老師交代的作業。你可以前往自由學習，或是到遊戲場放鬆一下。</p>
+                    <a href="dashboard.html" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200">
+                        <i class="fas fa-rocket mr-2"></i>前往課程總覽
+                    </a>
+                </div>
+
+                <div id="taskList" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // ⚠️ 替換為你的 GAS URL
+        const GAS_URL = "你的_GAS_部署網址";
+        let userGrade = "高一";
+
+        window.onload = function() {
+            if (typeof Auth !== 'undefined') {
+                const user = Auth.getCurrentUser();
+                if(user) {
+                    document.getElementById('sideUserName').textContent = user.name;
+                    document.getElementById('sideUserRole').textContent = user.grade;
+                    userGrade = user.grade;
+                    fetchAssignments(); // 載入任務
+                } else {
+                    alert("請先登入！");
+                    window.location.href = 'index.html';
+                }
+            }
+        };
+
+        // 抓取任務核心邏輯
+        async function fetchAssignments() {
+            const loadingState = document.getElementById('loadingState');
+            const emptyState = document.getElementById('emptyState');
+            const taskList = document.getElementById('taskList');
+            const badge = document.getElementById('taskCountBadge');
+
+            try {
+                const res = await fetch(`${GAS_URL}?action=get_assignments`);
+                const tasks = await res.json();
+                
+                // 隱藏載入動畫
+                loadingState.classList.add('hidden');
+
+                if (!tasks || tasks.length === 0) {
+                    // 若無任務，顯示空狀態
+                    emptyState.classList.remove('hidden');
+                    badge.classList.add('hidden');
+                } else {
+                    // 若有任務，顯示卡片網格並更新紅點數量
+                    taskList.classList.remove('hidden');
+                    badge.classList.remove('hidden');
+                    badge.textContent = tasks.length;
+
+                    taskList.innerHTML = tasks.map((task, idx) => {
+                        // 根據科目決定卡片的主題顏色與圖示
+                        const theme = getSubjectTheme(task.subject);
+                        
+                        return `
+                            <div class="task-card bg-white p-6 rounded-3xl shadow-sm flex flex-col h-full fade-in" style="animation-delay: ${idx * 0.1}s">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div class="w-12 h-12 ${theme.bg} ${theme.text} rounded-2xl flex items-center justify-center text-xl shadow-sm">
+                                        <i class="fas ${theme.icon}"></i>
+                                    </div>
+                                    <span class="text-[10px] font-black bg-red-100 text-red-600 px-3 py-1 rounded-full uppercase tracking-wider animate-pulse">
+                                        未完成
+                                    </span>
+                                </div>
+                                <div class="flex-grow">
+                                    <h3 class="font-black text-gray-800 text-lg mb-2 line-clamp-2">${task.title}</h3>
+                                    <p class="text-xs font-bold text-gray-400 mb-2 px-2 py-1 bg-gray-50 rounded-md inline-block">科目：${theme.name}</p>
+                                    <p class="text-xs text-gray-400 mt-2"><i class="far fa-calendar-plus mr-1"></i>派送時間：${task.date.split(' ')[0]}</p>
+                                </div>
+                                <div class="mt-6 pt-4 border-t border-gray-50">
+                                    <a href="course_hub.html?subject=${task.subject}&grade=${encodeURIComponent(userGrade)}" 
+                                       class="block w-full text-center bg-gray-800 text-white py-3 rounded-xl text-sm font-bold hover:bg-orange-500 transition shadow-md hover:shadow-lg">
+                                        <i class="fas fa-play mr-2"></i>立即挑戰
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (err) {
+                console.warn("載入任務失敗", err);
+                loadingState.innerHTML = `
+                    <div class="text-red-500 text-4xl mb-4"><i class="fas fa-exclamation-triangle"></i></div>
+                    <h3 class="text-lg font-bold text-slate-700">連線發生錯誤</h3>
+                    <p class="text-slate-400 text-sm mt-2">請檢查網路連線或稍後再試</p>
+                `;
+            }
+        }
+
+        // 輔助函數：取得科目的顏色與圖示設定
+        function getSubjectTheme(subjectKey) {
+            const themes = {
+                'earth_science': { name: '地球科學', icon: 'fa-globe-asia', bg: 'bg-blue-100', text: 'text-blue-600' },
+                'biology': { name: '生物科學', icon: 'fa-leaf', bg: 'bg-green-100', text: 'text-green-600' },
+                'chemistry': { name: '理化學科', icon: 'fa-flask', bg: 'bg-purple-100', text: 'text-purple-600' },
+                'chinese': { name: '國文', icon: 'fa-book-open', bg: 'bg-red-100', text: 'text-red-600' },
+                'math': { name: '數學', icon: 'fa-calculator', bg: 'bg-indigo-100', text: 'text-indigo-600' },
+                'english': { name: '英文', icon: 'fa-language', bg: 'bg-cyan-100', text: 'text-cyan-600' }
+            };
+            return themes[subjectKey] || { name: '綜合測驗', icon: 'fa-star', bg: 'bg-orange-100', text: 'text-orange-600' };
+        }
+
+        // 側邊欄開關 (手機版)
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
