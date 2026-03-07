@@ -560,36 +560,64 @@
 
         // 5. 雲端智能出題
         async function createSmartQuestion(btn) {
-            const subject = document.getElementById('qSubject').value;
-            const tagsRaw = document.getElementById('qTags').value;
-            const q = document.getElementById('qText').value.trim();
-            const a = document.getElementById('qCorrect').value.trim();
-            const o1 = document.getElementById('qWrong1').value.trim();
-            const o2 = document.getElementById('qWrong2').value.trim();
-            const o3 = document.getElementById('qWrong3').value.trim();
+    // 1. 抓取升級後的四個分類欄位
+    const subject = document.getElementById('qSubject').value;
+    const grade = document.getElementById('qGrade').value;
+    const chapter = document.getElementById('qChapter').value.trim();
+    const level = document.getElementById('qLevel').value;
 
-            if(!q || !a || !o1 || !o2 || !o3) return alert('⚠️ 請填寫完整的題目、正解與三個干擾項！');
+    // 2. 抓取題目與選項
+    const q = document.getElementById('qText').value.trim();
+    const a = document.getElementById('qCorrect').value.trim();
+    const o1 = document.getElementById('qWrong1').value.trim();
+    const o2 = document.getElementById('qWrong2').value.trim();
+    const o3 = document.getElementById('qWrong3').value.trim();
 
-            let tags = tagsRaw.split(/[,，]/).map(t => t.trim()).filter(Boolean);
-            tags.unshift(subject); 
+    // 防呆檢查
+    if(!q || !a || !o1 || !o2 || !o3) return alert('⚠️ 請填寫完整的題目、正解與三個干擾項！');
+    if(!chapter) return alert('⚠️ 請填寫「單元 / 章節名稱」！');
 
-            const user = JSON.parse(localStorage.getItem('currentUser'));
-            const origText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 寫入中...';
-            btn.disabled = true;
+    // 3. 把分類組合成 Tags 傳給後端
+    let tagsArray = [subject, grade, chapter, level];
+    let tagsString = tagsArray.join(','); // 結果會像這樣: "math,七上,1-1 相似形,基礎"
 
-            try {
-                const payload = { action: "create_question", teacher: user.name, subject: subject, question: q, answer: a, optA: o1, optB: o2, optC: o3, optD: "", tags: tags.join(',') };
-                const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
-                const result = await res.json();
-                if(result.result === "success") {
-                    alert('🎉 題目儲存成功！測驗時將自動洗牌選項。');
-                    ['qText','qCorrect','qWrong1','qWrong2','qWrong3', 'qTags'].forEach(id => document.getElementById(id).value = '');
-                } else alert('錯誤: ' + result.message);
-            } catch (err) { alert('連線失敗，請檢查網路。'); } 
-            finally { btn.innerHTML = origText; btn.disabled = false; }
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+    const origText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 寫入中...';
+    btn.disabled = true;
+
+    try {
+        const payload = { 
+            action: "create_question", 
+            teacher: user.name, 
+            subject: subject, 
+            question: q, 
+            answer: a, 
+            optA: o1, 
+            optB: o2, 
+            optC: o3, 
+            optD: "", 
+            tags: tagsString // 傳送組合好的標籤
+        };
+        const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+        const result = await res.json();
+        
+        if(result.result === "success") {
+            alert('🎉 題目儲存成功！測驗時將自動洗牌選項。');
+            // 注意：這裡把 qTags 拿掉了，改成清空 chapter 和題目內容
+            ['qChapter', 'qText', 'qCorrect', 'qWrong1', 'qWrong2', 'qWrong3'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+        } else {
+            alert('錯誤: ' + result.message);
         }
-
+    } catch (err) { 
+        alert('連線失敗，請檢查網路。'); 
+    } finally { 
+        btn.innerHTML = origText; 
+        btn.disabled = false; 
+    }
+}
         // 6. 搜尋與過濾學生
         function filterRoster() {
             const q = document.getElementById('searchBar').value.toLowerCase();
