@@ -38,7 +38,7 @@
         </nav>
         <div class="p-6 border-t border-slate-800">
             <button onclick="logout()" class="flex items-center space-x-3 text-red-400 hover:text-red-300 transition w-full">
-                <i class="fas fa-sign-out-alt"></i><span>安全登出</span>
+                <i class="fas fa-sign-out-alt"></i><span>登出系統</span>
             </button>
         </div>
     </aside>
@@ -93,28 +93,36 @@
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
                     <div>
                         <h3 class="font-bold text-slate-800 mb-2 flex items-center text-lg"><i class="fas fa-pen-nib mr-2 text-purple-500"></i> 自訂雲端題庫</h3>
-                        <p class="text-slate-400 text-xs mb-4">題目將儲存至 Google 試算表。</p>
-                        <select id="qSubject" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-700 outline-none mb-3 text-sm">
-                            <option value="earth_science">地球科學</option>
-                            <option value="biology">生物科學</option>
-                            <option value="chemistry">理化學科</option>
-                        </select>
-                        <textarea id="qText" rows="2" placeholder="請輸入題目敘述..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-700 outline-none resize-none mb-3 text-sm"></textarea>
-                        <div class="grid grid-cols-2 gap-2 mb-3">
-                            <input type="text" id="qOptA" placeholder="選項 A" class="bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-xs outline-none">
-                            <input type="text" id="qOptB" placeholder="選項 B" class="bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-xs outline-none">
-                            <input type="text" id="qOptC" placeholder="選項 C" class="bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-xs outline-none">
-                            <input type="text" id="qOptD" placeholder="選項 D" class="bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-xs outline-none">
+                        <p class="text-slate-400 text-xs mb-4">輸入正解與干擾項，系統測驗時會自動洗牌。</p>
+                        
+                        <div class="flex space-x-2 mb-3">
+                            <select id="qSubject" class="w-1/3 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-700 outline-none text-sm">
+                                <option value="chinese">國文</option>
+                                <option value="math">數學</option>
+                                <option value="english">英文</option>
+                                <option value="biology">生物</option>
+                                <option value="physics">理化(物理)</option>
+                                <option value="chemistry">理化(化學)</option>
+                                <option value="earth_science">地球科學</option>
+                                <option value="history">歷史</option>
+                                <option value="geography">地理</option>
+                                <option value="civics">公民</option>
+                            </select>
+                            <input type="text" id="qTags" placeholder="標籤 (用逗號分隔，例: 國九,天文)" class="w-2/3 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none">
                         </div>
-                        <select id="qAnswer" class="w-full bg-green-50 border border-green-200 rounded-xl px-3 py-2 text-green-700 font-bold outline-none mb-4 text-sm">
-                            <option value="A">正確答案: A</option>
-                            <option value="B">正確答案: B</option>
-                            <option value="C">正確答案: C</option>
-                            <option value="D">正確答案: D</option>
-                        </select>
+                        
+                        <textarea id="qText" rows="2" placeholder="請輸入完整的題目敘述 (q)..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-700 outline-none resize-none mb-3 text-sm"></textarea>
+                        
+                        <input type="text" id="qCorrect" placeholder="輸入正確答案 (a)" class="w-full bg-green-50 border border-green-200 rounded-xl px-3 py-2 mb-2 text-sm font-bold text-green-700 outline-none">
+                        
+                        <div class="grid grid-cols-1 gap-2 mb-4">
+                            <input type="text" id="qWrong1" placeholder="干擾項 1" class="bg-red-50 border border-red-100 rounded-lg px-3 py-2 text-xs outline-none">
+                            <input type="text" id="qWrong2" placeholder="干擾項 2" class="bg-red-50 border border-red-100 rounded-lg px-3 py-2 text-xs outline-none">
+                            <input type="text" id="qWrong3" placeholder="干擾項 3" class="bg-red-50 border border-red-100 rounded-lg px-3 py-2 text-xs outline-none">
+                        </div>
                     </div>
-                    <button onclick="createQuestion(this)" class="w-full bg-purple-600 text-white font-black py-3 rounded-xl shadow-lg hover:bg-purple-700 transition flex justify-center items-center">
-                        <i class="fas fa-save mr-2"></i> 儲存題目
+                    <button onclick="createSmartQuestion(this)" class="w-full bg-purple-600 text-white font-black py-3 rounded-xl shadow-lg hover:bg-purple-700 transition flex justify-center items-center">
+                        <i class="fas fa-save mr-2"></i> 寫入題庫系統
                     </button>
                 </div>
             </div>
@@ -160,7 +168,6 @@
     </div>
 
     <script>
-        // ⚠️ 替換為你最新部署的 GAS Web App URL
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
         
         let studentData = [];
@@ -226,7 +233,6 @@
             document.getElementById('stat-avg').textContent = avg + ' 分';
             document.getElementById('stat-alert').textContent = data.filter(s => s.avgScore < 60 && s.testCount > 0).length + ' 人';
 
-            // 繪製圓餅圖
             const dist = [
                 validData.filter(s => s.avgScore >= 80).length,
                 validData.filter(s => s.avgScore >= 60 && s.avgScore < 80).length,
@@ -266,17 +272,20 @@
             finally { btn.innerHTML = origText; btn.disabled = false; }
         }
 
-        // 5. 教師自訂出題
-        async function createQuestion(btn) {
+        // 5. 雲端智能出題 (取代原本的固定選項版本)
+        async function createSmartQuestion(btn) {
             const subject = document.getElementById('qSubject').value;
-            const answer = document.getElementById('qAnswer').value;
-            const question = document.getElementById('qText').value.trim();
-            const optA = document.getElementById('qOptA').value.trim();
-            const optB = document.getElementById('qOptB').value.trim();
-            const optC = document.getElementById('qOptC').value.trim();
-            const optD = document.getElementById('qOptD').value.trim();
+            const tagsRaw = document.getElementById('qTags').value;
+            const q = document.getElementById('qText').value.trim();
+            const a = document.getElementById('qCorrect').value.trim();
+            const o1 = document.getElementById('qWrong1').value.trim();
+            const o2 = document.getElementById('qWrong2').value.trim();
+            const o3 = document.getElementById('qWrong3').value.trim();
 
-            if(!question || !optA || !optB || !optC || !optD) return alert('⚠️ 請填寫完整的題目與四個選項！');
+            if(!q || !a || !o1 || !o2 || !o3) return alert('⚠️ 請填寫題目、正解與三個干擾項！');
+
+            let tags = tagsRaw.split(/[,，]/).map(t => t.trim()).filter(Boolean);
+            tags.unshift(subject); // 把科目加到標籤陣列第一位
 
             const user = JSON.parse(localStorage.getItem('currentUser'));
             const origText = btn.innerHTML;
@@ -284,14 +293,21 @@
             btn.disabled = true;
 
             try {
-                const res = await fetch(GAS_URL, { 
-                    method: 'POST', 
-                    body: JSON.stringify({ action: "create_question", teacher: user.name, subject, question, optA, optB, optC, optD, answer }) 
-                });
+                const payload = { 
+                    action: "create_smart_question", 
+                    teacher: user.name, 
+                    subject: subject, 
+                    q: q, 
+                    a: a, 
+                    o: JSON.stringify([o1, o2, o3]), 
+                    t: JSON.stringify(tags)          
+                };
+
+                const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const result = await res.json();
                 if(result.result === "success") {
-                    alert('🎉 題目儲存成功！已寫入 Google 試算表。');
-                    ['qText','qOptA','qOptB','qOptC','qOptD'].forEach(id => document.getElementById(id).value = '');
+                    alert('🎉 題目儲存成功！已寫入 Google 試算表，測驗時會自動洗牌。');
+                    ['qText','qCorrect','qWrong1','qWrong2','qWrong3', 'qTags'].forEach(id => document.getElementById(id).value = '');
                 } else alert('錯誤: ' + result.message);
             } catch (err) { alert('連線失敗，請檢查網路。'); } 
             finally { btn.innerHTML = origText; btn.disabled = false; }
@@ -308,33 +324,68 @@
         async function viewStudentDetails(username, name) {
             const modal = document.getElementById('detailModal');
             const body = document.getElementById('modalBody');
-            document.getElementById('modalName').textContent = `${name} 的學習歷程`;
+            document.getElementById('modalName').textContent = name + ' 的學習歷程';
             modal.classList.remove('hidden');
             body.innerHTML = '<div class="text-center p-10"><i class="fas fa-circle-notch fa-spin text-3xl text-blue-500 mb-4"></i><p class="text-slate-500">正在抓取錯題數據...</p></div>';
 
             try {
-                const res = await fetch(`${GAS_URL}?username=${username}`);
+                const res = await fetch(GAS_URL + '?username=' + username);
                 const records = await res.json();
+                
                 if(records.length === 0) {
                     body.innerHTML = '<div class="text-center p-10 text-slate-400">尚無任何測驗紀錄</div>';
                     return;
                 }
-                body.innerHTML = records.map(r => `
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <div class="flex justify-between items-center mb-3">
-                            <h4 class="font-bold text-slate-800 text-lg">${r.title}</h4>
-                            <span class="text-xl font-black ${r.score >= 60 ? 'text-green-500' : 'text-red-500'}">${r.score}分</span>
-                        </div>
-                        <p class="text-xs text-slate-400 mb-3 border-b border-slate-100 pb-2"><i class="far fa-clock mr-1"></i>${r.date.replace('T', ' ')}</p>
-                        ${r.wrongList && r.wrongList.length > 0 ? `
-                            <p class="text-xs font-bold text-red-500 mb-2">錯誤題目紀錄：</p>
-                            <ul class="space-y-2">
-                                ${r.wrongList.map(w => `<li class="text-sm text-slate-700 bg-red-50 p-3 rounded-xl border border-red-100"><span class="font-bold text-red-400 mr-2">Q:</span>${w.q}</li>`).join('')}
-                            </ul>
-                        ` : '<p class="text-sm text-green-600 font-bold bg-green-50 p-3 rounded-xl"><i class="fas fa-check-circle mr-2"></i>完美表現，全數答對！</p>'}
-                    </div>
-                `).join('');
-            } catch(e) { body.innerHTML = '<p class="text-red-500 text-center">資料載入錯誤</p>'; }
+                
+                let htmlContent = '';
+                
+                records.forEach(r => {
+                    let scoreClass = r.score >= 60 ? 'text-green-500' : 'text-red-500';
+                    let dateStr = r.date.replace('T', ' ');
+                    
+                    htmlContent += '<div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm mb-4">';
+                    htmlContent += '<div class="flex justify-between items-center mb-3">';
+                    htmlContent += '<h4 class="font-bold text-slate-800 text-lg">' + r.title + '</h4>';
+                    htmlContent += '<span class="text-xl font-black ' + scoreClass + '">' + r.score + '分</span>';
+                    htmlContent += '</div>';
+                    htmlContent += '<p class="text-xs text-slate-400 mb-3 border-b border-slate-100 pb-2"><i class="far fa-clock mr-1"></i>' + dateStr + '</p>';
+                    
+                    if (r.wrongList && r.wrongList.length > 0) {
+                        htmlContent += '<p class="text-xs font-bold text-red-500 mb-2">錯誤題目紀錄：</p>';
+                        htmlContent += '<ul class="space-y-3">';
+                        
+                        r.wrongList.forEach(w => {
+                            let qText = w.question || w.q || "無法解析的題目";
+                            let studentAns = "未作答 / 系統無法判定";
+                            let correctAns = "未知";
+                            
+                            if (w.yourAns !== null && w.yourAns !== undefined && w.options && w.options[w.yourAns]) {
+                                studentAns = w.options[w.yourAns];
+                            }
+                            if (w.answer !== null && w.answer !== undefined && w.options && w.options[w.answer]) {
+                                correctAns = w.options[w.answer];
+                            }
+                            
+                            htmlContent += '<li class="text-sm text-slate-700 bg-red-50 p-4 rounded-xl border border-red-100 mb-2 shadow-sm">';
+                            htmlContent += '<div class="font-bold text-slate-800 mb-3"><span class="text-red-500 mr-1">Q:</span>' + qText + '</div>';
+                            htmlContent += '<div class="flex flex-col space-y-2 mt-2 text-xs">';
+                            htmlContent += '<div class="bg-white px-3 py-2 rounded-lg text-red-600 border border-red-200 w-fit"><i class="fas fa-times mr-1"></i> 學生作答：' + studentAns + '</div>';
+                            htmlContent += '<div class="bg-white px-3 py-2 rounded-lg text-green-600 border border-green-200 w-fit"><i class="fas fa-check mr-1"></i> 正確答案：' + correctAns + '</div>';
+                            htmlContent += '</div></li>';
+                        });
+                        htmlContent += '</ul>';
+                    } else {
+                        htmlContent += '<p class="text-sm text-green-600 font-bold bg-green-50 p-3 rounded-xl"><i class="fas fa-check-circle mr-2"></i>完美表現，全數答對！</p>';
+                    }
+                    htmlContent += '</div>';
+                });
+                
+                body.innerHTML = htmlContent;
+                
+            } catch(e) { 
+                console.error(e);
+                body.innerHTML = '<p class="text-red-500 text-center">資料載入錯誤，請檢查網路連線</p>'; 
+            }
         }
 
         function closeModal() { document.getElementById('detailModal').classList.add('hidden'); }
