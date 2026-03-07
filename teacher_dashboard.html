@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico">
+    <script src="mockdata/curriculum_integrated.js"></script>
     <style>
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
         .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid #e2e8f0; }
@@ -126,36 +127,37 @@
                                 </select>
                             </div>
                         </div>
-
-                        <div id="dispatchExamSettings" class="space-y-4 pt-2 border-t border-white/10">
-                            <div>
-                                <label class="block text-xs font-bold text-blue-200 mb-2">測驗標題</label>
-                                <input type="text" id="assignTitle" placeholder="例: 週末地科特訓" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-white/60 focus:bg-white/30 outline-none text-sm">
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-blue-200 mb-2">科目</label>
-                                    <select id="assignSubject" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white outline-none text-sm">
-                                         <option value="chinese">國文</option>
-                                <option value="math">數學</option>
-                                <option value="english">英文</option>
-                                <option value="biology">生物</option>
-                                <option value="physics">理化(物理)</option>
-                                <option value="chemistry">理化(化學)</option>
-                                <option value="earth_science">地球科學</option>
-                                <option value="history">歷史</option>
-                                <option value="geography">地理</option>
-                                <option value="civics">公民</option>
-
-
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-blue-200 mb-2">抓題範圍標籤 (選填)</label>
-                                    <input type="text" id="assignTags" placeholder="例: 國九,相似形" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-white/60 focus:bg-white/30 outline-none text-sm">
-                                </div>
-                            </div>
-                        </div>
+<div id="dispatchExamSettings" class="space-y-4 pt-2 border-t border-white/10">
+    <div>
+        <label class="block text-xs font-bold text-blue-200 mb-2">測驗標題</label>
+        <input type="text" id="assignTitle" placeholder="例: 週末地科特訓" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-white/60 focus:bg-white/30 outline-none text-sm">
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+        <div>
+            <label class="block text-xs font-bold text-blue-200 mb-2">科目</label>
+            <select id="assignSubject" onchange="updateUnitDropdown()" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white outline-none text-sm">
+                <option value="">請選擇科目</option>
+                <option value="chinese">國文</option>
+                <option value="math">數學</option>
+                <option value="english">英文</option>
+                <option value="biology">生物</option>
+                <option value="physics">理化(物理)</option>
+                <option value="chemistry">理化(化學)</option>
+                <option value="earth_science">地球科學</option>
+                <option value="history">歷史</option>
+                <option value="geography">地理</option>
+                <option value="civics">公民</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-blue-200 mb-2">選擇單元 (連動)</label>
+            <select id="assignUnit" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white outline-none text-sm">
+                <option value="">-- 請先選擇科目 --</option>
+            </select>
+            <input type="hidden" id="assignTags">
+        </div>
+    </div>
+</div>
 
                         <div id="dispatchMessageSettings" class="hidden pt-2 border-t border-white/10">
                             <label class="block text-xs font-bold text-blue-200 mb-2">公告內容</label>
@@ -343,7 +345,57 @@
             document.getElementById('teacherName').textContent = user.name;
             fetchRoster();
         };
+// 初始化單元下拉選單
+function updateUnitDropdown() {
+    const subject = document.getElementById('assignSubject').value;
+    const unitSelect = document.getElementById('assignUnit');
+    const tagsInput = document.getElementById('assignTags');
+    
+    // 清空選項
+    unitSelect.innerHTML = '<option value="">-- 請選擇單元 --</option>';
+    tagsInput.value = ""; // 重置隱藏標籤
 
+    if (!subject || !window.CurriculumLibrary) return;
+
+    // 取得該科目的課程陣列
+    // 考慮到你的資料結構可能是 CurriculumLibrary.data[subject] 或 CurriculumLibrary[subject]
+    const courses = (window.CurriculumLibrary.data ? window.CurriculumLibrary.data[subject] : window.CurriculumLibrary[subject]) || [];
+
+    courses.forEach(course => {
+        // 建立分組 (例如：國七國文上)
+        const group = document.createElement('optgroup');
+        group.label = course.name;
+
+        course.units.forEach(unit => {
+            const option = document.createElement('option');
+            option.value = unit.name; // 傳給後端的單元名稱
+            option.textContent = unit.name;
+            
+            // 將該單元的 topics (標籤) 存入 dataset 備用
+            if (unit.topics) {
+                option.dataset.tags = unit.topics.join(',');
+            } else if (unit.tags) {
+                option.dataset.tags = unit.tags.join(',');
+            }
+            
+            group.appendChild(option);
+        });
+        unitSelect.appendChild(group);
+    });
+}
+
+// 當單元改變時，自動把對應的標籤填入隱藏欄位
+document.getElementById('assignUnit').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const tags = selectedOption.dataset.tags || "";
+    document.getElementById('assignTags').value = tags;
+    
+    // 如果標題是空的，自動帶入單元名稱作為預設標題
+    const titleInput = document.getElementById('assignTitle');
+    if (!titleInput.value) {
+        titleInput.value = `測驗：${this.value}`;
+    }
+});
         // UI: 切換左側選單分頁
         function switchTab(tabId, btnElement) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -540,40 +592,71 @@
         }
 
         // 4. 進階任務派送
-        async function sendDispatch(btn) {
-            const target = document.getElementById('dispatchTarget').value;
-            const type = document.getElementById('dispatchType').value;
-            let payloadContent;
+       async function sendDispatch(btn) {
+    const target = document.getElementById('dispatchTarget').value; // 學生帳號
+    const type = document.getElementById('dispatchType').value;   // 任務類型 (exam/message)
+    let payloadContent;
 
-            if (type === 'exam') {
-                const title = document.getElementById('assignTitle').value.trim();
-                const subject = document.getElementById('assignSubject').value;
-                const tags = document.getElementById('assignTags').value.trim();
-                if(!title) return alert('請輸入測驗標題！');
-                payloadContent = { subject: subject, tags: tags || subject, title: title };
-            } else {
-                const msg = document.getElementById('assignMessage').value.trim();
-                if(!msg) return alert('請輸入公告內容！');
-                payloadContent = msg;
-            }
+    if (type === 'exam') {
+        const title = document.getElementById('assignTitle').value.trim();
+        const subject = document.getElementById('assignSubject').value;
+        const unitName = document.getElementById('assignUnit').value; // 🌟 取得新下拉選單的單元名稱
+        const tags = document.getElementById('assignTags').value.trim(); // 🌟 從隱藏欄位取得自動帶入的標籤
 
-            const origText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 發送中...';
-            btn.disabled = true;
+        if(!title) return alert('請輸入測驗標題！');
+        if(!unitName) return alert('請選擇測驗單元！');
 
-            try {
-                const payload = { action: "send_dispatch", target: target, type: type, content: payloadContent };
-                const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
-                const result = await res.json();
-                
-                if(result.result === "success") {
-                    alert('🎉 任務發布成功！學生登入時將會收到通知。');
-                    document.getElementById('assignTitle').value = '';
-                    document.getElementById('assignMessage').value = '';
-                } else alert('錯誤: ' + result.message);
-            } catch (err) { alert('連線失敗，請檢查網路。'); } 
-            finally { btn.innerHTML = origText; btn.disabled = false; }
+        // ✨ 這裡將資料包裝好，傳給學生端定位使用
+        payloadContent = { 
+            subject: subject, 
+            unitName: unitName, // 學生 course_hub.html 定位用
+            tags: tags || subject, // 學生 exam.html 抓題用
+            title: title 
+        };
+    } else {
+        const msg = document.getElementById('assignMessage').value.trim();
+        if(!msg) return alert('請輸入公告內容！');
+        payloadContent = msg;
+    }
+
+    const origText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 發送中...';
+    btn.disabled = true;
+
+    try {
+        // action 確保對應你的 GAS 後端處理邏輯
+        const payload = { 
+            action: "send_dispatch", 
+            target: target, 
+            type: type, 
+            content: payloadContent 
+        };
+        
+        const res = await fetch(GAS_URL, { 
+            method: 'POST', 
+            body: JSON.stringify(payload) 
+        });
+        
+        const result = await res.json();
+        
+        if(result.result === "success") {
+            alert('🎉 任務發布成功！學生登入時將會收到通知。');
+            // 發布後清空輸入框，保持介面整潔
+            document.getElementById('assignTitle').value = '';
+            document.getElementById('assignMessage').value = '';
+            document.getElementById('assignUnit').innerHTML = '<option value="">-- 請先選擇科目 --</option>';
+            document.getElementById('assignTags').value = '';
+        } else {
+            alert('錯誤: ' + result.message);
         }
+    } catch (err) { 
+        console.error(err);
+        alert('連線失敗，請檢查網路。'); 
+    } finally { 
+        btn.innerHTML = origText; 
+        btn.disabled = false; 
+    }
+}
 
         // 5. 雲端智能出題
         async function createSmartQuestion(btn) {
