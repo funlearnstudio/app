@@ -158,22 +158,23 @@ async function fetchAssignments() {
                     theme = { bg: 'bg-amber-100', text: 'text-amber-600', icon: 'fa-comment-dots' };
                     link = "#"; // 訊息純讀取，不跳轉
               // ... 在 fetchAssignments 的迴圈內 ...
-                } else {
-                    // 這是考試類型
-                    const contentObj = typeof task.content === 'string' ? JSON.parse(task.content) : task.content;
-                    title = contentObj.title || "新測驗任務";
-                    subject = contentObj.subject || "math";
-                    
-                    // 取得老師設定的標籤 (Tags)，這會決定要從 templates 抓哪些題目
-                    const tags = contentObj.tags || ""; 
-                    
-                    theme = getSubjectTheme(subject);
-                    
-                    // ✨ 修改點：在 URL 加入 tags 參數
-                    // 這樣 course_hub.html 才能知道要篩選 templates 裡的哪些題目
-                    link = `course_hub.html?subject=${subject}&grade=${encodeURIComponent(userGrade)}&tags=${encodeURIComponent(tags)}&missionId=${task.id}`;
-                }
-
+               } else {
+    // 這是考試類型
+    const contentObj = typeof task.content === 'string' ? JSON.parse(task.content) : task.content;
+    
+    title = contentObj.title || "新測驗任務";
+    subject = contentObj.subject || "math";
+    
+    // ✨ 關鍵修改：取得老師設定的「單元名稱」
+    // 這裡預設老師端發送的 JSON 欄位名稱為 unitName
+    const unitName = contentObj.unitName || ""; 
+    
+    theme = getSubjectTheme(subject);
+    
+    // ✨ 修改點：在 URL 加入 unit 參數，並移除舊有的 tags
+    // 這樣 course_hub.html 就能根據單元名稱去 curriculum_integrated.js 抓取對應的題目範圍
+    link = `course_hub.html?subject=${subject}&grade=${encodeURIComponent(userGrade)}&unit=${encodeURIComponent(unitName)}&missionId=${task.id}`;
+}
                 return `
                     <div class="task-card bg-white p-6 rounded-3xl shadow-sm flex flex-col h-full fade-in" style="animation-delay: ${idx * 0.1}s">
                         <div class="flex justify-between items-start mb-4">
