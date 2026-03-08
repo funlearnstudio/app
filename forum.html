@@ -336,136 +336,120 @@ function toggleForm() {
     form.classList.toggle('hidden');
     if (!form.classList.contains('hidden')) document.getElementById('postTitle').focus();
 }
-
 // ==========================================
-// 📢 論壇核心邏輯 (貼文與回覆)
-// ==========================================
-
-// ==========================================
-// 📢 論壇核心邏輯 (貼文與回覆) - 升級新後端版
+// 📢 論壇核心邏輯 (貼文與回覆) - 完美對話版
 // ==========================================
 
 async function loadPosts() {
     const container = document.getElementById('postList') || document.getElementById('postsContainer');
-    
-    if (!container) {
-        console.error("錯誤：找不到貼文顯示容器");
-        return;
-    }
-
+    if (!container) return;
     container.innerHTML = '<div class="text-center p-10 text-slate-400 animate-pulse"><i class="fas fa-spinner fa-spin text-3xl mb-3"></i><br>正在同步雲端討論區資料...</div>';
 
     try {
         const response = await fetch(`${GAS_URL}?action=get_forum_posts`);
         const posts = await response.json();
 
-        // 檢查是否沒有資料
         if (!Array.isArray(posts) || posts.length === 0) {
-            container.innerHTML = '<div class="text-center p-12 bg-white rounded-[2rem] border border-slate-100 shadow-sm"><i class="fas fa-comments text-5xl text-slate-200 mb-4"></i><p class="text-slate-500 font-bold">目前尚無貼文，來發布第一個問題吧！</p></div>';
+            container.innerHTML = '<div class="text-center p-12 bg-white rounded-[2rem] border border-slate-100 shadow-sm"><i class="fas fa-comments text-5xl text-slate-200 mb-4"></i><p class="text-slate-500 font-bold">目前尚無貼文，來發佈第一個問題吧！</p></div>';
             return;
         }
 
         container.innerHTML = ''; 
-
-        // 由於後端已經完美打包好父子留言，我們直接反轉陣列渲染即可
         posts.reverse().forEach(post => {
             const html = renderPostTemplate(post);
             container.insertAdjacentHTML('beforeend', html);
         });
     } catch (e) {
-        console.error("載入失敗：", e);
+        console.error(e);
         container.innerHTML = '<div class="text-center text-red-400 p-10 bg-red-50 rounded-2xl"><i class="fas fa-exclamation-triangle text-3xl mb-2"></i><p class="font-bold">讀取貼文失敗，請檢查網路連線。</p></div>';
     }
 }
 
 function renderPostTemplate(post) {
+    const id = post.id;
     const authorName = post.author || post.name || post.username || "學生";
     const displayTitle = post.title || "無標題提問";
     const displayContent = post.content || "（無內容）";
     
-    // =====================================
-    // 1. AI 助教回覆區塊
-    // =====================================
     const aiContent = post.aiReply || ""; 
-    const hasAI = aiContent.trim() !== "" && aiContent !== "undefined";
+    const hasAI = aiContent.trim() !== "";
     let aiSection = ""; 
     
     if (hasAI) {
-        // 若有引入 marked.js 則解析 markdown，否則直接顯示
         const parsedAI = typeof marked !== 'undefined' ? marked.parse(aiContent) : aiContent;
         aiSection = `
-            <div class="mt-5 p-5 rounded-2xl border ai-reply-card flex flex-col sm:flex-row gap-4 bg-blue-50/40">
-                <div class="flex-shrink-0 hidden sm:block">
-                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30">
-                        <i class="fas fa-robot text-lg"></i>
-                    </div>
-                </div>
+            <div class="mt-4 p-5 rounded-2xl border ai-reply-card flex gap-4 bg-blue-50/30">
+                <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md shrink-0"><i class="fas fa-robot"></i></div>
                 <div class="flex-grow min-w-0">
-                    <div class="flex items-center gap-2 mb-3">
-                        <span class="font-black text-sm text-slate-800">AI 助教解析</span>
-                        <span class="bg-blue-100 text-blue-700 text-[9px] px-2 py-0.5 rounded-md font-black tracking-wider uppercase">Verified AI</span>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="font-bold text-sm text-slate-800">AI 助教</span>
                     </div>
-                    <div class="text-sm text-slate-700 markdown-body overflow-x-auto">${parsedAI}</div>
+                    <div class="text-sm text-slate-700 markdown-body">${parsedAI}</div>
                 </div>
             </div>`;
     } else {
-        // 如果還沒有 AI 回覆，顯示打字動畫
         aiSection = `
-            <div class="mt-5 flex items-center justify-center gap-3 text-[11px] text-blue-500 bg-blue-50/50 px-4 py-5 rounded-2xl border border-blue-100 border-dashed animate-pulse-soft">
-                <i class="fas fa-circle-notch fa-spin text-lg"></i> 
-                <span class="font-bold tracking-widest">AI 助教正在思考並查閱課本知識...</span>
+            <div class="mt-4 flex items-center justify-center gap-3 text-[11px] text-blue-500 bg-blue-50/50 px-4 py-4 rounded-xl border border-blue-100 border-dashed animate-pulse-soft">
+                <i class="fas fa-spinner fa-spin"></i> <span class="font-bold tracking-widest">AI 正在思考並查閱課本知識...</span>
             </div>`;
     }
 
-    // =====================================
-    // 2. 老師親自回覆區塊 (新功能！)
-    // =====================================
-    let teacherSection = "";
-    const teacherContent = post.adminReply || "";
-    if (teacherContent.trim() !== "") {
-        teacherSection = `
-            <div class="mt-4 p-5 rounded-2xl border-l-4 border-indigo-500 bg-indigo-50 flex flex-col sm:flex-row gap-4 shadow-sm relative overflow-hidden">
-                <div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-6xl">
-                    <i class="fas fa-chalkboard-teacher"></i>
-                </div>
-                <div class="flex-shrink-0 hidden sm:block z-10">
-                    <div class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-md">
-                        <i class="fas fa-chalkboard-teacher text-lg"></i>
+    // ✨ 渲染所有留言 (老師親自回覆 + 學生底下留言)
+    let repliesHtml = "";
+    if (post.replies && post.replies.length > 0) {
+        repliesHtml = post.replies.map(r => {
+            if (r.isTeacher) {
+                return `
+                <div class="mt-3 p-4 rounded-2xl border-l-4 border-indigo-500 bg-indigo-50 flex gap-3 shadow-sm">
+                    <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md"><i class="fas fa-chalkboard-teacher text-sm"></i></div>
+                    <div>
+                        <span class="text-[10px] font-black text-indigo-800 bg-indigo-200 px-2 py-0.5 rounded uppercase tracking-widest">老師親自回覆</span>
+                        <p class="text-sm font-bold text-slate-800 mt-1 whitespace-pre-wrap leading-relaxed">${r.content}</p>
                     </div>
-                </div>
-                <div class="flex-grow min-w-0 z-10">
-                    <div class="flex items-center gap-2 mb-3">
-                        <span class="font-black text-sm text-indigo-800">老師親自回覆</span>
-                        <span class="bg-indigo-200 text-indigo-800 text-[9px] px-2 py-0.5 rounded-md font-black tracking-wider uppercase">Teacher</span>
+                </div>`;
+            } else {
+                return `
+                <div class="mt-2 p-3 bg-slate-50/80 rounded-2xl border border-slate-100 flex gap-3">
+                    <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-500 shrink-0">${r.author[0]}</div>
+                    <div class="flex-grow">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-slate-700">${r.author}</span>
+                            <span class="text-[9px] text-slate-400">${r.date || ''}</span>
+                        </div>
+                        <p class="text-xs text-slate-600 mt-1 whitespace-pre-wrap">${r.content}</p>
                     </div>
-                    <div class="text-sm font-bold text-slate-700 whitespace-pre-wrap leading-relaxed">${teacherContent}</div>
-                </div>
-            </div>`;
+                </div>`;
+            }
+        }).join('');
     }
 
-    // =====================================
-    // 3. 組合輸出最終的貼文卡片
-    // =====================================
     return `
-    <div class="bg-white p-6 sm:p-8 rounded-[2rem] shadow-sm hover:shadow-md border border-slate-100 mb-6 transition-all fade-in">
+    <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 mb-6 fade-in">
         <div class="flex gap-4">
-            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-black text-xl border-2 border-white shadow-sm">
-                ${authorName[0]}
-            </div>
-            <div class="flex-grow min-w-0">
-                <span class="text-[10px] font-black text-indigo-500 bg-indigo-50 border border-indigo-100 px-2 py-1 rounded uppercase tracking-widest inline-block mb-2">
-                    <i class="fas fa-question-circle mr-1"></i>學生提問
-                </span>
-                <h3 class="font-black text-slate-800 text-xl leading-tight break-words">${displayTitle}</h3>
-                <p class="text-sm text-slate-600 mt-3 leading-relaxed whitespace-pre-wrap break-words bg-slate-50 p-4 rounded-xl border border-slate-100">${displayContent}</p>
-                <div class="text-[10px] text-slate-400 mt-3 font-bold flex items-center gap-1">
-                    <i class="far fa-clock"></i> 由 ${authorName} 發表於 ${post.timestamp || post.date || "未知時間"}
-                </div>
+            <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg shrink-0">${authorName[0]}</div>
+            <div class="flex-grow">
+                <h3 class="font-bold text-slate-800 text-lg">${displayTitle}</h3>
+                <p class="text-sm text-slate-500 mt-1 leading-relaxed whitespace-pre-wrap">${displayContent}</p>
+                <div class="text-[10px] text-slate-400 mt-2">由 ${authorName} 發表於 ${post.timestamp || post.date || ""}</div>
             </div>
         </div>
 
         ${aiSection}
-        ${teacherSection}
+        
+        <div class="mt-4 ml-12 space-y-2">
+            ${repliesHtml}
+        </div>
+
+        <div class="mt-4 ml-12 flex items-center gap-4">
+            <button onclick="showReplyInput('${id}')" class="text-xs font-bold text-blue-500 hover:text-blue-700 transition-colors">
+                <i class="fas fa-reply mr-1"></i> 我要回覆
+            </button>
+        </div>
+
+        <div id="reply-box-${id}" class="hidden mt-3 ml-12 relative fade-in">
+            <textarea id="input-${id}" class="w-full p-4 pr-16 text-sm border border-slate-200 rounded-2xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none h-20" placeholder="寫下你的看法..."></textarea>
+            <button onclick="submitReply('${id}')" class="absolute right-2 bottom-2 bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-black transition-colors shadow-md">傳送</button>
+        </div>
     </div>`;
 }
 function showReplyInput(postId) {
