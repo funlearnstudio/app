@@ -39,15 +39,19 @@
             <span class="text-lg font-bold text-slate-800">雲端學院</span>
         </div>
 
-        <div class="p-6">
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
-                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
-                    <i class="fas fa-user-graduate"></i>
-                </div>
-                <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
-                <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
-            </div>
+        <div class="p-6 lg:block watch-hidden">
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+        <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
+            <i class="fas fa-user-graduate"></i>
         </div>
+        <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
+        <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
+        <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
+            <i class="fas fa-pen mr-1"></i> 編輯年級
+        </button>
+    </div>
+</div>
+
 
       <nav class="flex-grow px-3 space-y-1 overflow-y-auto no-scrollbar">
     <a href="mission.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition"><i class="fas fa-highlighter w-5 text-center"></i> 任務中心</a>
