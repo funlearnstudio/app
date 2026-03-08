@@ -287,113 +287,172 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_O
         if (!form.classList.contains('hidden')) document.getElementById('postTitle').focus();
     }
 
-    function loadPosts() {
-        const posts = JSON.parse(localStorage.getItem(dbKey) || "[]");
-        const container = document.getElementById('postList');
-        container.innerHTML = '';
+    async function loadPosts() {
+    const response = await fetch(`${GAS_URL}?action=get_forum_posts`);
+    const allData = await response.json();
+    
+    // 1. 分離主貼文與回覆
+    const mainPosts = allData.filter(p => !p.parentId);
+    const replies = allData.filter(p => p.parentId);
 
-        if (posts.length === 0) {
-            renderPost({
-                id: 0, title: "歡迎來到 AI 解題論壇", content: "在這裡您可以詢問任何課業上的疑難雜症，AI 助教將會即時提供解析。",
-                author: "小助教", role: "admin", date: "2026/01/29",
-                reply: { author: "AI 助教", content: "您好！我是您的專屬學習夥伴。請點擊右上方的「我要提問」來開始第一場對話吧！" }
-            });
-        } else {
-            // 最新的貼文顯示在最上面
-            [...posts].reverse().forEach(post => renderPost(post));
-        }
-    }
+    const container = document.getElementById('postList');
+    container.innerHTML = '';
 
-    function renderPost(post) {
-        const isAIReply = post.reply && (post.reply.author === "AI 助教" || post.reply.author === RealAITutor.name);
-        const userIconColor = post.role === 'admin' ? 'bg-slate-100 text-slate-500' : 'bg-blue-50 text-blue-600';
+    mainPosts.reverse().forEach(post => {
+        renderPost(post);
         
-        let replyHtml = '';
-        if (post.reply) {
-            const parsedContent = marked.parse(post.reply.content);
-            const replyClass = isAIReply ? 'ai-reply-card' : 'bg-slate-50 border-slate-100';
-            const replyIcon = isAIReply 
-                ? `<div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-robot"></i></div>`
-                : `<div class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs">師</div>`;
-            
-            replyHtml = `
-                <div class="mt-4 p-5 rounded-2xl border ${replyClass} flex gap-4 transition-all">
-                    <div class="flex-shrink-0">${replyIcon}</div>
-                    <div class="flex-grow min-w-0">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="font-bold text-sm text-slate-800">${post.reply.author}</span>
-                            ${isAIReply ? '<span class="bg-blue-100 text-blue-700 text-[9px] px-1.5 py-0.5 rounded-md font-black uppercase tracking-tighter">Verified AI</span>' : ''}
-                        </div>
-                        <div class="text-sm text-slate-700 leading-relaxed markdown-body">
-                            ${parsedContent}
-                        </div>
-                    </div>
-                </div>`;
-        } else {
-            replyHtml = `<div class="mt-4 flex items-center gap-2 text-[11px] text-slate-400 bg-slate-50 px-4 py-3 rounded-xl border border-slate-100 border-dashed"><i class="far fa-clock"></i> AI 助教正在分析您的問題，請稍候...</div>`;
-        }
-
-        const html = `
-            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 hover:border-blue-100 transition-all group fade-in">
-                <div class="flex gap-4">
-                    <div class="flex-shrink-0">
-                        <div class="w-10 h-10 rounded-full ${userIconColor} flex items-center justify-center text-lg font-bold border-2 border-white shadow-sm">${post.author[0]}</div>
-                    </div>
-                    <div class="flex-grow min-w-0">
-                        <h3 class="font-bold text-base text-slate-800 group-hover:text-blue-600 transition truncate">${post.title}</h3>
-                        <div class="text-[11px] text-slate-400 flex items-center gap-2 mt-1 mb-3 font-medium">
-                            <span class="text-slate-600 font-bold">${post.author}</span>
-                            <span class="text-slate-200">•</span>
-                            <span>${post.date}</span>
-                        </div>
-                        <p class="text-slate-600 text-sm leading-relaxed">${post.content}</p>
-                    </div>
+        // 2. 渲染該貼文下的所有回覆
+        const postReplies = replies.filter(r => r.parentId == post.id);
+        const commentContainer = document.getElementById(`comments-${post.id}`);
+        
+        postReplies.forEach(reply => {
+            commentContainer.innerHTML += `
+                <div class="bg-slate-50 p-3 rounded-xl text-xs border border-slate-100">
+                    <span class="font-bold text-slate-700">${reply.author}：</span>
+                    <span class="text-slate-600">${reply.content}</span>
+                    <div class="text-[9px] text-slate-400 mt-1">${reply.date}</div>
                 </div>
-                ${replyHtml}
+            `;
+        });
+    });
+}
+    function renderPost(post) {
+    const isAIReply = post.reply && (post.reply.author === "AI 助教" || post.reply.author === RealAITutor.name);
+    
+    // --- 處理 AI 回覆區塊 ---
+    let replyHtml = '';
+    if (post.reply) {
+        const parsedContent = marked.parse(post.reply.content);
+        const replyClass = isAIReply ? 'ai-reply-card' : 'bg-slate-50 border-slate-100';
+        const replyIcon = isAIReply 
+            ? `<div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-robot"></i></div>`
+            : `<div class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs">師</div>`;
+        
+        replyHtml = `
+            <div class="mt-4 p-5 rounded-2xl border ${replyClass} flex gap-4">
+                <div class="flex-shrink-0">${replyIcon}</div>
+                <div class="flex-grow min-w-0">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="font-bold text-sm text-slate-800">${post.reply.author}</span>
+                        ${isAIReply ? '<span class="bg-blue-100 text-blue-700 text-[9px] px-1.5 py-0.5 rounded-md font-black">Verified AI</span>' : ''}
+                    </div>
+                    <div class="text-sm text-slate-700 markdown-body">${parsedContent}</div>
+                </div>
             </div>`;
-        document.getElementById('postList').insertAdjacentHTML('beforeend', html);
+    } else {
+        replyHtml = `<div class="mt-4 text-[11px] text-slate-400 bg-slate-50 px-4 py-3 rounded-xl border border-dashed text-center">AI 助教正在分析中...</div>`;
     }
 
-    async function addPost() {
-        const t = document.getElementById('postTitle').value;
-        const c = document.getElementById('postContent').value;
-        if(!t.trim() || !c.trim()) return;
-        
-        const newPost = {
-            id: Date.now(), title: t, content: c, author: currentUser.name, role: "student", date: new Date().toLocaleString(), reply: null
-        };
+    // --- 處理真人留言區塊 (巢狀回覆) ---
+    let commentsHtml = '';
+    if (post.userComments && post.userComments.length > 0) {
+        commentsHtml = post.userComments.map(comment => `
+            <div class="flex gap-3 p-3 bg-slate-50/50 rounded-2xl border border-slate-100">
+                <div class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">${comment.name[0]}</div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-700">${comment.name}</span>
+                        <span class="text-[9px] text-slate-400">${comment.date}</span>
+                    </div>
+                    <p class="text-xs text-slate-600 mt-1">${comment.content}</p>
+                </div>
+            </div>
+        `).join('');
+    }
 
-        const posts = JSON.parse(localStorage.getItem(dbKey) || "[]");
-        posts.push(newPost);
-        localStorage.setItem(dbKey, JSON.stringify(posts));
+    // --- 組合最終 HTML ---
+    const html = `
+    <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 mb-6 fade-in">
+        <div class="flex gap-4">
+            <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold">${post.author[0]}</div>
+            <div>
+                <h3 class="font-bold text-slate-800">${post.title}</h3>
+                <p class="text-sm text-slate-500 mt-1">${post.content}</p>
+            </div>
+        </div>
+
+        ${replyHtml}
+
+        <div id="comments-${post.id}" class="mt-4 ml-12 space-y-3">
+            ${commentsHtml}
+        </div>
+
+        <div class="mt-4 ml-12 flex items-center gap-4">
+            <button onclick="showReplyInput(${post.id})" class="text-xs font-bold text-blue-500 hover:text-blue-700 transition-colors">
+                <i class="fas fa-reply mr-1"></i> 我要回覆
+            </button>
+        </div>
+
+        <div id="reply-box-${post.id}" class="hidden mt-3 ml-12">
+            <div class="relative">
+                <textarea id="input-${post.id}" 
+                    class="w-full p-4 pr-16 text-sm border border-slate-200 rounded-2xl bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all outline-none" 
+                    placeholder="寫下你的看法..."></textarea>
+                <button onclick="submitReply(${post.id})" 
+                    class="absolute right-2 bottom-2 bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-black">
+                    傳送
+                </button>
+            </div>
+        </div>
+    </div>`;
+
+    document.getElementById('postList').insertAdjacentHTML('beforeend', html);
+}
+  async function addPost() {
+    const t = document.getElementById('postTitle').value;
+    const c = document.getElementById('postContent').value;
+    if(!t.trim() || !c.trim()) return;
+
+    const user = Auth.getCurrentUser();
+    const postId = Date.now(); // 產生唯一 ID
+    const postDate = new Date().toLocaleString();
+
+    // 1. 先把貼文存到試算表
+    try {
+        await fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: "add_forum_post",
+                id: postId,
+                username: user.username,
+                name: user.name,
+                title: t,
+                content: c,
+                date: postDate
+            })
+        });
         
+        // UI 更新：清空並隱藏表單
         document.getElementById('postTitle').value = '';
         document.getElementById('postContent').value = '';
         toggleForm();
-        loadPosts();
+        await loadPosts(); // 重新整理清單
 
-        // 啟動 AI 回應邏輯
+        // 2. 啟動 AI 回應
         const loading = document.getElementById('aiThinking');
         loading.classList.remove('hidden');
-        
-        // 呼叫 AI 接口
-        try {
-            const aiResponse = await RealAITutor.askGemini(t, c);
-            
-            const updatedPosts = JSON.parse(localStorage.getItem(dbKey) || "[]");
-            const targetIndex = updatedPosts.findIndex(p => p.id === newPost.id);
-            if (targetIndex !== -1) {
-                updatedPosts[targetIndex].reply = { author: RealAITutor.name, content: aiResponse };
-                localStorage.setItem(dbKey, JSON.stringify(updatedPosts));
-            }
-        } catch (err) {
-            console.error("AI 回覆出錯", err);
-        } finally {
-            loading.classList.add('hidden');
-            loadPosts();
-        }
-    }
 
+        const aiResponse = await RealAITutor.askGemini(t, c);
+
+        // 3. 把 AI 的回應存回試算表
+        await fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: "update_forum_reply",
+                id: postId,
+                replyAuthor: RealAITutor.name,
+                replyContent: aiResponse
+            })
+        });
+
+        loading.classList.add('hidden');
+        loadPosts(); // 再次重新整理，顯示 AI 回覆
+
+    } catch (err) {
+        alert("傳送失敗，請稍後再試");
+        console.error(err);
+    }
+}
     // 初始加載
     loadPosts();
     // ... (上面原本的 Sidebar、Auth、addPost 等程式碼保持不變) ...
