@@ -815,33 +815,38 @@ async function prepareExam(count, timeMin) {
             setTimeout(() => { window.location.href = "analysis.html?mode=new"; }, 1000);
         }
 
-     async function uploadToCloud(username, activityName, score, fullData) {
-            // 🌟 新增：直接從網址抓取科目代號 (例如從 ?subject=biology 抓出 biology)
-            const urlParams = new URLSearchParams(window.location.search);
-            const currentSubject = urlParams.get('subject') || fullData.subject || "chinese";
+    async function uploadToCloud(username, activityName, score, fullData) {
+    // 1. 取得當前網址參數中的科目 (例如 ?subject=english)
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentSubject = urlParams.get('subject') || "english"; // 💡 建議預設改為常見科目或從 fullData 抓
 
-            const payload = {
-                action: "save_record",
-                username: username,
-                activity: activityName,
-                score: score,
-                // 🌟 將 subject 加入 detail 中，讓家長後台可以正確辨識科目！
-                detail: JSON.stringify({
-                    subject: currentSubject, // 🌟 改用剛剛從網址抓到的真實科目
-                    totalCount: fullData.totalCount,
-                    correctCount: fullData.correctCount,
-                    tabSwitches: fullData.tabSwitches,
-                    cheat: fullData.cheat,
-                    wrongList: fullData.wrongList // 建議把錯題也傳回去，家長後台才看得到錯什麼
-                })
-            };
-            
-            return fetch(GAS_URL, {
-                method: "POST",
-                mode: 'no-cors', 
-                body: JSON.stringify(payload)
-            });
-        }
+    // 2. 重新建構要存入 detail 的物件
+    const detailToSave = {
+        subject: currentSubject,           // 🌟 確保這行有加進去！
+        unitName: activityName,            // 儲存單元名稱
+        grade: fullData.grade || "國九",
+        totalCount: fullData.totalCount,
+        correctCount: fullData.correctCount,
+        wrongList: fullData.wrongList,
+        cheat: fullData.cheat,
+        tabSwitches: fullData.tabSwitches
+    };
+
+    const payload = {
+        action: "save_record",
+        username: username,
+        activity: activityName,
+        score: score,
+        detail: JSON.stringify(detailToSave) // 🌟 將包含 subject 的物件轉成字串
+    };
+    
+    // ... 後續 fetch 程式碼 ...
+    return fetch(GAS_URL, {
+        method: "POST",
+        mode: 'no-cors', 
+        body: JSON.stringify(payload)
+    });
+}
     </script>
 </body>
 </html>
