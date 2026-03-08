@@ -212,6 +212,33 @@
         </div>
     </div>
 </div>
+<div id="announcementModal" class="hidden fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+    <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300" id="announcementContent">
+        
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-center relative">
+            <button onclick="closeAnnouncement()" class="absolute top-4 right-4 text-white/70 hover:text-white transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <div class="w-16 h-16 bg-white/20 rounded-2xl backdrop-blur-md mx-auto flex items-center justify-center mb-4 shadow-inner">
+                <i class="fas fa-bullhorn text-3xl text-white"></i>
+            </div>
+            <h3 class="text-2xl font-black text-white tracking-widest">系統最新公告</h3>
+        </div>
+
+        <div class="p-8">
+            <div class="mb-8">
+                <span id="annDateDisplay" class="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-lg tracking-widest mb-3 border border-blue-100"></span>
+                <h4 id="annTitleDisplay" class="text-xl font-black text-slate-800 mb-3 leading-snug"></h4>
+                <div id="annContentDisplay" class="text-sm text-slate-500 leading-relaxed space-y-2 font-medium"></div>
+            </div>
+
+            <button onclick="closeAnnouncement()" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-blue-600 transition-colors shadow-lg shadow-slate-200 flex items-center justify-center gap-2">
+                <span>我知道了，開始使用</span>
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
 </main>
 
 <script>
@@ -485,10 +512,21 @@ async function fetchAnnouncement() {
 }
 
 function renderAnnouncement(ann) {
-    document.getElementById('annDateDisplay').innerText = ann.date || "最新消息";
-    document.getElementById('annTitleDisplay').innerText = ann.title;
-    document.getElementById('annContentDisplay').innerHTML = ann.content.replace(/\n/g, '<br>');
-    setTimeout(showAnnouncement, 500);
+    const dateEl = document.getElementById('annDateDisplay');
+    const titleEl = document.getElementById('annTitleDisplay');
+    const contentEl = document.getElementById('annContentDisplay');
+
+    // 檢查元素是否存在，存在才填入內容
+    if (dateEl) dateEl.innerText = ann.date || "最新消息";
+    if (titleEl) titleEl.innerText = ann.title || "";
+    if (contentEl) contentEl.innerHTML = (ann.content || "").replace(/\n/g, '<br>');
+    
+    // 如果元素都齊全，才顯示彈窗
+    if (dateEl && titleEl && contentEl) {
+        setTimeout(showAnnouncement, 500);
+    } else {
+        console.error("找不到公告相關的 HTML 元素，請檢查 forum.html 是否包含公告 Modal 結構");
+    }
 }
 
 function showAnnouncement() {
