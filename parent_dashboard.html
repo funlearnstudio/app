@@ -125,106 +125,119 @@
             console.error("Data fetch error:", error);
             alert("無法連線至雲端資料庫，請檢查網路設定。");
         }
-    }
+    }function renderSubjectProgress() {
+    const subjects = [
+        { id: 'chinese', name: '國文', color: 'bg-red-500' },
+        { id: 'math', name: '數學', color: 'bg-blue-500' },
+        { id: 'english', name: '英文', color: 'bg-orange-500' },
+        { id: 'biology', name: '生物', color: 'bg-green-500' },
+        { id: 'physics', name: '理化(物理)', color: 'bg-purple-500' },
+        { id: 'chemistry', name: '理化(化學)', color: 'bg-pink-500' },
+        { id: 'earth_science', name: '地球科學', color: 'bg-teal-500' },
+        { id: 'history', name: '歷史', color: 'bg-yellow-600' },
+        { id: 'geography', name: '地理', color: 'bg-emerald-500' },
+        { id: 'civics', name: '公民', color: 'bg-indigo-500' }
+    ];
 
-    function renderSubjectProgress() {
-        const subjects = [
-            { id: 'chinese', name: '國文', color: 'bg-red-500' },
-            { id: 'math', name: '數學', color: 'bg-blue-500' },
-            { id: 'english', name: '英文', color: 'bg-orange-500' },
-            { id: 'biology', name: '生物', color: 'bg-green-500' },
-            { id: 'physics', name: '理化(物理)', color: 'bg-purple-500' },
-            { id: 'chemistry', name: '理化(化學)', color: 'bg-pink-500' },
-            { id: 'earth_science', name: '地球科學', color: 'bg-teal-500' },
-            { id: 'history', name: '歷史', color: 'bg-yellow-600' },
-            { id: 'geography', name: '地理', color: 'bg-emerald-500' },
-            { id: 'civics', name: '公民', color: 'bg-indigo-500' }
-        ];
-
-       const html = subjects.map(s => {
-        // 🌟 強化比對邏輯：
-        // 1. 比對 subject 欄位
-        // 2. 如果紀錄裡沒有 subject，嘗試比對 unitName 是否出現在該科目的 CurriculumLibrary 中
-      // 🌟 在 parent_dashboard.html 的 renderSubjectProgress 函數內
+    const html = subjects.map(s => {
+        // 🌟 修正後的篩選邏輯：確保括號完全對應
         const results = remoteData.records.filter(r => {
-            // 加上 .toLowerCase() 確保 english 能夠匹配 ENGLISH
-            return (r.subject || "").toLowerCase() === s.id.toLowerCase();
-        }); 
-           // 💡 額外檢查：如果紀錄是「國文」，但單元名稱其實是「生物」相關的
+            const recordSubject = (r.subject || "").toLowerCase();
+            const targetSubject = s.id.toLowerCase();
+            
+            // 1. 基本比對
+            if (recordSubject === targetSubject) return true;
+            
+            // 2. 備用比對：如果科目名稱在單元清單內 (CurriculumLibrary)
             const lib = window.CurriculumLibrary[s.id] || [];
-            const isMatchUnit = lib.some(book => book.units.some(u => u.name === r.unitName));
-            return isMatchUnit;
+            return lib.some(book => book.units.some(u => u.name === r.unitName));
         });
 
         const avg = results.length ? Math.round(results.reduce((a, b) => a + b.score, 0) / results.length) : 0;
-            return `
-                <div>
-                    <div class="flex justify-between text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">
-                        <span>${s.name}平均精熟度</span>
-                        <span class="${avg >= 80 ? 'text-green-500' : 'text-slate-600'}">${avg}%</span>
-                    </div>
-                    <div class="w-full bg-slate-100 h-4 rounded-full p-1 border border-slate-50">
-                        <div class="${s.color} h-full rounded-full transition-all duration-1000 shadow-sm shadow-current" style="width: ${avg}%"></div>
-                    </div>
+        
+        return `
+            <div>
+                <div class="flex justify-between text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">
+                    <span>${s.name}平均精熟度</span>
+                    <span class="${avg >= 80 ? 'text-green-500' : 'text-slate-600'}">${avg}%</span>
                 </div>
-            `;
-        }).join('');
-        document.getElementById('subjectGrid').innerHTML = html;
+                <div class="w-full bg-slate-100 h-4 rounded-full p-1 border border-slate-50">
+                    <div class="${s.color} h-full rounded-full transition-all duration-1000 shadow-sm shadow-current" style="width: ${avg}%"></div>
+                </div>
+            </div>
+        `;
+    }).join(''); // 這裡的 join 也檢查一下
+    
+    document.getElementById('subjectGrid').innerHTML = html;
+}
+    function renderUnitDetails() {
+    const selectedSub = document.getElementById('subPicker').value;
+    const listContainer = document.getElementById('unitDetailList');
+    
+    // 1. 抓取該科目的課程架構
+    const libData = window.CurriculumLibrary || {};
+    const curriculumData = (libData.data ? libData.data[selectedSub] : libData[selectedSub]) || [];
+
+    // 防呆檢查
+    if (curriculumData.length === 0) {
+        listContainer.innerHTML = '<div class="p-10 text-center text-slate-400 font-bold bg-slate-50 rounded-2xl border border-slate-100 m-4">此科目暫無單元資料</div>';
+        return;
     }
 
-    function renderUnitDetails() {
-        const selectedSub = document.getElementById('subPicker').value;
-        const listContainer = document.getElementById('unitDetailList');
-        
-        // 🛡️ 防呆：檢查 CurriculumLibrary 是否存在
-        if (typeof window.CurriculumLibrary === "undefined") {
-            console.error("找不到單元資料！請檢查 curriculum_integrated.js 檔案是否正確載入。");
-            listContainer.innerHTML = `
-                <div class="p-8 text-center text-red-500 font-bold bg-red-50 rounded-xl m-4 border border-red-200">
-                    <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
-                    <p>無法載入課程單元資料</p>
-                    <p class="text-xs text-red-400 mt-1">請檢查 JS 檔案路徑與變數名稱設定</p>
-                </div>`;
-            return; 
-        }
-    
-        // 🌟 核心：撈取資料
-        const curriculumData = (window.CurriculumLibrary.data ? window.CurriculumLibrary.data[selectedSub] : window.CurriculumLibrary[selectedSub]) || [];
-        // 攤平所有冊別 (Books) 的單元
-        let unitsToDisplay = [];
-        curriculumData.forEach(book => {
-            book.units.forEach(u => {
-                unitsToDisplay.push({ ...u, bookLabel: book.name });
-            });
-        });
+    // 2. 🌟 依「冊別/單元大類」進行分組渲染
+    const html = curriculumData.map(book => {
+        // 如果這個分類沒有單元，就跳過不顯示
+        if (!book.units || book.units.length === 0) return '';
 
-        listContainer.innerHTML = unitsToDisplay.map(unit => {
-            // 比對 GAS 回傳的成績
-            const match = remoteData.records.find(r => r.unitName === unit.name);
-            const score = match ? match.score : null;
+        // 渲染該冊底下的所有單元列表
+        const unitsHtml = book.units.map(unit => {
+            // 找出該單元的測驗紀錄 (抓最高分或最新的一筆)
+            const matches = remoteData.records.filter(r => r.unitName === unit.name);
+            const bestRecord = matches.length > 0 ? matches.sort((a, b) => b.score - a.score)[0] : null;
+            
+            const score = bestRecord ? bestRecord.score : null;
             const scoreColor = score === null ? 'text-slate-200' : (score >= 80 ? 'text-green-500' : (score >= 60 ? 'text-amber-500' : 'text-red-500'));
 
             return `
-                <div class="p-8 flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-slate-50 transition-all group">
+                <div class="p-6 flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-blue-50/30 transition-all group">
                     <div class="space-y-2">
-                        <p class="text-[10px] font-black text-blue-500 uppercase tracking-tighter">${unit.bookLabel}</p>
-                        <h4 class="text-lg font-black text-slate-800 group-hover:text-blue-600 transition-colors">${unit.name}</h4>
+                        <h4 class="text-md font-black text-slate-800 group-hover:text-blue-600 transition-colors">${unit.name}</h4>
                         <div class="flex flex-wrap gap-2">
-                            ${unit.topics.map(t => `<span class="px-2 py-1 bg-slate-100 text-slate-400 text-[9px] font-bold rounded-md border border-slate-200 uppercase tracking-tighter italic">${t}</span>`).join('')}
+                            ${(unit.topics || []).map(t => `<span class="px-2 py-1 bg-white text-slate-400 text-[10px] font-bold rounded-md border border-slate-200 uppercase tracking-tighter">${t}</span>`).join('')}
                         </div>
                     </div>
                     <div class="mt-4 md:mt-0 text-right">
-                        <div class="text-4xl font-black ${scoreColor} tracking-tighter">
-                            ${score !== null ? score + '<span class="text-xs ml-1 font-bold text-slate-400">分</span>' : '----'}
+                        <div class="text-3xl font-black ${scoreColor} tracking-tighter">
+                            ${score !== null ? score + '<span class="text-xs ml-1 font-bold text-slate-400">分</span>' : '<span class="text-lg">----</span>'}
                         </div>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase mt-1">
-                            ${match ? '完成日期：' + match.date : '尚未測驗'}
+                        <p class="text-[10px] font-bold text-slate-400 mt-1">
+                            ${bestRecord ? '<i class="far fa-calendar-check mr-1"></i>' + bestRecord.date : '尚未測驗'}
                         </p>
                     </div>
                 </div>
             `;
         }).join('');
-    }
+
+        // 🌟 回傳這「一冊」的專屬卡片區塊
+        return `
+            <div class="mb-6 bg-white border border-slate-100 rounded-[1.5rem] overflow-hidden shadow-sm">
+                <div class="bg-slate-50/80 border-b border-slate-100 px-6 py-4 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-500 flex items-center justify-center shadow-inner">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <h3 class="text-sm font-black text-slate-700 tracking-widest">${book.name}</h3>
+                </div>
+                <div class="divide-y divide-slate-50">
+                    ${unitsHtml}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // 將整理好的分組卡片塞入畫面，並把外層的 divide-y 樣式拿掉（因為我們改用卡片了）
+    listContainer.className = "p-6 bg-slate-50/50 rounded-b-[2rem]"; 
+    listContainer.innerHTML = html;
+}
 
     // 🌟 登出功能
     function logout() {
