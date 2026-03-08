@@ -1355,7 +1355,6 @@ function toggleSidebar() {
                 // 💡 無敵相容模式：自動尋找可能是「學生提問」與「AI回覆」的欄位
                 const questionText = post.content || post.question || post.text || '無提問內容';
                 const aiReplyText = post.aiReply || post.ai_reply || post.reply_content || (post.reply ? post.reply.content : null) || '目前尚未有 AI 或教師回覆。';
-                
                 html += `
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-4 transition-all hover:shadow-md">
                         <div class="flex justify-between items-start mb-4">
@@ -1385,8 +1384,13 @@ function toggleSidebar() {
 
                         <div class="flex gap-2">
                             <input id="admin-input-${post.id}" type="text" placeholder="以教師身分補充回覆或訂正..." class="flex-grow bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition-all font-bold text-slate-700">
+                            
                             <button onclick="adminReply('${post.id}')" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-black hover:bg-blue-700 transition-all shadow-md flex items-center gap-2 whitespace-nowrap">
                                 <i class="fas fa-paper-plane"></i> 送出
+                            </button>
+                            
+                            <button onclick="deleteForumPost('${post.id}')" class="bg-red-50 text-red-600 px-4 py-2.5 rounded-xl text-sm font-black hover:bg-red-100 hover:text-red-700 border border-red-200 transition-all shadow-sm flex items-center justify-center whitespace-nowrap" title="強制刪除貼文">
+                                <i class="fas fa-trash-alt"></i>
                             </button>
                         </div>
                     </div>
