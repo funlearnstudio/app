@@ -307,6 +307,10 @@
         let timeLog = [], tabLog = [], tabLeaveStart = null, questionStartTime = 0;
         let selectedCount = 10;
         let isSubmitting = false; 
+       // 在 exam 頁面的 script 開頭檢查
+const urlParams = new URLSearchParams(window.location.search);
+const subjectFromUrl = urlParams.get('subject');
+console.log("當前測驗科目：", subjectFromUrl); // 如果這裡出現 null，代表網址沒傳科目進來
 // ⚡ 雲端題庫融合器
 async function injectCustomQuestionsToRepo() {
     
