@@ -1352,15 +1352,11 @@ function toggleSidebar() {
             const posts = Array.isArray(data) ? data.reverse() : [];
 
     posts.forEach(post => {
-                // 💡 1. 抓取所有可能的文字內容
+        // 💡 1. 抓取所有可能的文字內容與標題
+                const postTitle = post.title || post.subject || '無標題'; // ✨ 新增：抓取標題
                 const questionText = post.content || post.question || post.text || '無提問內容';
-                
-                // 💡 2. 判斷是否有 AI 回覆
                 const aiText = post.aiReply || post.ai_reply || post.reply_content || post.reply?.content || '';
-                
-                // 💡 3. 判斷是否有 教師回覆 (依據您後端的欄位名稱，通常是這幾個)
                 const teacherText = post.adminReply || post.admin_reply || post.teacher_reply || post.teacherReply || '';
-
                 // 產生回覆區塊的 HTML
                 let replyBlocksHtml = '';
 
@@ -1397,7 +1393,6 @@ function toggleSidebar() {
                     `;
                 }
 
-                // 組合整張卡片
                 html += `
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-4 transition-all hover:shadow-md">
                         
@@ -1416,22 +1411,15 @@ function toggleSidebar() {
                         
                         <div class="mb-5">
                             <span class="text-[10px] font-black text-indigo-500 bg-indigo-50 border border-indigo-100 px-2 py-1 rounded uppercase tracking-widest"><i class="fas fa-question-circle mr-1"></i>學生提問</span>
-                            <p class="text-sm text-slate-700 mt-2 bg-slate-50 p-4 rounded-xl border border-slate-100 leading-relaxed whitespace-pre-wrap">${questionText}</p>
+                            
+                            <h4 class="text-lg font-black text-slate-800 mt-3 mb-2">${postTitle}</h4>
+                            
+                            <p class="text-sm text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-100 leading-relaxed whitespace-pre-wrap">${questionText}</p>
                         </div>
 
                         ${replyBlocksHtml}
 
-                        <div class="flex gap-2 pt-2 border-t border-slate-100 mt-2">
-                            <input id="admin-input-${post.id}" type="text" placeholder="以教師身分補充回覆或訂正..." class="flex-grow bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none shadow-sm transition-all font-bold text-slate-700">
-                            
-                            <button onclick="adminReply('${post.id}')" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-black hover:bg-blue-700 active:scale-95 transition-all shadow-md flex items-center gap-2 whitespace-nowrap">
-                                <i class="fas fa-paper-plane"></i> 送出
-                            </button>
-                            
-                            <button onclick="deleteForumPost('${post.id}')" class="bg-red-50 text-red-600 px-4 py-2.5 rounded-xl text-sm font-black hover:bg-red-100 hover:text-red-700 border border-red-200 active:scale-95 transition-all shadow-sm flex items-center justify-center whitespace-nowrap" title="強制刪除貼文">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </div>
+                        ...
                     </div>
                 `;
             });
