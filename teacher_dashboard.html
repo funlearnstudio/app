@@ -633,21 +633,11 @@ document.getElementById('assignUnit').addEventListener('change', function() {
             }
         }
 
-      // 1. 抓取學生名單與成績
     // 1. 抓取學生名單與成績
-  // 1. 抓取學生名單與成績
     async function fetchRoster() {
         try {
             const res = await fetch(`${GAS_URL}?action=get_roster`);
-            const rawData = await res.json(); 
-            
-            // 🌟 終極無敵過濾器：不管身分欄位叫什麼名字，只要資料內容是 'student' 就抓出來！
-            studentData = rawData.filter(user => {
-                // 將這個人的所有屬性值抽出來檢查
-                return Object.values(user).some(value => 
-                    String(value).trim().toLowerCase() === 'student'
-                );
-            });
+            studentData = await res.json(); // ⚠️ 把過濾器拿掉，先讓所有人顯示出來
             
             renderTable(studentData);
             updateDashboardStats(studentData);
