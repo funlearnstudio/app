@@ -1350,13 +1350,13 @@ function toggleSidebar() {
             let html = '';
             // 翻轉陣列，讓最新的貼文顯示在最上面
             const posts = Array.isArray(data) ? data.reverse() : [];
-
-    posts.forEach(post => {
-        // 💡 1. 抓取所有可能的文字內容與標題
-                const postTitle = post.title || post.subject || '無標題'; // ✨ 新增：抓取標題
+posts.forEach(post => {
+                // 💡 1. 抓取所有可能的文字內容與標題
+                const postTitle = post.title || post.subject || '無標題'; 
                 const questionText = post.content || post.question || post.text || '無提問內容';
                 const aiText = post.aiReply || post.ai_reply || post.reply_content || post.reply?.content || '';
                 const teacherText = post.adminReply || post.admin_reply || post.teacher_reply || post.teacherReply || '';
+                
                 // 產生回覆區塊的 HTML
                 let replyBlocksHtml = '';
 
@@ -1419,7 +1419,18 @@ function toggleSidebar() {
 
                         ${replyBlocksHtml}
 
-                        ...
+                        <div class="flex gap-2 pt-2 border-t border-slate-100 mt-2">
+                            <input id="admin-input-${post.id}" type="text" placeholder="以教師身分補充回覆或訂正..." class="flex-grow bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none shadow-sm transition-all font-bold text-slate-700">
+                            
+                            <button onclick="adminReply('${post.id}')" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-black hover:bg-blue-700 active:scale-95 transition-all shadow-md flex items-center gap-2 whitespace-nowrap">
+                                <i class="fas fa-paper-plane"></i> 送出
+                            </button>
+                            
+                            <button onclick="deleteForumPost('${post.id}')" class="bg-red-50 text-red-600 px-4 py-2.5 rounded-xl text-sm font-black hover:bg-red-100 hover:text-red-700 border border-red-200 active:scale-95 transition-all shadow-sm flex items-center justify-center whitespace-nowrap" title="強制刪除貼文">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+
                     </div>
                 `;
             });
