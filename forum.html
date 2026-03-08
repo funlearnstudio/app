@@ -418,61 +418,50 @@ async function addPost() {
     const postId = Date.now(); // 產生唯一識別碼
     const postDate = new Date().toLocaleString();
 
-    // 🚩 1. 立即在本地預覽這篇貼文 (此時 reply 為 null，會顯示「分析中」)
-    const newPost = { 
-        id: postId, 
-        title: t, 
-        content: c, 
-        author: user.name, 
-        date: postDate, 
-        reply: null,
-        userComments: [] 
-    };
-    
-    // 清空輸入框並隱藏表單
+    // 🚩 1. 本地清空輸入並隱藏表單
     document.getElementById('postTitle').value = '';
     document.getElementById('postContent').value = '';
     if (typeof toggleForm === 'function') toggleForm();
-
-    // 在列表最上方插入這則「分析中」的貼文
-    const container = document.getElementById('postList');
-    // 如果你有用到渲染函數，這裡手動呼叫一次
-    // 注意：這裡是用 prepend 讓它出現在最上面，不用等 loadPosts
-    const tempDiv = document.createElement('div');
-    container.prepend(tempDiv); 
-    // 假設你的 renderPost 是直接 append，這裡可能需要微調 loadPosts 邏輯
     
     try {
-        // 🚀 第一步：先把學生的提問存到試算表 (action: add_forum_post)
+        // 🚀 第一步：先把學生的提問存到試算表
         await fetch(GAS_URL, {
             method: 'POST',
             body: JSON.stringify({
                 action: "add_forum_post",
                 id: postId,
-                // ... 其他欄位 ...
+                username: user.username,
+                name: user.name,
+                title: t,
+                content: c,
+                date: postDate
             })
         });
         
-        await loadPosts(); // 立即顯示「分析中」
+        // 立即刷新列表，這時會出現「分析中」的區塊
+        await loadPosts(); 
 
-        // 🚀 第二步：呼叫你的 RealAITutor 拿答案
-        // 注意：這裡拿到的會是包含 "📘 AI 助教解答" 的文字
+        // 🚀 第二步：呼叫 RealAITutor 拿 AI 答案
         const aiResponse = await RealAITutor.askGemini(t, c);
 
-        // 🚀 第三步：把這個答案存回試算表 (action: update_forum_reply)
+        // 🚀 第三步：把 AI 的答案存回試算表
         await fetch(GAS_URL, {
             method: 'POST',
             body: JSON.stringify({
                 action: "update_forum_reply",
                 id: postId,
                 replyAuthor: RealAITutor.name,
-                replyContent: aiResponse // 存入帶有 Markdown 排版的內容
+                replyContent: aiResponse 
             })
         });
 
-        await loadPosts(); // 再次刷新，分析中變身為解答
+        // 再次刷新，讓 AI 答案顯示出來
+        await loadPosts();
 
-    } catch (err) { ... }
+    } catch (err) {
+        console.error("發送失敗:", err);
+        alert("連線不穩定，請稍後再試。");
+    }
 }
     //
     // ==========================================
