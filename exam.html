@@ -627,23 +627,48 @@ async function prepareExam(count, timeMin) {
         });
     }
 
-    // --- 3. 處理 MathJax 與 介面更新 ---
-    if (window.MathJax) {
-        MathJax.typesetPromise().catch((err) => console.log('MathJax error: ', err.message));
-    }
-    
+  // 在 renderQuestion 末端修改
+const hasMath = questionTextBox.innerText.includes('\\(') || container.innerText.includes('\\(');
+if (window.MathJax && hasMath) {
+    MathJax.typesetPromise();
+}
     updateNavButtons();
     updatePalette();
 }
+window.selectAnswer = (mainIdx, optIdx, subIdx = null) => {
+    // 1. 更新資料
+    if (subIdx !== null) {
+        userAnswers[mainIdx][subIdx] = optIdx;
+    } else {
+        userAnswers[mainIdx] = optIdx;
+    }
 
-        window.selectAnswer = (mainIdx, optIdx, subIdx = null) => {
-            if (subIdx !== null) {
-                userAnswers[mainIdx][subIdx] = optIdx;
-            } else {
-                userAnswers[mainIdx] = optIdx;
-            }
-            renderQuestion();
-        };
+    // 2. 局部更新畫面樣式，不再呼叫 renderQuestion()
+    // 找出目前容器內所有的選項卡片
+    const container = subIdx !== null 
+        ? document.querySelectorAll('.group-context-content + div, .fade-in')[subIdx + 1] // 題組定位
+        : document.getElementById('optionsContainer');
+
+    const cards = container.querySelectorAll('.option-card');
+    
+    cards.forEach((card, idx) => {
+        const circle = card.querySelector('.rounded-full');
+        if (idx === optIdx) {
+            // 選中樣式
+            card.classList.add('selected');
+            card.classList.remove('bg-white', 'bg-slate-50', 'border-slate-100');
+            if (circle) circle.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+        } else {
+            // 取消選中
+            card.classList.remove('selected');
+            card.classList.add('bg-white', 'border-slate-100');
+            if (circle) circle.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+        }
+    });
+
+    // 3. 更新下方題號狀態點 (Palette)
+    updatePalette();
+};
 
         function updateNavButtons() {
             const nextBtn = document.getElementById('nextBtn');
