@@ -442,86 +442,90 @@
 
     
    <script>
-        // ⚠️⚠️⚠️ 請確認這裡是你最新的 GAS 部署網址 ⚠️⚠️⚠️
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
+    // ⚠️ 請確認這裡是你最新的 GAS 部署網址
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
 
-        // 1. 自動登入檢查
-        const savedUser = localStorage.getItem('currentUser');
-        if (savedUser) {
-            try {
-                const user = JSON.parse(savedUser);
-                // 如需自動跳轉可取消下方註解
-                // redirectUser(user.role); 
-            } catch(e) {
-                localStorage.removeItem('currentUser');
-            }
+    // =========================================
+    // 1. 登入系統邏輯
+    // =========================================
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+        try {
+            const user = JSON.parse(savedUser);
+            // 若要自動登入，可取消下方註解
+            // redirectUser(user.role); 
+        } catch(e) {
+            localStorage.removeItem('currentUser');
+        }
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const u = document.getElementById('username').value.trim();
+        const p = document.getElementById('password').value.trim();
+        const btn = document.getElementById('loginBtn');
+        const originalBtnText = btn.innerHTML;
+
+        if(!u || !p) {
+            alert("請輸入帳號與密碼");
+            return;
         }
 
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const u = document.getElementById('username').value.trim();
-            const p = document.getElementById('password').value.trim();
-            const btn = document.getElementById('loginBtn');
-            const originalBtnText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> 驗證中...';
 
-            if(!u || !p) {
-                alert("請輸入帳號與密碼");
-                return;
-            }
+        const payload = { action: "login", username: u, password: p };
 
-            // 鎖定按鈕
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> 驗證中...';
+        fetch(GAS_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.result === "success") {
+                const user = data.user;
+                const safeRole = String(user.role).trim().toLowerCase(); // 防呆處理
 
-            // 準備傳送資料
-            const payload = {
-                action: "login",
-                username: u,
-                password: p
-            };
+                // 🌟 1. 存入整包資訊
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                
+                // 🌟 2. 存入散裝資訊 (雙重保險)
+                localStorage.setItem('username', user.username);
+                localStorage.setItem('name', user.name);
+                localStorage.setItem('role', safeRole);
 
-            // 發送請求給 Google Sheet
-            fetch(GAS_URL, {
-                method: "POST",
-                headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify(payload)
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.result === "success") {
-                    const userInfo = {
-                        username: u,
-                        name: data.user.name,
-                        grade: data.user.grade,
-                        role: data.user.role
-                    };
-                    localStorage.setItem('currentUser', JSON.stringify(userInfo));
-                    alert(`歡迎回來，${data.user.name}！`);
-                    redirectUser(data.user.role);
-                } else {
-                    alert("登入失敗：" + data.message);
-                    resetButton();
+                // 🌟 3. 處理家長專屬邏輯：把存在 grade 裡的綁定帳號抽出來存
+                if (safeRole === 'parent') {
+                    localStorage.setItem('childUsername', user.grade);
                 }
-            })
-            .catch(err => {
-                console.error('詳細錯誤:', err);
-                alert("連線發生錯誤，請檢查網路或稍後再試。"); 
-                resetButton();
-            });
 
-            function resetButton() {
-                btn.disabled = false;
-                btn.innerHTML = originalBtnText;
+                alert(`歡迎回來，${user.name}！`);
+                redirectUser(safeRole);
+            } else {
+                alert("登入失敗：" + data.message);
+                resetButton();
             }
+        })
+        .catch(err => {
+            console.error('詳細錯誤:', err);
+            alert("連線發生錯誤，請檢查網路或稍後再試。"); 
+            resetButton();
         });
 
-        function redirectUser(role) {
-            if (role === 'student') window.location.href = 'dashboard.html';
-            else if (role === 'teacher') window.location.href = 'teacher_dashboard.html';
-            else if (role === 'parent') window.location.href = 'parent_dashboard.html';
-            else window.location.href = 'dashboard.html';
+        function resetButton() {
+            btn.disabled = false;
+            btn.innerHTML = originalBtnText;
         }
+    });
+
+    function redirectUser(role) {
+        if (role === 'student') window.location.href = 'dashboard.html';
+        else if (role === 'teacher') window.location.href = 'teacher_dashboard.html';
+        else if (role === 'parent') window.location.href = 'parent_dashboard.html';
+        else window.location.href = 'dashboard.html';
+    }
     </script>
     <div id="announcementModal" class="hidden fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
         <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300" id="announcementContent">
