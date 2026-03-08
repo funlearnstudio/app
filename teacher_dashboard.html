@@ -635,21 +635,18 @@ document.getElementById('assignUnit').addEventListener('change', function() {
 
       // 1. 抓取學生名單與成績
     // 1. 抓取學生名單與成績
+  // 1. 抓取學生名單與成績
     async function fetchRoster() {
         try {
             const res = await fetch(`${GAS_URL}?action=get_roster`);
             const rawData = await res.json(); 
             
-            // 🌟 照妖鏡：把後端傳來的原始資料印在 Console 裡！
-            console.log("【除錯】後端傳來的原始資料長這樣：", rawData);
-            
-            // 🌟 防呆版過濾器：無視大小寫跟空白。如果後端根本沒傳 role 欄位，就先暫時把大家放行！
+            // 🌟 終極無敵過濾器：不管身分欄位叫什麼名字，只要資料內容是 'student' 就抓出來！
             studentData = rawData.filter(user => {
-                if (!user.role) {
-                    console.warn("⚠️ 警告：這筆資料沒有 role 欄位！", user);
-                    return true; // 如果沒有 role 欄位，先放行讓他顯示，免得畫面全空
-                }
-                return String(user.role).trim().toLowerCase() === 'student';
+                // 將這個人的所有屬性值抽出來檢查
+                return Object.values(user).some(value => 
+                    String(value).trim().toLowerCase() === 'student'
+                );
             });
             
             renderTable(studentData);
