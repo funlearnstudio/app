@@ -811,7 +811,11 @@ async function prepareExam(count, timeMin) {
             setTimeout(() => { window.location.href = "analysis.html?mode=new"; }, 1000);
         }
 
-       async function uploadToCloud(username, activityName, score, fullData) {
+     async function uploadToCloud(username, activityName, score, fullData) {
+            // 🌟 新增：直接從網址抓取科目代號 (例如從 ?subject=biology 抓出 biology)
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentSubject = urlParams.get('subject') || fullData.subject || "chinese";
+
             const payload = {
                 action: "save_record",
                 username: username,
@@ -819,7 +823,7 @@ async function prepareExam(count, timeMin) {
                 score: score,
                 // 🌟 將 subject 加入 detail 中，讓家長後台可以正確辨識科目！
                 detail: JSON.stringify({
-                    subject: fullData.subject || "chinese", // 新增這行：從 fullData 抓取科目
+                    subject: currentSubject, // 🌟 改用剛剛從網址抓到的真實科目
                     totalCount: fullData.totalCount,
                     correctCount: fullData.correctCount,
                     tabSwitches: fullData.tabSwitches,
@@ -827,6 +831,7 @@ async function prepareExam(count, timeMin) {
                     wrongList: fullData.wrongList // 建議把錯題也傳回去，家長後台才看得到錯什麼
                 })
             };
+            
             return fetch(GAS_URL, {
                 method: "POST",
                 mode: 'no-cors', 
