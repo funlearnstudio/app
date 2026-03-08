@@ -145,10 +145,12 @@
         // 🌟 強化比對邏輯：
         // 1. 比對 subject 欄位
         // 2. 如果紀錄裡沒有 subject，嘗試比對 unitName 是否出現在該科目的 CurriculumLibrary 中
+      // 🌟 在 parent_dashboard.html 的 renderSubjectProgress 函數內
         const results = remoteData.records.filter(r => {
-            if (r.subject === s.id) return true;
-            
-            // 💡 額外檢查：如果紀錄是「國文」，但單元名稱其實是「生物」相關的
+            // 加上 .toLowerCase() 確保 english 能夠匹配 ENGLISH
+            return (r.subject || "").toLowerCase() === s.id.toLowerCase();
+        }); 
+           // 💡 額外檢查：如果紀錄是「國文」，但單元名稱其實是「生物」相關的
             const lib = window.CurriculumLibrary[s.id] || [];
             const isMatchUnit = lib.some(book => book.units.some(u => u.name === r.unitName));
             return isMatchUnit;
