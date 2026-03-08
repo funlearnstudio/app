@@ -298,78 +298,107 @@ function toggleForm() {
 // ==========================================
 
 async function loadPosts() {
-    const container = document.getElementById('postList');
+    // ⚠️ 請確認你的 HTML 標籤裡是 id="postList" 還是 id="postsContainer"
+    const container = document.getElementById('postList') || document.getElementById('postsContainer');
+    
+    if (!container) {
+        console.error("錯誤：找不到貼文顯示容器 (postList)");
+        return;
+    }
+
     container.innerHTML = '<div class="text-center p-10 text-slate-400 animate-pulse">🔍 正在搬運貼文中...</div>';
 
     try {
         const response = await fetch(`${GAS_URL}?action=get_forum_posts`);
         const allData = await response.json();
         
-        // 1. 分離主貼文與回覆
+        console.log("從雲端抓到的原始資料：", allData); // 👈 加入這一行，在 F12 檢查欄位名稱對不對
+
+        if (!Array.isArray(allData)) {
+            container.innerHTML = '<div class="text-center p-10 text-slate-400">目前尚無貼文。</div>';
+            return;
+        }
+
         const mainPosts = allData.filter(p => !p.parentId);
         const allReplies = allData.filter(p => p.parentId);
 
-        container.innerHTML = ''; // 清空
+        container.innerHTML = ''; 
 
         mainPosts.reverse().forEach(post => {
-            // 整理此貼文的真人回覆與 AI 內容
-            const userComments = allReplies.filter(r => r.parentId == post.id);
+            const userComments = allReplies.filter(r => String(r.parentId) === String(post.id));
             const html = renderPostTemplate(post, userComments);
             container.insertAdjacentHTML('beforeend', html);
         });
     } catch (e) {
-        container.innerHTML = '<div class="text-red-400 p-10">讀取貼文失敗，請檢查連線。</div>';
+        console.error("載入失敗：", e);
+        container.innerHTML = '<div class="text-red-400 p-10">讀取貼文失敗，請檢查網路連線或 GAS 權限。</div>';
     }
 }
 
 function renderPostTemplate(post, userComments) {
     const id = post.id;
-    const authorName = post.author || post.name || "學生";
-    // 檢查是否有 AI 回覆 (假設後端欄位叫 aiReply 或使用你原本的邏輯)
-    const hasAI = post.aiReply && post.aiReply.trim() !== "";
+    // 1. 姓名容錯
+    const authorName = post.name || post.author || post.username || "學生";
     
-    // AI 區塊
-    const aiSection = hasAI ? `
-        <div class="mt-4 p-5 rounded-2xl border ai-reply-card flex gap-4 bg-blue-50/30">
-            <div class="flex-shrink-0">
-                <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md">
-                    <i class="fas fa-robot"></i>
-                </div>
-            </div>
-            <div class="flex-grow min-w-0">
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="font-bold text-sm text-slate-800">AI 助教</span>
-                    <span class="bg-blue-100 text-blue-700 text-[9px] px-1.5 py-0.5 rounded-md font-black">Verified AI</span>
-                </div>
-                <div class="text-sm text-slate-700 markdown-body">${marked.parse(post.aiReply)}</div>
-            </div>
-        </div>` : `
-        <div class="mt-4 flex items-center justify-center gap-3 text-[11px] text-blue-400 bg-blue-50/50 px-4 py-4 rounded-xl border border-blue-100 border-dashed animate-pulse-soft">
-            <i class="fas fa-spinner fa-spin"></i> 
-            <span class="font-bold tracking-widest">AI 助教正在思考並查閱課本知識...</span>
-        </div>`;
+    // 2. AI 回覆內容容錯 (整合多種可能的欄位名)
+    const aiContent = post.aiReply || post.replyContent || post.reply_content || ""; 
+    const hasAI = aiContent.trim() !== "";
+    
+    // 3. 標題與內容容錯
+    const displayTitle = post.title || "無標題提問";
+    const displayContent = post.content || "（無內容）";
 
-    // 真人留言
-    const commentsHtml = userComments.map(c => `
-        <div class="flex gap-3 p-3 bg-slate-50/50 rounded-2xl border border-slate-100 mb-2">
-            <div class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">${(c.author || "匿")[0]}</div>
-            <div class="flex-grow">
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-slate-700">${c.author || "匿名"}</span>
-                    <span class="text-[9px] text-slate-400">${c.date || ""}</span>
+    // --- AI 區塊處理 ---
+    let aiSection = "";
+    if (hasAI) {
+        // 🌟 修正點：使用處理過的 aiContent 而非原始 post.aiReply
+        aiSection = `
+            <div class="mt-4 p-5 rounded-2xl border ai-reply-card flex gap-4 bg-blue-50/30">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md">
+                        <i class="fas fa-robot"></i>
+                    </div>
                 </div>
-                <p class="text-xs text-slate-600 mt-1">${c.content}</p>
-            </div>
-        </div>
-    `).join('');
+                <div class="flex-grow min-w-0">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="font-bold text-sm text-slate-800">AI 助教</span>
+                        <span class="bg-blue-100 text-blue-700 text-[9px] px-1.5 py-0.5 rounded-md font-black">Verified AI</span>
+                    </div>
+                    <div class="text-sm text-slate-700 markdown-body">${marked.parse(aiContent)}</div>
+                </div>
+            </div>`;
+    } else {
+        aiSection = `
+            <div class="mt-4 flex items-center justify-center gap-3 text-[11px] text-blue-400 bg-blue-50/50 px-4 py-4 rounded-xl border border-blue-100 border-dashed animate-pulse-soft">
+                <i class="fas fa-spinner fa-spin"></i> 
+                <span class="font-bold tracking-widest">AI 助教正在思考並查閱課本知識...</span>
+            </div>`;
+    }
 
+    // --- 真人留言處理 ---
+    const commentsHtml = userComments.map(c => {
+        const cAuthor = c.author || c.name || "匿名";
+        return `
+            <div class="flex gap-3 p-3 bg-slate-50/50 rounded-2xl border border-slate-100 mb-2">
+                <div class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">${cAuthor[0]}</div>
+                <div class="flex-grow">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-700">${cAuthor}</span>
+                        <span class="text-[9px] text-slate-400">${c.date || ""}</span>
+                    </div>
+                    <p class="text-xs text-slate-600 mt-1">${c.content || ""}</p>
+                </div>
+            </div>`;
+    }).join('');
+
+    // --- 最終輸出 ---
     return `
     <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 mb-6 fade-in">
         <div class="flex gap-4">
             <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg">${authorName[0]}</div>
             <div class="flex-grow">
-                <h3 class="font-bold text-slate-800 text-lg">${post.title || "無標題"}</h3>
-                <p class="text-sm text-slate-500 mt-1 leading-relaxed">${post.content || ""}</p>
+                <h3 class="font-bold text-slate-800 text-lg">${displayTitle}</h3>
+                <p class="text-sm text-slate-500 mt-1 leading-relaxed">${displayContent}</p>
                 <div class="text-[10px] text-slate-400 mt-2">由 ${authorName} 發表於 ${post.date || ""}</div>
             </div>
         </div>
