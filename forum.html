@@ -306,7 +306,7 @@ async function loadPosts() {
         return;
     }
 
-    container.innerHTML = '<div class="text-center p-10 text-slate-400 animate-pulse">🔍 正在搬運貼文中...</div>';
+    container.innerHTML = '<div class="text-center p-10 text-slate-400 animate-pulse">稍等一下</div>';
 
     try {
         const response = await fetch(`${GAS_URL}?action=get_forum_posts`);
@@ -337,36 +337,32 @@ async function loadPosts() {
 
 function renderPostTemplate(post, userComments) {
     const id = post.id;
-    // 1. 姓名容錯
-    const authorName = post.name || post.author || post.username || "學生";
+    const authorName = post.author || post.name || "學生";
     
-    // 2. AI 回覆內容容錯 (整合多種可能的欄位名)
-    const aiContent = post.aiReply || post.replyContent || post.reply_content || ""; 
-    const hasAI = aiContent.trim() !== "";
+    // 🌟 對齊 GAS 新回傳的欄位 aiReply
+    const aiContent = post.aiReply || ""; 
+    const hasAI = aiContent.trim() !== "" && aiContent !== "undefined";
     
-    // 3. 標題與內容容錯
-    const displayTitle = post.title || "無標題提問";
-    const displayContent = post.content || "（無內容）";
-
-    // --- AI 區塊處理 ---
-    let aiSection = "";
-    if (hasAI) {
-        // 🌟 修正點：使用處理過的 aiContent 而非原始 post.aiReply
-        aiSection = `
-            <div class="mt-4 p-5 rounded-2xl border ai-reply-card flex gap-4 bg-blue-50/30">
-                <div class="flex-shrink-0">
-                    <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md">
-                        <i class="fas fa-robot"></i>
-                    </div>
+    // AI 區塊邏輯
+    const aiSection = hasAI ? `
+        <div class="mt-4 p-5 rounded-2xl border ai-reply-card flex gap-4 bg-blue-50/30">
+            <div class="flex-shrink-0">
+                <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md">
+                    <i class="fas fa-robot"></i>
                 </div>
-                <div class="flex-grow min-w-0">
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="font-bold text-sm text-slate-800">AI 助教</span>
-                        <span class="bg-blue-100 text-blue-700 text-[9px] px-1.5 py-0.5 rounded-md font-black">Verified AI</span>
-                    </div>
-                    <div class="text-sm text-slate-700 markdown-body">${marked.parse(aiContent)}</div>
+            </div>
+            <div class="flex-grow min-w-0">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="font-bold text-sm text-slate-800">AI 助教</span>
+                    <span class="bg-blue-100 text-blue-700 text-[9px] px-1.5 py-0.5 rounded-md font-black">Verified AI</span>
                 </div>
-            </div>`;
+                <div class="text-sm text-slate-700 markdown-body">${marked.parse(aiContent)}</div>
+            </div>
+        </div>` : `
+        <div class="mt-4 flex items-center justify-center gap-3 text-[11px] text-blue-400 bg-blue-50/50 px-4 py-4 rounded-xl border border-blue-100 border-dashed animate-pulse-soft">
+            <i class="fas fa-spinner fa-spin"></i> 
+            <span class="font-bold tracking-widest">AI 助教正在思考並查閱課本知識...</span>
+        </div>`;
     } else {
         aiSection = `
             <div class="mt-4 flex items-center justify-center gap-3 text-[11px] text-blue-400 bg-blue-50/50 px-4 py-4 rounded-xl border border-blue-100 border-dashed animate-pulse-soft">
