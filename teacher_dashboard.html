@@ -269,7 +269,7 @@
                 </div>
             </div>
 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 mb-8">
-            <div id="tab-students" class="tab-content hidden">
+ <div id="tab-students" class="tab-content hidden">
                 <div class="bg-white rounded-3xl shadow-sm overflow-hidden border border-slate-200">
                     <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center bg-slate-50 space-y-4 md:space-y-0">
                         <h3 class="font-bold text-slate-800 text-xl"><i class="fas fa-users text-blue-500 mr-2"></i>班級學生名冊</h3>
@@ -296,85 +296,60 @@
                                 </tr>
                             </thead>
                             <tbody id="studentTableBody" class="divide-y divide-slate-100 bg-white">
-                                <tr><td colspan="6" class="p-10 text-center text-slate-400"><i class="fas fa-circle-notch fa-spin text-2xl mb-2 text-blue-500"></i><br>資料同步中...</td></tr>
-                             </tbody>
+                                </tbody>
                         </table>
                     </div>
                 </div>
             </div>
-        </div>
-        </div> </main>
 
-    <div id="detailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden transform transition-all">
-            <div class="p-6 border-b flex justify-between items-center bg-slate-50">
-                <h2 class="text-xl font-bold text-slate-800" id="modalName">學生學習歷程</h2>
-                <button onclick="closeModal()" class="w-10 h-10 bg-slate-200 hover:bg-slate-300 rounded-full flex items-center justify-center transition text-slate-600"><i class="fas fa-times text-lg"></i></button>
-            </div>
-            <div id="modalBody" class="p-6 overflow-y-auto space-y-4 custom-scrollbar bg-slate-50/50">
-            </div>
+            <div id="tab-announcement" class="tab-content hidden">
+                <div class="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 mb-8 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+                    
+                    <h3 class="font-black text-slate-800 mb-6 text-xl flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center shadow-inner">
+                            <i class="fas fa-bullhorn"></i>
+                        </div>
+                        全站公告發布中心
+                    </h3>
+                    
+                    <div class="space-y-5 relative z-10">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">公告日期</label>
+                                <input type="text" id="annInputDate" placeholder="例如：2026/03/08" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white transition-colors text-sm font-medium">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">顯示狀態</label>
+                                <select id="annInputStatus" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white transition-colors text-sm font-bold">
+                                    <option value="true">🟢 啟用 (學生/家長登入時彈出)</option>
+                                    <option value="false">🔴 停用 (關閉彈窗提醒)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">公告標題</label>
+                            <input type="text" id="annInputTitle" placeholder="輸入公告標題..." class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white transition-colors text-lg font-black text-slate-800">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">公告內容 (支援多行)</label>
+                            <textarea id="annInputContent" rows="4" placeholder="輸入公告內容..." class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white transition-colors text-sm leading-relaxed"></textarea>
+                        </div>
+                        
+                        <div class="pt-2">
+                            <button onclick="publishAnnouncement()" id="publishBtn" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 w-full md:w-auto">
+                                <i class="fas fa-paper-plane"></i> <span>確認發布全站公告</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div> 
+
+        </div> </main> <div id="detailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         </div>
-    </div>
 
     <div id="mockExamModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden transform transition-all">
-            <div class="p-6 border-b flex justify-between items-center bg-indigo-50">
-                <div>
-                    <h2 class="text-xl font-black text-indigo-900"><i class="fas fa-file-alt text-indigo-500 mr-2"></i>模擬考卷預覽</h2>
-                    <p class="text-sm text-indigo-600 mt-1 font-bold" id="mockExamMeta">讀取中...</p>
-                </div>
-                <button onclick="closeMockModal()" class="w-10 h-10 bg-indigo-200 hover:bg-indigo-300 rounded-full flex items-center justify-center transition text-indigo-700 shadow-sm"><i class="fas fa-times text-lg"></i></button>
-            </div>
-            <div id="mockExamBody" class="p-6 overflow-y-auto space-y-4 custom-scrollbar bg-slate-50/50 flex-1">
-            </div>
-            <div class="p-4 border-t border-slate-200 bg-white flex justify-end">
-                <button onclick="closeMockModal()" class="bg-slate-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-700 transition shadow-md">關閉預覽</button>
-            </div>
         </div>
-    </div>
-<div id="tab-announcement" class="tab-content hidden max-w-4xl mx-auto">
-    <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 mb-8 relative overflow-hidden">
-        <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
-        
-        <h3 class="font-black text-slate-800 mb-6 text-xl flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center shadow-inner">
-                <i class="fas fa-bullhorn"></i>
-            </div>
-            全站公告發布中心
-        </h3>
-        
-        <div class="space-y-5 relative z-10">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">公告日期</label>
-                    <input type="text" id="annInputDate" placeholder="例如：2026/03/08" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white transition-colors text-sm font-medium">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">顯示狀態</label>
-                    <select id="annInputStatus" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white transition-colors text-sm font-bold">
-                        <option value="true">🟢 啟用 (學生/家長登入時彈出)</option>
-                        <option value="false">🔴 停用 (關閉彈窗提醒)</option>
-                    </select>
-                </div>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">公告標題</label>
-                <input type="text" id="annInputTitle" placeholder="輸入震撼人心的標題..." class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white transition-colors text-lg font-black text-slate-800">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">公告內容 (支援多行)</label>
-                <textarea id="annInputContent" rows="4" placeholder="輸入你想對學生/家長說的話... (換行會自動保留)" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white transition-colors text-sm leading-relaxed"></textarea>
-            </div>
-            
-            <div class="pt-2">
-                <button onclick="publishAnnouncement()" id="publishBtn" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 w-full md:w-auto">
-                    <i class="fas fa-paper-plane"></i> <span>確認發布全站公告</span>
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-    <script>
         // ⚠️ 請確保這是你正確的 GAS 網址
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
         
