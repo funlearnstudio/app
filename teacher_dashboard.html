@@ -158,7 +158,46 @@
         </div>
     </div>
 </div>
-
+<div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 mb-8 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+            
+            <h3 class="font-black text-slate-800 mb-6 text-xl flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center shadow-inner">
+                    <i class="fas fa-bullhorn"></i>
+                </div>
+                全站公告發布中心
+            </h3>
+            
+            <div class="space-y-5 relative z-10">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">公告日期</label>
+                        <input type="text" id="annInputDate" placeholder="例如：2024/03/15" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white transition-colors text-sm font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">顯示狀態</label>
+                        <select id="annInputStatus" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white transition-colors text-sm font-bold">
+                            <option value="true">🟢 啟用 (學生/家長登入時彈出)</option>
+                            <option value="false">🔴 停用 (關閉彈窗提醒)</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">公告標題</label>
+                    <input type="text" id="annInputTitle" placeholder="輸入震撼人心的標題..." class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white transition-colors text-lg font-black text-slate-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">公告內容 (支援多行)</label>
+                    <textarea id="annInputContent" rows="4" placeholder="輸入你想對學生/家長說的話... (換行會自動保留)" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white transition-colors text-sm leading-relaxed"></textarea>
+                </div>
+                
+                <div class="pt-2">
+                    <button onclick="publishAnnouncement()" id="publishBtn" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 w-full md:w-auto">
+                        <i class="fas fa-paper-plane"></i> <span>確認發布全站公告</span>
+                    </button>
+                </div>
+            </div>
+        </div>
                         <div id="dispatchMessageSettings" class="hidden pt-2 border-t border-white/10">
                             <label class="block text-xs font-bold text-blue-200 mb-2">公告內容</label>
                             <textarea id="assignMessage" rows="3" placeholder="提醒同學記得帶圓規..." class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-white/60 focus:bg-white/30 outline-none text-sm resize-none"></textarea>
@@ -828,6 +867,65 @@ function toggleSidebar() {
         setTimeout(() => backdrop.classList.add('hidden'), 300);
     }
 }
+        // ==========================================
+        // 🌟 發布公告邏輯
+        // ==========================================
+        async function publishAnnouncement() {
+            const btn = document.getElementById('publishBtn');
+            const dateInput = document.getElementById('annInputDate').value.trim();
+            const title = document.getElementById('annInputTitle').value.trim();
+            const content = document.getElementById('annInputContent').value.trim();
+            const isActive = document.getElementById('annInputStatus').value === 'true';
+
+            // 防呆檢查
+            if (!title || !content) {
+                alert("⚠️ 標題和內容不能為空喔！");
+                return;
+            }
+
+            // 取得今天的預設日期 (如果老師沒有填的話)
+            const today = new Date();
+            const defaultDate = `${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}`;
+            const finalDate = dateInput || defaultDate;
+
+            // 按鈕進入載入狀態
+            const originalBtnHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> <span>雲端發布中...</span>`;
+
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: "update_announcement",
+                        date: finalDate,
+                        title: title,
+                        content: content,
+                        isActive: isActive
+                    })
+                });
+                
+                const resData = await response.json();
+                
+                if (resData.result === "success") {
+                    alert("✅ 公告已成功發布！\n全站使用者重新載入後即可看見最新消息。");
+                    // 發布成功後清空輸入框 (保留狀態)
+                    document.getElementById('annInputTitle').value = "";
+                    document.getElementById('annInputContent').value = "";
+                } else {
+                    alert("❌ 發布失敗：" + (resData.message || "未知錯誤"));
+                }
+            } catch (e) {
+                console.error("發布公告錯誤:", e);
+                alert("⚠️ 無法連線至伺服器，請檢查網路狀態。");
+            } finally {
+                // 恢復按鈕狀態
+                btn.disabled = false;
+                btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                btn.innerHTML = originalBtnHTML;
+            }
+        }
     </script>
 </body>
 </html>
