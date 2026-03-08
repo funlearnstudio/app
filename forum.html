@@ -216,300 +216,208 @@
 
 <script>
     // ==========================================
-// ✏️ 個人資料編輯功能
+// ✏️ 個人資料與介面功能
 // ==========================================
+
 // 手機側邊欄開關
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
-    
-    if (sidebar.classList.contains('-translate-x-full')) {
-        // 開啟
-        sidebar.classList.remove('-translate-x-full');
-        overlay.classList.remove('hidden');
-    } else {
-        // 關閉
-        sidebar.classList.add('-translate-x-full');
-        overlay.classList.add('hidden');
-    }
+    sidebar.classList.toggle('-translate-x-full');
+    overlay.classList.toggle('hidden');
 }
-// 1. 開啟編輯視窗
+
+// 開啟編輯視窗
 function openProfileModal() {
     const user = Auth.getCurrentUser();
-    if (!user) {
-        alert("請先登入！");
-        return;
-    }
-
-    // 設定下拉選單為目前的年級
+    if (!user) return alert("請先登入！");
     const select = document.getElementById('editGradeSelect');
-    if (user.grade) {
-        select.value = user.grade;
-    }
-    
-    // 顯示視窗
+    if (user.grade) select.value = user.grade;
     document.getElementById('profileModal').classList.remove('hidden');
 }
 
-// 2. 關閉編輯視窗
 function closeProfileModal() {
     document.getElementById('profileModal').classList.add('hidden');
 }
 
-// 3. 儲存修改
 function saveProfile() {
     const newGrade = document.getElementById('editGradeSelect').value;
-    
-    // 呼叫 Auth 模組更新資料庫 (這會同時更新 LocalStorage 和 mockdata)
     if (Auth.updateUser) {
         Auth.updateUser('grade', newGrade);
-        
-        // 更新畫面上的文字
         const roleEl = document.getElementById('sideUserRole');
         if (roleEl) roleEl.innerText = newGrade;
-        
-        // 提示成功
         alert(`修改成功！目前年級已更新為：${newGrade}`);
         closeProfileModal();
-        
-        // 如果是在 dashboard，可能需要重新整理頁面以套用新題庫設定
-        // location.reload(); 
-    } else {
-        console.error("Auth.updateUser 函式不存在，請檢查 auth.js");
-        alert("系統錯誤：無法儲存資料");
     }
 }
-    // 登入驗證與個人資料初始化
-    const currentUser = Auth.requireLogin();
-    if (currentUser) {
-        document.getElementById('sideUserName').textContent = currentUser.name;
-        document.getElementById('sideUserRole').textContent = currentUser.grade || "學生";
-    }
+
+// 登入初始化
+const currentUser = Auth.requireLogin();
+if (currentUser) {
+    document.getElementById('sideUserName').textContent = currentUser.name;
+    document.getElementById('sideUserRole').textContent = currentUser.grade || "學生";
+}
+
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
-    const dbKey = 'forum_posts';
 
-    function toggleForm() {
-        const form = document.getElementById('postForm');
-        form.classList.toggle('hidden');
-        if (!form.classList.contains('hidden')) document.getElementById('postTitle').focus();
-    }
+function toggleForm() {
+    const form = document.getElementById('postForm');
+    form.classList.toggle('hidden');
+    if (!form.classList.contains('hidden')) document.getElementById('postTitle').focus();
+}
 
-  
+// ==========================================
+// 📢 論壇核心邏輯 (貼文與回覆)
+// ==========================================
+
 async function loadPosts() {
     const container = document.getElementById('postList');
-    // ✨ 在抓資料前先顯示載入中
-    container.innerHTML = '<div class="text-center p-10 text-slate-400">🔍 正在搬運貼文中...</div>';
+    container.innerHTML = '<div class="text-center p-10 text-slate-400 animate-pulse">🔍 正在搬運貼文中...</div>';
 
-    const response = await fetch(`${GAS_URL}?action=get_forum_posts`);
-    const allData = await response.json();
-    
-    // 1. 分離主貼文與回覆
-    const mainPosts = allData.filter(p => !p.parentId);
-    const replies = allData.filter(p => p.parentId);
-
-    const container = document.getElementById('postList');
-    container.innerHTML = ''; // 清空列表
-
-    // 先把所有主貼文的「外殼」渲染出來
-    mainPosts.reverse().forEach(post => {
-        // 🌟 這裡呼叫 renderPost 並將結果加入 container
-        container.innerHTML += renderPost(post);
-    });
-
-    // 🌟 等到所有主貼文都在網頁上了，再跑第二次迴圈填入回覆
-    mainPosts.forEach(post => {
-        const postReplies = replies.filter(r => r.parentId == post.id);
-        const commentContainer = document.getElementById(`comments-${post.id}`);
+    try {
+        const response = await fetch(`${GAS_URL}?action=get_forum_posts`);
+        const allData = await response.json();
         
-        if (commentContainer) {
-            postReplies.forEach(reply => {
-                commentContainer.innerHTML += `
-                    <div class="bg-slate-50 p-3 rounded-xl text-xs border border-slate-100 mb-2">
-                        <span class="font-bold text-slate-700">${reply.author}：</span>
-                        <span class="text-slate-600">${reply.content}</span>
-                        <div class="text-[9px] text-slate-400 mt-1">${reply.date}</div>
-                    </div>
-                `;
-            });
-        }
-    });
-}
+        // 1. 分離主貼文與回覆
+        const mainPosts = allData.filter(p => !p.parentId);
+        const allReplies = allData.filter(p => p.parentId);
 
-// 🌟 確保你的 renderPost 函式有回傳 HTML 字串，並且包含正確的 onclick
-function renderPost(post) {
-    // 1. 先定義好安全變數 (處理 undefined)
-    const title = post.title || "無標題";
-    const content = post.content || "無內容";
-    const author = post.author || post.name || "匿名用戶"; 
-    const date = post.date || "";
-    const id = post.id || "temp_" + Date.now(); // 確保 ID 存在
+        container.innerHTML = ''; // 清空
 
-    // 2. 在 return 時使用上面定義好的變數 (去掉了 post.)
-    return `
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 mb-4">
-            <h3 class="text-lg font-bold text-slate-800">${title}</h3>
-            <p class="text-slate-600 my-2">${content}</p>
-            <div class="flex justify-between items-center text-xs text-slate-400 mb-3">
-                <span>By ${author} | ${date}</span>
-                <button onclick="showReplyInput('${id}')" class="text-blue-500 font-bold">回覆</button>
-            </div>
-            
-            <div id="reply-area-${id}" style="display:none;" class="mb-3"></div>
-            
-            <div id="comments-${id}" class="space-y-2 border-l-2 border-slate-100 pl-4"></div>
-        </div>
-    `;
-}
-    // 顯示回覆輸入框的函式
-function showReplyInput(postId) {
-  // 找到該貼文下方的回覆容器
-  const replyArea = document.getElementById(`reply-area-${postId}`);
-  if (!replyArea) return;
-
-  // 切換顯示/隱藏
-  if (replyArea.style.display === 'none' || replyArea.style.display === '') {
-    replyArea.style.display = 'block';
-    replyArea.innerHTML = `
-      <div style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
-        <textarea id="reply-text-${postId}" placeholder="請輸入回覆內容..." style="width:100%; height:60px;"></textarea>
-        <button onclick="submitReply('${postId}')" style="margin-top:5px; background-color:#28a745; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:4px;">提交回覆</button>
-      </div>
-    `;
-  } else {
-    replyArea.style.display = 'none';
-  }
-}
-
-// 提交回覆到後端的函式
-function submitReply(postId) {
-  const content = document.getElementById(`reply-text-${postId}`).value;
-  if (!content) return alert("內容不能為空");
-
-  const user = JSON.parse(localStorage.getItem('user'));
-  
-  // 呼叫你的 GAS doPost
-  fetch(googleWebAppUrl, {
-    method: 'POST',
-    body: JSON.stringify({
-      action: 'add_forum_post',
-      id: 'R' + Date.now(),
-      date: new Date().toLocaleString(),
-      username: user.username,
-      name: user.name,
-      content: content,
-      parentId: postId // 🌟 這裡會對應到你 GAS 裡的 param.parentId
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.result === 'success') {
-      alert("回覆成功！");
-      loadPosts(); // 重新載入列表
+        mainPosts.reverse().forEach(post => {
+            // 整理此貼文的真人回覆與 AI 內容
+            const userComments = allReplies.filter(r => r.parentId == post.id);
+            const html = renderPostTemplate(post, userComments);
+            container.insertAdjacentHTML('beforeend', html);
+        });
+    } catch (e) {
+        container.innerHTML = '<div class="text-red-400 p-10">讀取貼文失敗，請檢查連線。</div>';
     }
-  });
 }
-    function renderPost(post) {
-    const isAIReply = post.reply && (post.reply.author === "AI 助教" || post.reply.author === RealAITutor.name);
+
+function renderPostTemplate(post, userComments) {
+    const id = post.id;
+    const authorName = post.author || post.name || "學生";
+    // 檢查是否有 AI 回覆 (假設後端欄位叫 aiReply 或使用你原本的邏輯)
+    const hasAI = post.aiReply && post.aiReply.trim() !== "";
     
-    // --- 處理 AI 回覆區塊 ---
-    let replyHtml = '';
-    if (post.reply) {
-        const parsedContent = marked.parse(post.reply.content);
-        const replyClass = isAIReply ? 'ai-reply-card' : 'bg-slate-50 border-slate-100';
-        const replyIcon = isAIReply 
-            ? `<div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-robot"></i></div>`
-            : `<div class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs">師</div>`;
-        
-        replyHtml = `
-            <div class="mt-4 p-5 rounded-2xl border ${replyClass} flex gap-4">
-                <div class="flex-shrink-0">${replyIcon}</div>
-                <div class="flex-grow min-w-0">
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="font-bold text-sm text-slate-800">${post.reply.author}</span>
-                        ${isAIReply ? '<span class="bg-blue-100 text-blue-700 text-[9px] px-1.5 py-0.5 rounded-md font-black">Verified AI</span>' : ''}
-                    </div>
-                    <div class="text-sm text-slate-700 markdown-body">${parsedContent}</div>
+    // AI 區塊
+    const aiSection = hasAI ? `
+        <div class="mt-4 p-5 rounded-2xl border ai-reply-card flex gap-4 bg-blue-50/30">
+            <div class="flex-shrink-0">
+                <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md">
+                    <i class="fas fa-robot"></i>
                 </div>
-            </div>`;
-   } else {
-    replyHtml = `
+            </div>
+            <div class="flex-grow min-w-0">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="font-bold text-sm text-slate-800">AI 助教</span>
+                    <span class="bg-blue-100 text-blue-700 text-[9px] px-1.5 py-0.5 rounded-md font-black">Verified AI</span>
+                </div>
+                <div class="text-sm text-slate-700 markdown-body">${marked.parse(post.aiReply)}</div>
+            </div>
+        </div>` : `
         <div class="mt-4 flex items-center justify-center gap-3 text-[11px] text-blue-400 bg-blue-50/50 px-4 py-4 rounded-xl border border-blue-100 border-dashed animate-pulse-soft">
             <i class="fas fa-spinner fa-spin"></i> 
             <span class="font-bold tracking-widest">AI 助教正在思考並查閱課本知識...</span>
         </div>`;
-}
 
-    // --- 處理真人留言區塊 (巢狀回覆) ---
-    let commentsHtml = '';
-    if (post.userComments && post.userComments.length > 0) {
-        commentsHtml = post.userComments.map(comment => `
-            <div class="flex gap-3 p-3 bg-slate-50/50 rounded-2xl border border-slate-100">
-                <div class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">${comment.name[0]}</div>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold text-slate-700">${comment.name}</span>
-                        <span class="text-[9px] text-slate-400">${comment.date}</span>
-                    </div>
-                    <p class="text-xs text-slate-600 mt-1">${comment.content}</p>
+    // 真人留言
+    const commentsHtml = userComments.map(c => `
+        <div class="flex gap-3 p-3 bg-slate-50/50 rounded-2xl border border-slate-100 mb-2">
+            <div class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">${(c.author || "匿")[0]}</div>
+            <div class="flex-grow">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-700">${c.author || "匿名"}</span>
+                    <span class="text-[9px] text-slate-400">${c.date || ""}</span>
                 </div>
+                <p class="text-xs text-slate-600 mt-1">${c.content}</p>
             </div>
-        `).join('');
-    }
+        </div>
+    `).join('');
 
-    // --- 組合最終 HTML ---
-    const html = `
+    return `
     <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 mb-6 fade-in">
         <div class="flex gap-4">
-            <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold">${post.author[0]}</div>
-            <div>
-                <h3 class="font-bold text-slate-800">${post.title}</h3>
-                <p class="text-sm text-slate-500 mt-1">${post.content}</p>
+            <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg">${authorName[0]}</div>
+            <div class="flex-grow">
+                <h3 class="font-bold text-slate-800 text-lg">${post.title || "無標題"}</h3>
+                <p class="text-sm text-slate-500 mt-1 leading-relaxed">${post.content || ""}</p>
+                <div class="text-[10px] text-slate-400 mt-2">由 ${authorName} 發表於 ${post.date || ""}</div>
             </div>
         </div>
 
-        ${replyHtml}
+        ${aiSection}
 
-        <div id="comments-${post.id}" class="mt-4 ml-12 space-y-3">
+        <div id="comments-${id}" class="mt-4 ml-12 space-y-2">
             ${commentsHtml}
         </div>
 
         <div class="mt-4 ml-12 flex items-center gap-4">
-            <button onclick="showReplyInput(${post.id})" class="text-xs font-bold text-blue-500 hover:text-blue-700 transition-colors">
+            <button onclick="showReplyInput('${id}')" class="text-xs font-bold text-blue-500 hover:text-blue-700 transition-colors">
                 <i class="fas fa-reply mr-1"></i> 我要回覆
             </button>
         </div>
 
-        <div id="reply-box-${post.id}" class="hidden mt-3 ml-12">
+        <div id="reply-box-${id}" class="hidden mt-3 ml-12">
             <div class="relative">
-                <textarea id="input-${post.id}" 
-                    class="w-full p-4 pr-16 text-sm border border-slate-200 rounded-2xl bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all outline-none" 
-                    placeholder="寫下你的看法..."></textarea>
-                <button onclick="submitReply(${post.id})" 
-                    class="absolute right-2 bottom-2 bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-black">
-                    傳送
-                </button>
+                <textarea id="input-${id}" class="w-full p-4 pr-16 text-sm border border-slate-200 rounded-2xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="寫下你的看法..."></textarea>
+                <button onclick="submitReply('${id}')" class="absolute right-2 bottom-2 bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-black transition-colors">傳送</button>
             </div>
         </div>
     </div>`;
-
-    document.getElementById('postList').insertAdjacentHTML('beforeend', html);
 }
+
+function showReplyInput(postId) {
+    const box = document.getElementById(`reply-box-${postId}`);
+    if (box) box.classList.toggle('hidden');
+}
+
+async function submitReply(postId) {
+    const input = document.getElementById(`input-${postId}`);
+    const content = input.value.trim();
+    if (!content) return alert("請輸入回覆內容");
+
+    const user = Auth.getCurrentUser();
+    
+    try {
+        const response = await fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'add_forum_post',
+                id: 'R' + Date.now(),
+                username: user.username,
+                name: user.name,
+                content: content,
+                parentId: postId,
+                date: new Date().toLocaleString()
+            })
+        });
+        const data = await response.json();
+        if (data.result === 'success') {
+            input.value = '';
+            showReplyInput(postId);
+            loadPosts();
+        }
+    } catch (e) {
+        alert("回覆失敗，請檢查連線");
+    }
+}
+
 async function addPost() {
     const t = document.getElementById('postTitle').value;
     const c = document.getElementById('postContent').value;
-    if (!t.trim() || !c.trim()) return;
+    if (!t.trim() || !c.trim()) return alert("標題與內容不能為空");
 
     const user = Auth.getCurrentUser();
-    const postId = Date.now(); // 產生唯一識別碼
-    const postDate = new Date().toLocaleString();
+    const postId = Date.now();
 
-    // 🚩 1. 本地清空輸入並隱藏表單
+    toggleForm();
     document.getElementById('postTitle').value = '';
     document.getElementById('postContent').value = '';
-    if (typeof toggleForm === 'function') toggleForm();
-    
+
     try {
-        // 🚀 第一步：先把學生的提問存到試算表
+        // 1. 儲存提問
         await fetch(GAS_URL, {
             method: 'POST',
             body: JSON.stringify({
@@ -519,187 +427,117 @@ async function addPost() {
                 name: user.name,
                 title: t,
                 content: c,
-                date: postDate
+                date: new Date().toLocaleString()
             })
         });
         
-        // 立即刷新列表，這時會出現「分析中」的區塊
-        await loadPosts(); 
+        await loadPosts(); // 先秀出貼文（此時 AI 在思考）
 
-        // 🚀 第二步：呼叫 RealAITutor 拿 AI 答案
+        // 2. 呼叫 AI (RealAITutor 為你的自定義模組)
         const aiResponse = await RealAITutor.askGemini(t, c);
 
-        // 🚀 第三步：把 AI 的答案存回試算表
+        // 3. 更新 AI 回覆到試算表
         await fetch(GAS_URL, {
             method: 'POST',
             body: JSON.stringify({
                 action: "update_forum_reply",
                 id: postId,
-                replyAuthor: RealAITutor.name,
+                replyAuthor: "AI 助教",
                 replyContent: aiResponse 
             })
         });
 
-        // 再次刷新，讓 AI 答案顯示出來
-        await loadPosts();
-
+        await loadPosts(); // 更新 AI 內容
     } catch (err) {
-        console.error("發送失敗:", err);
-        alert("連線不穩定，請稍後再試。");
+        console.error(err);
     }
 }
-    //
-    // ==========================================
-    // ✨ 新增功能：偵測是否有來自「錯題本」的提問
-    // ==========================================
-    function checkForumDraft() {
-        const draft = localStorage.getItem('forum_draft');
+
+// ==========================================
+// 📢 公告系統邏輯
+// ==========================================
+
+let currentAnnVersion = null; 
+
+async function fetchAnnouncement() {
+    try {
+        const response = await fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "get_announcement" })
+        });
+        const resData = await response.json();
         
-        if (draft) {
-            try {
-                const data = JSON.parse(draft);
-                
-                // 1. 強制開啟提問視窗
-                const form = document.getElementById('postForm');
-                if (form.classList.contains('hidden')) {
-                    form.classList.remove('hidden');
-                }
+        if (resData.result === "success" && resData.data && resData.data.isActive) {
+            const ann = resData.data;
+            currentAnnVersion = ann.version; 
 
-                // 2. 自動填入資料
-                const titleInput = document.getElementById('postTitle');
-                const contentInput = document.getElementById('postContent');
-                
-                titleInput.value = data.title || "";
-                contentInput.value = data.content || "";
-                
-                // 3. 聚焦在內容框，方便學生繼續補充
-                contentInput.focus();
+            const user = Auth.getCurrentUser();
+            const storageKey = `read_ann_${user ? user.username : 'guest'}`;
+            const lastReadVersion = localStorage.getItem(storageKey);
 
-                // 4. 清除草稿 (避免下次重新整理頁面時又跳出來)
-                localStorage.removeItem('forum_draft');
-                
-            } catch (e) {
-                console.error("讀取草稿失敗", e);
+            if (lastReadVersion !== currentAnnVersion) {
+                renderAnnouncement(ann);
             }
         }
+    } catch (error) {
+        console.error("無法抓取公告:", error);
     }
+}
 
-    // ==========================================
-    // 初始加載執行
-    // ==========================================
-    loadPosts();       // 原本的加載貼文
-    checkForumDraft(); // ✨ 執行檢查草稿
-</script>
-        <div id="announcementModal" class="hidden fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
-        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300" id="announcementContent">
-            
-            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-center relative">
-                <button onclick="closeAnnouncement()" class="absolute top-4 right-4 text-white/70 hover:text-white transition-colors">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-                <div class="w-16 h-16 bg-white/20 rounded-2xl backdrop-blur-md mx-auto flex items-center justify-center mb-4 shadow-inner">
-                    <i class="fas fa-bullhorn text-3xl text-white"></i>
-                </div>
-                <h3 class="text-2xl font-black text-white tracking-widest">系統最新公告</h3>
-            </div>
+function renderAnnouncement(ann) {
+    document.getElementById('annDateDisplay').innerText = ann.date || "最新消息";
+    document.getElementById('annTitleDisplay').innerText = ann.title;
+    document.getElementById('annContentDisplay').innerHTML = ann.content.replace(/\n/g, '<br>');
+    setTimeout(showAnnouncement, 500);
+}
 
-            <div class="p-8">
-                <div class="mb-8">
-                    <span id="annDateDisplay" class="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-lg tracking-widest mb-3 border border-blue-100">
-                        </span>
-                    <h4 id="annTitleDisplay" class="text-xl font-black text-slate-800 mb-3 leading-snug">
-                        </h4>
-                    <div id="annContentDisplay" class="text-sm text-slate-500 leading-relaxed space-y-2 font-medium">
-                        </div>
-                </div>
+function showAnnouncement() {
+    const modal = document.getElementById('announcementModal');
+    const content = document.getElementById('announcementContent');
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        content.classList.remove('scale-95');
+    }, 10);
+}
 
-                <button onclick="closeAnnouncement()" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-blue-600 transition-colors shadow-lg shadow-slate-200 flex items-center justify-center gap-2">
-                    <span>我知道了，開始使用</span>
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-            </div>
-        </div>
-    </div>
+function closeAnnouncement() {
+    const modal = document.getElementById('announcementModal');
+    const content = document.getElementById('announcementContent');
+    modal.classList.add('opacity-0');
+    content.classList.add('scale-95');
+    setTimeout(() => { modal.classList.add('hidden'); }, 300);
+    
+    if (currentAnnVersion) {
+        const user = Auth.getCurrentUser();
+        localStorage.setItem(`read_ann_${user ? user.username : 'guest'}`, currentAnnVersion);
+    }
+}
 
-   <script>
-    // 🌟 全站公告邏輯：確保每個帳號在每則新公告發布時都只顯示一次
-    let currentAnnVersion = null; 
-
-    async function fetchAnnouncement() {
-        // GAS URL 檢查
-        const url = typeof GAS_URL !== 'undefined' ? GAS_URL : "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
-        
+// ==========================================
+// ✨ 檢查草稿功能
+// ==========================================
+function checkForumDraft() {
+    const draft = localStorage.getItem('forum_draft');
+    if (draft) {
         try {
-            const response = await fetch(url, {
-                method: 'POST',
-                body: JSON.stringify({ action: "get_announcement" })
-            });
-            const resData = await response.json();
-            
-            // 判斷公告是否處於「啟用」狀態
-            if (resData.result === "success" && resData.data && resData.data.isActive) {
-                const ann = resData.data;
-                currentAnnVersion = ann.version; 
-
-                // 🌟 關鍵邏輯：取得當前登入者 ID（確保不同帳號登入有獨立的已讀紀錄）
-                // 請確認你的 HTML 導覽列中有 id="teacherName" 的元素，或改用你的用戶變數
-                const currentUser = document.getElementById('teacherName')?.innerText.trim() || "guest";
-                const storageKey = `read_ann_${currentUser}`;
-                
-                // 從瀏覽器取出該使用者最後讀過的版本號
-                const lastReadVersion = localStorage.getItem(storageKey);
-
-                // 如果 版本號不一致（代表有新公告）或 從未讀過
-                if (lastReadVersion !== currentAnnVersion) {
-                    renderAnnouncement(ann);
-                }
-            }
-        } catch (error) {
-            console.error("無法抓取公告:", error);
-        }
+            const data = JSON.parse(draft);
+            const form = document.getElementById('postForm');
+            if (form.classList.contains('hidden')) form.classList.remove('hidden');
+            document.getElementById('postTitle').value = data.title || "";
+            document.getElementById('postContent').value = data.content || "";
+            document.getElementById('postContent').focus();
+            localStorage.removeItem('forum_draft');
+        } catch (e) { console.error(e); }
     }
+}
 
-    // 將資料塞入 HTML 並顯示
-    function renderAnnouncement(ann) {
-        document.getElementById('annDateDisplay').innerText = ann.date || "最新消息";
-        document.getElementById('annTitleDisplay').innerText = ann.title;
-        // 支援換行符號
-        document.getElementById('annContentDisplay').innerHTML = ann.content.replace(/\n/g, '<br>');
-        
-        // 延遲顯示，增加視覺緩衝感
-        setTimeout(showAnnouncement, 500);
-    }
-
-    function showAnnouncement() {
-        const modal = document.getElementById('announcementModal');
-        const content = document.getElementById('announcementContent');
-        modal.classList.remove('hidden');
-        // Tailwind 動畫觸發
-        setTimeout(() => {
-            modal.classList.remove('opacity-0');
-            content.classList.remove('scale-95');
-        }, 10);
-    }
-
-    function closeAnnouncement() {
-        const modal = document.getElementById('announcementModal');
-        const content = document.getElementById('announcementContent');
-        
-        modal.classList.add('opacity-0');
-        content.classList.add('scale-95');
-        
-        setTimeout(() => { 
-            modal.classList.add('hidden'); 
-        }, 300);
-        
-        // 🌟 使用者點擊「我知道了」後，立即標記該帳號已讀取此版本
-        if (currentAnnVersion) {
-            const currentUser = document.getElementById('teacherName')?.innerText.trim() || "guest";
-            localStorage.setItem(`read_ann_${currentUser}`, currentAnnVersion);
-        }
-    }
-
-    window.addEventListener('DOMContentLoaded', fetchAnnouncement);
+// 初始化執行
+window.addEventListener('DOMContentLoaded', () => {
+    loadPosts();
+    fetchAnnouncement();
+    checkForumDraft();
+});
 </script>
 </body>
 </html>
