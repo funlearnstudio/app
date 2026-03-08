@@ -807,13 +807,15 @@ window.selectAnswer = (mainIdx, optIdx, subIdx = null) => {
             const totalXP = baseXP + bonusXP;
             let isLevelUp = (window.Auth && user.username !== 'guest') ? Auth.addXP(totalXP) : false;
 
+          const urlParams = new URLSearchParams(window.location.search);
+
             const resultData = {
                 owner: user.username, 
                 id: Date.now(),
-                date: new Date().toLocaleString(),
-                subject: examInfo.subject,
-                title: examInfo.title,
-                score: finalScore,
+                // 🌟 修正：優先從 examInfo 抓，抓不到就從網址抓，最後預設 english
+                subject: (examInfo && examInfo.subject) ? examInfo.subject : (urlParams.get('subject') || "english"),
+                title: examInfo.title || urlParams.get('title') || "綜合測驗",
+                score: finalScore, 
                 correctCount,
                 totalCount,
                 wrongList,
@@ -845,15 +847,13 @@ window.selectAnswer = (mainIdx, optIdx, subIdx = null) => {
             setTimeout(() => { window.location.href = "analysis.html?mode=new"; }, 1000);
         }
 
-   async function uploadToCloud(username, activityName, score, fullData) {
-    const urlParams = new URLSearchParams(window.location.search);
-    
-    // 🌟 修正點：優先從 examInfo 抓取（這是 prepareExam 時就定好的），其次才是網址或預設
-    const currentSubject = examInfo.subject ? examInfo.subject.toLowerCase() : (urlParams.get('subject') || "english");
+ async function uploadToCloud(username, activityName, score, fullData) {
+    // 🌟 修正：不要再看網址了，直接看傳進來的資料
+    const currentSubject = (fullData.subject || "english").toLowerCase();
 
     const detailToSave = {
-        subject: currentSubject,           // 確保這一行確實存在
-        unitName: activityName,
+        subject: currentSubject,           // 這裡就是家長看板顯示科目的關鍵！
+        unitName: activityName,            
         grade: fullData.grade || "國九",
         totalCount: fullData.totalCount,
         correctCount: fullData.correctCount,
@@ -867,15 +867,13 @@ window.selectAnswer = (mainIdx, optIdx, subIdx = null) => {
         username: username,
         activity: activityName,
         score: score,
-        // 🌟 同時在最外層也傳一份 subject，讓 GAS 後端更好處理
-        subject: currentSubject, 
-        detail: JSON.stringify(detailToSave)
+        detail: JSON.stringify(detailToSave) 
     };
-    
-    // ... 後續 fetch 程式碼 ...
+
+    // 傳送到您的 GAS
     return fetch(GAS_URL, {
-        method: "POST",
-        mode: 'no-cors', 
+        method: 'POST',
+        mode: 'no-cors', // 配合您的 GAS 設定
         body: JSON.stringify(payload)
     });
 }
