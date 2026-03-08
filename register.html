@@ -6,38 +6,54 @@
     <title>註冊會員 - 雲端學院</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
     <style>
         body { background-color: #f4f6f8; font-family: 'Noto Sans TC', sans-serif; }
     </style>
 </head>
-    
-<body class="flex items-center justify-center min-h-screen">
+<body class="flex items-center justify-center min-h-screen py-8">
 
     <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
-        <div class="text-center mb-8">
-            <div class="w-12 h-12 bg-blue-600 rounded-lg text-white flex items-center justify-center font-bold text-2xl mx-auto mb-4 shadow-lg">學</div>
-            <h2 class="text-2xl font-bold text-gray-800">註冊學生帳號</h2>
-            <p class="text-sm text-gray-500 mt-2">可以自己取一個方便記得的帳號密碼，以便下次登入</p>
+        <div class="text-center mb-6">
+            <div class="w-12 h-12 bg-blue-600 rounded-lg text-white flex items-center justify-center font-bold text-2xl mx-auto mb-4 shadow-lg"><i class="fas fa-user-plus"></i></div>
+            <h2 class="text-2xl font-bold text-gray-800">建立新帳號</h2>
+            <p class="text-sm text-gray-500 mt-2">請先選擇您的身份</p>
         </div>
 
         <form id="regForm" class="space-y-5">
+            <div class="flex gap-4 mb-4">
+                <label class="flex-1 cursor-pointer">
+                    <input type="radio" name="role" value="student" class="peer sr-only" checked onchange="toggleRoleUI()">
+                    <div class="p-3 text-center rounded-xl border-2 border-gray-100 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 font-bold transition">
+                        <i class="fas fa-user-graduate mr-1"></i> 學生
+                    </div>
+                </label>
+                <label class="flex-1 cursor-pointer">
+                    <input type="radio" name="role" value="parent" class="peer sr-only" onchange="toggleRoleUI()">
+                    <div class="p-3 text-center rounded-xl border-2 border-gray-100 peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-700 font-bold transition">
+                        <i class="fas fa-user-shield mr-1"></i> 家長
+                    </div>
+                </label>
+            </div>
+
             <div>
                 <label class="block text-sm font-bold text-gray-700 mb-1">真實姓名</label>
                 <input type="text" id="name" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition" placeholder="請輸入真實姓名" required>
             </div>
+            
             <div>
-                <label class="block text-sm font-bold text-gray-700 mb-1">帳號</label>
-                <input type="text" id="username" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition" placeholder="請設定登入帳號" required>
+                <label class="block text-sm font-bold text-gray-700 mb-1">設定登入帳號</label>
+                <input type="text" id="username" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition" placeholder="請設定一組英數帳號" required>
             </div>
+            
             <div>
-                <label class="block text-sm font-bold text-gray-700 mb-1">密碼</label>
+                <label class="block text-sm font-bold text-gray-700 mb-1">設定密碼</label>
                 <input type="password" id="password" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition" placeholder="請設定密碼" required>
             </div>
-            <div>
+
+            <div id="studentFields" class="block">
                 <label class="block text-sm font-bold text-gray-700 mb-1">目前年級</label>
                 <select id="grade" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition">
-                    <option value="國七" selected>國七</option>
+                    <option value="國七">國七</option>
                     <option value="國八">國八</option>
                     <option value="國九">國九</option>
                     <option value="高一">高一</option>
@@ -46,12 +62,13 @@
                 </select>
             </div>
 
-            <div class="bg-yellow-50 text-yellow-800 text-xs p-3 rounded-lg border border-yellow-100 flex gap-2">
-                <i class="fas fa-info-circle mt-0.5"></i>
-                <span>系統將自動連結至雲端資料庫，請確保網路連線正常。</span>
+            <div id="parentFields" class="hidden">
+                <label class="block text-sm font-bold text-gray-700 mb-1 text-orange-600"><i class="fas fa-link"></i> 綁定學生帳號</label>
+                <input type="text" id="childUsername" class="w-full p-3 bg-orange-50 border border-orange-200 rounded-xl focus:outline-none focus:border-orange-500 transition" placeholder="請輸入您孩子的「登入帳號」">
+                <p class="text-xs text-gray-400 mt-1">※ 孩子必須先完成註冊，您才能進行綁定</p>
             </div>
 
-            <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200 flex justify-center items-center gap-2">
+            <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200 flex justify-center items-center gap-2 mt-4">
                 <span>立即註冊</span>
             </button>
         </form>
@@ -61,51 +78,89 @@
         </div>
     </div>
 
+    
+
     <script>
-        // ⚠️⚠️⚠️ 請將這裡換成你剛剛部署好的 Google Apps Script 網址 ⚠️⚠️⚠️
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
 
-        document.getElementById('regForm').addEventListener('submit', function(e) {
+        // 控制畫面切換：學生秀年級，家長秀綁定欄位
+        function toggleRoleUI() {
+            const role = document.querySelector('input[name="role"]:checked').value;
+            const btn = document.getElementById('submitBtn');
+            if (role === 'student') {
+                document.getElementById('studentFields').classList.remove('hidden');
+                document.getElementById('parentFields').classList.add('hidden');
+                btn.className = "w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200 flex justify-center items-center gap-2 mt-4";
+            } else {
+                document.getElementById('studentFields').classList.add('hidden');
+                document.getElementById('parentFields').classList.remove('hidden');
+                btn.className = "w-full bg-orange-500 text-white p-3 rounded-xl font-bold hover:bg-orange-600 transition shadow-lg shadow-orange-200 flex justify-center items-center gap-2 mt-4";
+            }
+        }
+
+        document.getElementById('regForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
             const submitBtn = document.getElementById('submitBtn');
             const originalBtnText = submitBtn.innerHTML;
 
-            // 1. 鎖定按鈕，避免重複發送
+            // 1. 收集資料
+            const role = document.querySelector('input[name="role"]:checked').value;
+            const name = document.getElementById('name').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            const grade = document.getElementById('grade').value;
+            const childUsername = document.getElementById('childUsername').value.trim();
+
+            // 2. 防呆驗證
+            if (!name || !username || !password) {
+                alert("❌ 請確實填寫基本資料欄位！"); return;
+            }
+            if (role === 'parent' && !childUsername) {
+                alert("❌ 家長註冊必須輸入要綁定的「孩子帳號」！"); 
+                document.getElementById('childUsername').focus();
+                return;
+            }
+
+            // 鎖定按鈕
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 資料傳送中...';
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 驗證與傳送中...';
             submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
 
-            // 2. 收集資料
             const userData = {
-                name: document.getElementById('name').value,
-                username: document.getElementById('username').value,
-                password: document.getElementById('password').value,
-                grade: document.getElementById('grade').value,
-                action: "register" // 標記這是註冊動作 (若日後要擴充功能用)
+                action: "register",
+                role: role,
+                name: name,
+                username: username,
+                password: password,
+                grade: grade, // 學生才有用
+                childUsername: childUsername // 家長才有用
             };
 
-            // 3. 發送至 Google Sheets
-            fetch(GAS_URL, {
-                method: "POST",
-                body: JSON.stringify(userData)
-            })
-            .then(response => response.json())
-            .then(data => {
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: "POST",
+                    redirect: "follow",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify(userData)
+                });
+
+                const data = await response.json();
+
                 if (data.result === "success") {
-                    alert("✅ 註冊成功！資料已寫入雲端。\n請使用新帳號登入。");
+                    alert("🎉 註冊成功！\n請使用剛剛設定的帳號登入系統。");
                     window.location.href = 'index.html';
                 } else {
-                    alert("❌ 註冊失敗：" + (data.message || "未知錯誤"));
+                    alert("❌ 註冊失敗：" + (data.message || "發生未知錯誤"));
                     resetButton();
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                // 處理 CORS 誤判 (若 Sheet 有資料但這邊報錯，通常是因為 CORS)
-                alert("⚠️ 資料已送出！若沒看到錯誤訊息，請嘗試登入。");
-                window.location.href = 'index.html';
-            });
+
+            } catch (error) {
+                console.error('Fetch Error:', error);
+                alert("⚠️ 無法連線至伺服器，請檢查網路狀態或稍後再試。");
+                resetButton();
+            }
 
             function resetButton() {
                 submitBtn.disabled = false;
