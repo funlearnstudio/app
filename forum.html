@@ -334,35 +334,35 @@ async function loadPosts() {
         container.innerHTML = '<div class="text-red-400 p-10">讀取貼文失敗，請檢查網路連線或 GAS 權限。</div>';
     }
 }
-
 function renderPostTemplate(post, userComments) {
     const id = post.id;
     const authorName = post.author || post.name || "學生";
     
-    // 🌟 對齊 GAS 新回傳的欄位 aiReply
+    // 1. 容錯處理：確保內容不會顯示 undefined
+    const displayTitle = post.title || "無標題提問";
+    const displayContent = post.content || "（無內容）";
     const aiContent = post.aiReply || ""; 
     const hasAI = aiContent.trim() !== "" && aiContent !== "undefined";
     
-    // AI 區塊邏輯
-    const aiSection = hasAI ? `
-        <div class="mt-4 p-5 rounded-2xl border ai-reply-card flex gap-4 bg-blue-50/30">
-            <div class="flex-shrink-0">
-                <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md">
-                    <i class="fas fa-robot"></i>
+    // 2. AI 區塊邏輯 (修正語法錯誤)
+    let aiSection = ""; // 使用 let 才能在下面修改內容
+    
+    if (hasAI) {
+        aiSection = `
+            <div class="mt-4 p-5 rounded-2xl border ai-reply-card flex gap-4 bg-blue-50/30">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md">
+                        <i class="fas fa-robot"></i>
+                    </div>
                 </div>
-            </div>
-            <div class="flex-grow min-w-0">
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="font-bold text-sm text-slate-800">AI 助教</span>
-                    <span class="bg-blue-100 text-blue-700 text-[9px] px-1.5 py-0.5 rounded-md font-black">Verified AI</span>
+                <div class="flex-grow min-w-0">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="font-bold text-sm text-slate-800">AI 助教</span>
+                        <span class="bg-blue-100 text-blue-700 text-[9px] px-1.5 py-0.5 rounded-md font-black">Verified AI</span>
+                    </div>
+                    <div class="text-sm text-slate-700 markdown-body">${marked.parse(aiContent)}</div>
                 </div>
-                <div class="text-sm text-slate-700 markdown-body">${marked.parse(aiContent)}</div>
-            </div>
-        </div>` : `
-        <div class="mt-4 flex items-center justify-center gap-3 text-[11px] text-blue-400 bg-blue-50/50 px-4 py-4 rounded-xl border border-blue-100 border-dashed animate-pulse-soft">
-            <i class="fas fa-spinner fa-spin"></i> 
-            <span class="font-bold tracking-widest">AI 助教正在思考並查閱課本知識...</span>
-        </div>`;
+            </div>`;
     } else {
         aiSection = `
             <div class="mt-4 flex items-center justify-center gap-3 text-[11px] text-blue-400 bg-blue-50/50 px-4 py-4 rounded-xl border border-blue-100 border-dashed animate-pulse-soft">
@@ -371,7 +371,7 @@ function renderPostTemplate(post, userComments) {
             </div>`;
     }
 
-    // --- 真人留言處理 ---
+    // 3. 真人留言處理
     const commentsHtml = userComments.map(c => {
         const cAuthor = c.author || c.name || "匿名";
         return `
@@ -387,7 +387,7 @@ function renderPostTemplate(post, userComments) {
             </div>`;
     }).join('');
 
-    // --- 最終輸出 ---
+    // 4. 最終輸出
     return `
     <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 mb-6 fade-in">
         <div class="flex gap-4">
@@ -419,7 +419,6 @@ function renderPostTemplate(post, userComments) {
         </div>
     </div>`;
 }
-
 function showReplyInput(postId) {
     const box = document.getElementById(`reply-box-${postId}`);
     if (box) box.classList.toggle('hidden');
