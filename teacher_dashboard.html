@@ -521,8 +521,8 @@ document.getElementById('assignUnit').addEventListener('change', function() {
         titleInput.value = `測驗：${this.value}`;
     }
 });
-        // UI: 切換左側選單分頁
-       function switchTab(tabId, element) {
+    // UI: 切換左側選單分頁
+function switchTab(tabId, element) {
     // 1. 隱藏所有分頁
     const tabs = document.querySelectorAll('.tab-content');
     tabs.forEach(tab => tab.classList.add('hidden'));
@@ -542,22 +542,30 @@ document.getElementById('assignUnit').addEventListener('change', function() {
     element.classList.add('active', 'bg-blue-600', 'text-white');
     element.classList.remove('text-slate-400');
 
-    // 5. 更新上方標題 (選擇性)
+    // 5. 更新上方標題
     const pageTitle = document.getElementById('pageTitle');
     const titleMap = {
         'tab-overview': '學習數據中心',
         'tab-dispatch': '智慧任務派送',
         'tab-questions': '雲端出題 & 模擬',
         'tab-students': '學生名單 & 成績',
-        'tab-announcement': '全站公告管理'
+        'tab-announcement': '全站公告管理',
+        'tab-forum': '討論區管理' // ✨ 新增這行：討論區標題
     };
     if (pageTitle && titleMap[tabId]) {
         pageTitle.innerText = titleMap[tabId];
     }
 
+    // ✨ 新增這行：當切換到討論區時，自動向後端抓取資料！
+    if (tabId === 'tab-forum') {
+        if (typeof refreshForum === 'function') {
+            refreshForum(); 
+        }
+    }
+
     // 如果在手機模式，切換後自動收起側邊欄
     if (window.innerWidth < 1024) {
-        toggleSidebar(); 
+        if (typeof toggleSidebar === 'function') toggleSidebar(); 
     }
 }
         // 處理全域快速搜尋
@@ -1322,7 +1330,74 @@ function toggleSidebar() {
             alert("網路連線異常，請稍後再試。");
         }
     }
+// 🌟 討論區管理：自動抓取與渲染
+    async function refreshForum() {
+        const forumList = document.getElementById('forumList');
+        if (!forumList) return;
+        
+        forumList.innerHTML = '<div class="text-center p-10"><i class="fas fa-spinner fa-spin text-3xl text-blue-500 mb-3"></i><p class="text-slate-500 font-bold">正在從雲端讀取討論區資料...</p></div>';
+        
+        try {
+            // 確保您的 GAS_URL 有正確設定！
+            const response = await fetch(GAS_URL + "?action=get_forum_posts");
+            const data = await response.json();
+            
+            if (!data || data.length === 0) {
+                forumList.innerHTML = '<div class="text-center p-10 bg-white rounded-2xl border border-slate-100 shadow-sm"><i class="fas fa-comments text-4xl text-slate-300 mb-3"></i><p class="text-slate-500 font-bold">目前討論區尚無任何提問資料</p></div>';
+                return;
+            }
+            
+            let html = '';
+            // 翻轉陣列，讓最新的貼文顯示在最上面
+            const posts = Array.isArray(data) ? data.reverse() : [];
 
+            posts.forEach(post => {
+                // 💡 無敵相容模式：自動尋找可能是「學生提問」與「AI回覆」的欄位
+                const questionText = post.content || post.question || post.text || '無提問內容';
+                const aiReplyText = post.aiReply || post.ai_reply || post.reply_content || (post.reply ? post.reply.content : null) || '目前尚未有 AI 或教師回覆。';
+                
+                html += `
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-4 transition-all hover:shadow-md">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-black">
+                                    ${(post.author || '生')[0]}
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-base">${post.author || '匿名學生'}</h3>
+                                    <span class="text-[10px] font-bold text-slate-400"><i class="far fa-clock mr-1"></i>${post.timestamp || post.date || '未知時間'}</span>
+                                </div>
+                            </div>
+                            <span class="text-[10px] font-black text-slate-400 border border-slate-200 px-2 py-1 rounded-md bg-slate-50 hidden md:inline-block">ID: ${post.id || 'N/A'}</span>
+                        </div>
+                        
+                        <div class="mb-5">
+                            <span class="text-[10px] font-black text-indigo-500 bg-indigo-50 border border-indigo-100 px-2 py-1 rounded uppercase tracking-widest"><i class="fas fa-question-circle mr-1"></i>學生提問</span>
+                            <p class="text-sm text-slate-700 mt-2 bg-slate-50 p-4 rounded-xl border border-slate-100 leading-relaxed whitespace-pre-wrap">${questionText}</p>
+                        </div>
+
+                        <div class="mb-5 border-l-4 border-green-500 bg-green-50 p-4 rounded-r-xl">
+                            <p class="text-[10px] font-black text-green-600 uppercase mb-2 tracking-widest">
+                                <i class="fas fa-robot mr-1"></i> 系統 / AI 解析
+                            </p>
+                            <p class="text-sm font-bold text-slate-700 whitespace-pre-wrap">${aiReplyText}</p>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <input id="admin-input-${post.id}" type="text" placeholder="以教師身分補充回覆或訂正..." class="flex-grow bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition-all font-bold text-slate-700">
+                            <button onclick="adminReply('${post.id}')" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-black hover:bg-blue-700 transition-all shadow-md flex items-center gap-2 whitespace-nowrap">
+                                <i class="fas fa-paper-plane"></i> 送出
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            forumList.innerHTML = html;
+        } catch (error) {
+            console.error("讀取討論區錯誤:", error);
+            forumList.innerHTML = '<div class="text-center p-10 text-red-500 font-bold bg-red-50 rounded-2xl border border-red-100"><i class="fas fa-exclamation-triangle text-3xl mb-3"></i><p>無法連線至資料庫，請檢查您的 GAS 網址是否正確設定。</p></div>';
+        }
+    }
 </script>
 </body>
 </html>
