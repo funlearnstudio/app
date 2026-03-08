@@ -75,8 +75,9 @@
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; // 💡 替換成你的真實 GAS 網址
         let remoteData = { records: [] };
-        const targetStudentId = "S12345"; // 💡 實際應用中可由 URL 參數取得 (?id=S12345)
-
+        // 🌟 從 localStorage 讀取剛剛登入時存起來的綁定小孩帳號
+        // 如果讀不到，才拿 S12345 當作備用的防呆測試帳號
+        const targetStudentId = localStorage.getItem('childUsername') || "S12345";
         async function fetchDashboardData() {
             try {
                 const response = await fetch(GAS_URL, {
