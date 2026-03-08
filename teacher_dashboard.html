@@ -633,11 +633,11 @@ document.getElementById('assignUnit').addEventListener('change', function() {
             }
         }
 
-    // 1. 抓取學生名單與成績
+   // 1. 抓取學生名單與成績
     async function fetchRoster() {
         try {
             const res = await fetch(`${GAS_URL}?action=get_roster`);
-            studentData = await res.json(); // ⚠️ 把過濾器拿掉，先讓所有人顯示出來
+            studentData = await res.json(); // 🎉 直接接收，因為後端已經幫忙過濾乾淨了！
             
             renderTable(studentData);
             updateDashboardStats(studentData);
@@ -651,7 +651,6 @@ document.getElementById('assignUnit').addEventListener('change', function() {
             document.getElementById('studentTableBody').innerHTML = '<tr><td colspan="6" class="p-10 text-center text-red-500 font-bold">資料讀取失敗，請確認網路狀態。</td></tr>';
         }
     }
-
         // 2. 渲染學生表格
         function renderTable(data) {
             const tbody = document.getElementById('studentTableBody');
