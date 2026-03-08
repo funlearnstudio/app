@@ -1276,14 +1276,35 @@ function toggleSidebar() {
         }
     }
 
+  // ==========================================
+    // 🌟 教師送出回覆功能
+    // ==========================================
     async function adminReply(postId) {
-        const content = document.getElementById(`admin-input-${postId}`).value.trim();
-        if (!content) return alert("⚠️ 請先輸入回覆內容！");
+        // 1. 抓取輸入框的元素和內容
+        const inputElement = document.getElementById(`admin-input-${postId}`);
+        
+        if (!inputElement) {
+            console.error("找不到對應的輸入框 ID:", `admin-input-${postId}`);
+            alert("❌ 找不到輸入框，請重新整理網頁！");
+            return;
+        }
 
-        const user = JSON.parse(localStorage.getItem('currentUser'));
+        const content = inputElement.value.trim();
+        if (!content) {
+            alert("⚠️ 老師，請先輸入回覆內容喔！");
+            return;
+        }
+
+        // 2. 抓取目前登入的老師名稱
+        const user = JSON.parse(localStorage.getItem('user'));
         const authorName = user ? user.name + " 老師" : "教師";
 
         try {
+            // 鎖定輸入框避免重複點擊
+            inputElement.disabled = true;
+            inputElement.placeholder = "傳送中...";
+
+            // 3. 發送請求給 GAS 後端
             const response = await fetch(GAS_URL, {
                 method: 'POST',
                 body: JSON.stringify({
@@ -1295,18 +1316,23 @@ function toggleSidebar() {
             });
             
             const res = await response.json();
+            
             if (res.result === "success") {
-                alert("✅ 回覆成功！");
-                refreshForum();
+                alert("✅ 回覆已成功發布！");
+                inputElement.value = ""; // 清空輸入框
+                refreshForum();          // 自動重新抓取並更新畫面
             } else {
                 alert("❌ 回覆失敗：" + res.message);
             }
         } catch (error) {
             console.error("回覆錯誤:", error);
-            alert("網路連線異常，請稍後再試。");
+            alert("連線異常，請檢查 GAS 網址或網路狀態。");
+        } finally {
+            // 恢復輸入框狀態
+            inputElement.disabled = false;
+            inputElement.placeholder = "以教師身分補充回覆或訂正...";
         }
     }
-
     async function deleteForumPost(postId) {
         if (!confirm("⚠️ 警告：確定要強制刪除這筆貼文嗎？此動作將從資料庫完全抹除，無法復原！")) {
             return;
@@ -1440,6 +1466,7 @@ posts.forEach(post => {
             forumList.innerHTML = '<div class="text-center p-10 text-red-500 font-bold bg-red-50 rounded-2xl border border-red-100"><i class="fas fa-exclamation-triangle text-3xl mb-3"></i><p>無法連線至資料庫，請檢查您的 GAS 網址是否正確設定。</p></div>';
         }
     }
+         
 </script>
 </body>
 </html>
