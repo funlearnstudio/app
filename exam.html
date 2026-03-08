@@ -849,8 +849,7 @@ window.selectAnswer = (mainIdx, optIdx, subIdx = null) => {
 
  async function uploadToCloud(username, activityName, score, fullData) {
     // 🌟 修正：不要再看網址了，直接看傳進來的資料
-    const currentSubject = (fullData.subject || "english").toLowerCase();
-
+   const currentSubject = urlParams.get('subject') || "unknown";
     const detailToSave = {
         subject: currentSubject,           // 這裡就是家長看板顯示科目的關鍵！
         unitName: activityName,            
