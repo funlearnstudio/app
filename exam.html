@@ -902,6 +902,11 @@
             score: finalScore, 
             correctCount,
             totalCount,
+                    // ✨ 重點：存入所有題目，並且要包含使用者選了什麼 (yourAns)
+            questions: questions.map((q, index) => ({
+                ...q,
+                yourAns: userAnswers[index] // 確保 userAnswers 有紀錄該題選了什麼
+            })),
             wrongList,
             tabSwitches: tabLog.length, 
             xpGained: totalXP,
