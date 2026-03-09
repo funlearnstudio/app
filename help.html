@@ -6,7 +6,7 @@
     <title>幫助中心 - 雲端學院</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
         .faq-card:hover { border-color: #3b82f6; }
@@ -20,81 +20,151 @@
                 <a href="dashboard.html" class="text-gray-400 hover:text-blue-600 transition">
                     <i class="fas fa-arrow-left text-xl"></i>
                 </a>
-                <h1 class="text-xl font-bold text-slate-800">幫助中心</h1>
+                <h1 class="text-xl font-black text-slate-800">幫助中心</h1>
             </div>
-            <div class="text-sm text-slate-500">遇到問題了嗎？</div>
+            <div class="text-sm font-bold text-slate-500">遇到問題了嗎？</div>
         </div>
     </header>
 
     <main class="max-w-4xl mx-auto px-4 py-8">
         <div class="bg-blue-600 rounded-3xl p-8 mb-10 text-center shadow-lg shadow-blue-200">
-            <h2 class="text-2xl font-bold text-white mb-4">有什麼我們可以幫您的？</h2>
+            <h2 class="text-2xl font-black text-white mb-4">有什麼我們可以幫您的？</h2>
             <div class="relative max-w-xl mx-auto">
-                <input type="text" placeholder="搜尋問題..." class="w-full py-3 px-12 rounded-full focus:outline-none shadow-inner">
+                <input type="text" placeholder="搜尋常見問題..." class="w-full py-3 px-12 rounded-full focus:outline-none shadow-inner font-bold text-slate-700">
                 <i class="fas fa-search absolute left-5 top-4 text-gray-400"></i>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
             <section>
                 <h3 class="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2">
                     <i class="fas fa-question-circle text-blue-500"></i> 常見問題
                 </h3>
-                <div class="space-y-3">
-                    <details class="group bg-white border rounded-xl overflow-hidden shadow-sm">
-                        <summary class="p-4 font-medium cursor-pointer hover:bg-slate-50 flex justify-between items-center list-none">
-                            如何查看測驗解析？
-                            <i class="fas fa-chevron-down text-xs transition-transform group-open:rotate-180"></i>
-                        </summary>
-                        <div class="p-4 border-t text-sm text-slate-600 bg-slate-50">
-                            測驗結束後，系統會自動跳轉至「診斷分析」頁面。您也可以在「課程總覽」中點擊過往的測驗紀錄查看。
-                        </div>
-                    </details>
-                    <details class="group bg-white border rounded-xl overflow-hidden shadow-sm">
-                        <summary class="p-4 font-medium cursor-pointer hover:bg-slate-50 flex justify-between items-center list-none">
-                            公式顯示不正確怎麼辦？
-                            <i class="fas fa-chevron-down text-xs transition-transform group-open:rotate-180"></i>
-                        </summary>
-                        <div class="p-4 border-t text-sm text-slate-600 bg-slate-50">
-                            請確保您的網路連線正常，並重新整理頁面。系統需要一點時間載入 MathJax 數學引擎。
-                        </div>
-                    </details>
-                </div>
+           <div class="space-y-3">
+    <details class="group bg-white border rounded-xl overflow-hidden shadow-sm">
+        <summary class="p-4 font-bold cursor-pointer hover:bg-slate-50 flex justify-between items-center list-none text-slate-700">
+            如何查看測驗解析？
+            <i class="fas fa-chevron-down text-xs transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="p-4 border-t text-sm text-slate-600 bg-slate-50 font-medium leading-relaxed">
+            測驗結束後，系統會自動跳轉至「診斷分析」頁面。您也可以在「課程總覽」中點擊過往的測驗紀錄查看詳細的逐題解析。
+        </div>
+    </details>
+
+    <details class="group bg-white border rounded-xl overflow-hidden shadow-sm">
+        <summary class="p-4 font-bold cursor-pointer hover:bg-slate-50 flex justify-between items-center list-none text-slate-700">
+            數學公式顯示不正確怎麼辦？
+            <i class="fas fa-chevron-down text-xs transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="p-4 border-t text-sm text-slate-600 bg-slate-50 font-medium leading-relaxed">
+            請確保您的網路連線正常，並重新整理頁面。系統需要一點時間載入 MathJax 數學引擎來渲染複雜的數學符號。
+        </div>
+    </details>
+
+    <details class="group bg-white border rounded-xl overflow-hidden shadow-sm">
+        <summary class="p-4 font-bold cursor-pointer hover:bg-slate-50 flex justify-between items-center list-none text-slate-700">
+            「錯題補救」裡的題目是怎麼來的？
+            <i class="fas fa-chevron-down text-xs transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="p-4 border-t text-sm text-slate-600 bg-slate-50 font-medium leading-relaxed">
+            系統會自動收集您在各項測驗中答錯的題目，並根據您的弱點概念，透過 AI 智慧推薦相似題型讓您反覆練習，直到您完全弄懂為止。
+        </div>
+    </details>
+
+    <details class="group bg-white border rounded-xl overflow-hidden shadow-sm">
+        <summary class="p-4 font-bold cursor-pointer hover:bg-slate-50 flex justify-between items-center list-none text-slate-700">
+            系統支援手機或平板操作嗎？
+            <i class="fas fa-chevron-down text-xs transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="p-4 border-t text-sm text-slate-600 bg-slate-50 font-medium leading-relaxed">
+            完全支援！本學院採用全響應式設計，無論您是使用電腦、平板還是智慧型手機，系統都會自動調整版面，提供最佳的學習與測驗體驗。
+        </div>
+    </details>
+
+    <details class="group bg-white border rounded-xl overflow-hidden shadow-sm">
+        <summary class="p-4 font-bold cursor-pointer hover:bg-slate-50 flex justify-between items-center list-none text-slate-700">
+            忘記密碼或想修改年級怎麼辦？
+            <i class="fas fa-chevron-down text-xs transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="p-4 border-t text-sm text-slate-600 bg-slate-50 font-medium leading-relaxed">
+            如需修改密碼，請點擊左側導覽列的「更改密碼」。若需要修改您的所屬年級（以獲取正確的題庫），請在左側選單點選您的姓名圖示進行「編輯年級」。
+        </div>
+    </details>
+
+    <details class="group bg-white border rounded-xl overflow-hidden shadow-sm">
+        <summary class="p-4 font-bold cursor-pointer hover:bg-slate-50 flex justify-between items-center list-none text-slate-700">
+            測驗可以中斷後下次再考嗎？
+            <i class="fas fa-chevron-down text-xs transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="p-4 border-t text-sm text-slate-600 bg-slate-50 font-medium leading-relaxed">
+            為求成績準確度與作答時間分析，建議您一次性完成測驗。若中途關閉視窗，系統可能不會保留您未送出的作答紀錄，請盡量在網路穩定的環境下進行。
+        </div>
+    </details>
+
+    <details class="group bg-white border rounded-xl overflow-hidden shadow-sm">
+        <summary class="p-4 font-bold cursor-pointer hover:bg-slate-50 flex justify-between items-center list-none text-slate-700">
+            發現題目或解答有錯該向誰反應？
+            <i class="fas fa-chevron-down text-xs transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="p-4 border-t text-sm text-slate-600 bg-slate-50 font-medium leading-relaxed">
+            請使用右側的「聯絡老師 / 回報問題」表單，將問題類型選擇為「題目內容錯誤」，並在詳細說明中註明是哪一份測驗的第幾題，我們會盡快為您核實與修正！
+        </div>
+    </details>
+</div>
             </section>
 
             <section id="contact-teacher">
                 <h3 class="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2">
                     <i class="fas fa-paper-plane text-green-500"></i> 聯絡老師 / 回報問題
                 </h3>
-                <div class="bg-white border rounded-2xl p-6 shadow-sm">
+                <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
                     <form id="helpForm" class="space-y-4">
                         <div>
-                            <label class="block text-sm font-bold text-slate-700 mb-1">問題類型</label>
-                            <select id="issueType" class="w-full p-2 bg-slate-50 border rounded-lg outline-none focus:border-blue-500">
+                            <label class="block text-sm font-black text-slate-700 mb-2">問題類型</label>
+                            <select id="issueType" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700">
                                 <option>題目內容錯誤</option>
                                 <option>系統功能異常</option>
                                 <option>學習進度問題</option>
-                                <option>其他</option>
+                                <option>其他建議</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-bold text-slate-700 mb-1">詳細說明</label>
-                            <textarea id="issueContent" rows="4" class="w-full p-2 bg-slate-50 border rounded-lg outline-none focus:border-blue-500" placeholder="請詳細描述您的問題..."></textarea>
+                            <label class="block text-sm font-black text-slate-700 mb-2">詳細說明</label>
+                            <textarea id="issueContent" rows="4" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-medium text-sm" placeholder="請詳細描述您的問題..."></textarea>
                         </div>
-                        <button type="button" onclick="sendToTeacher()" id="btnSubmit" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition flex items-center justify-center gap-2">
+                        <button type="button" onclick="sendToTeacher()" id="btnSubmit" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 shadow-lg shadow-blue-200 transition flex items-center justify-center gap-2 active:scale-95">
                             <i class="fas fa-paper-plane"></i> 傳送給老師
                         </button>
                     </form>
                 </div>
             </section>
         </div>
+
+        <section class="mt-8 border-t border-slate-200 pt-8">
+            <h3 class="font-black text-xl text-slate-800 mb-6 flex items-center gap-2">
+                <i class="fas fa-inbox text-purple-500"></i> 我的提問與回覆紀錄
+            </h3>
+            
+            <div id="requestsList" class="space-y-4">
+                <div class="text-center py-12 text-slate-400 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                    <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+                    <p class="font-bold">正在同步您的提問紀錄...</p>
+                </div>
+            </div>
+        </section>
     </main>
 
     <script src="assets/js/auth.js"></script>
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; // 填入你的 GAS Web App URL
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
 
-        function sendToTeacher() {
+        // 頁面載入時自動讀取紀錄
+        document.addEventListener('DOMContentLoaded', () => {
+            loadMyRequests();
+        });
+
+        // 1. 傳送問題給老師
+        async function sendToTeacher() {
             const user = Auth.getCurrentUser();
             if (!user) return alert("請先登入！");
 
@@ -104,33 +174,105 @@
 
             if (!content.trim()) return alert("請輸入說明內容");
 
-            // UI 狀態
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 傳送中...';
 
             const payload = {
-                action: "save_help_request", // 在 GAS 中判斷這個 action
+                action: "save_help_request",
                 username: user.username,
                 name: user.name,
                 grade: user.grade,
                 type: type,
-                content: content,
-                timestamp: new Date().toLocaleString()
+                content: content
             };
 
-            fetch(GAS_URL, {
-                method: "POST",
-                mode: "no-cors",
-                body: JSON.stringify(payload)
-            }).then(() => {
-                alert("訊息已成功傳送給老師！");
+            try {
+                await fetch(GAS_URL, {
+                    method: "POST",
+                    mode: "no-cors",
+                    body: JSON.stringify(payload)
+                });
+                alert("✅ 訊息已成功傳送給老師！");
                 document.getElementById('issueContent').value = "";
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-paper-plane"></i> 傳送給老師';
-            }).catch(err => {
+                
+                // 傳送成功後，自動重新載入紀錄列表！
+                loadMyRequests(); 
+            } catch (err) {
                 console.error(err);
                 alert("傳送失敗，請檢查網路連線");
-            });
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> 傳送給老師';
+            }
+        }
+
+        // 2. 載入並顯示學生的歷史提問與老師回覆
+        async function loadMyRequests() {
+            const user = Auth.getCurrentUser();
+            if (!user) return;
+
+            const container = document.getElementById('requestsList');
+            
+            try {
+                const res = await fetch(`${GAS_URL}?action=get_help_requests`);
+                const allData = await res.json();
+                
+                // 💡 關鍵：只過濾出目前登入學生的紀錄
+                const myData = allData.filter(d => d.username === user.username);
+                
+                if (myData.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-12 text-slate-400 bg-white rounded-3xl border border-dashed border-slate-300">
+                            <i class="fas fa-box-open text-4xl mb-3 opacity-50"></i>
+                            <p class="font-bold">您目前沒有任何提問紀錄</p>
+                        </div>`;
+                    return;
+                }
+
+                let html = '';
+                myData.forEach(item => {
+                    const isSolved = item.status === '已解決';
+                    // 根據狀態設定標籤顏色
+                    const statusColor = isSolved ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-600';
+                    const statusIcon = isSolved ? 'fa-check-circle' : 'fa-clock';
+                    
+                    // 判斷老師是否有回覆
+                    const replyHtml = item.reply 
+                        ? `<div class="mt-4 bg-blue-50 p-5 rounded-2xl border border-blue-100">
+                               <p class="text-xs font-black text-blue-600 mb-2 flex items-center gap-1">
+                                   <i class="fas fa-chalkboard-teacher text-sm"></i> 老師回覆 
+                                   <span class="text-[10px] text-blue-400 font-medium ml-1">(${item.replyTime || ''})</span>
+                               </p>
+                               <p class="text-sm text-slate-700 leading-relaxed font-bold">${item.reply.replace(/\n/g, '<br>')}</p>
+                           </div>`
+                        : `<div class="mt-4 text-xs font-bold text-slate-400 flex items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                               <i class="fas fa-hourglass-half"></i> 正在等待老師處理與回覆...
+                           </div>`;
+
+                    // 組合單筆紀錄的卡片
+                    html += `
+                    <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition group">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex items-center gap-3">
+                                <span class="px-3 py-1 text-[10px] font-black rounded-lg bg-slate-100 text-slate-600 border border-slate-200">${item.type}</span>
+                                <span class="text-xs text-slate-400 font-medium">${item.timestamp}</span>
+                            </div>
+                            <span class="px-3 py-1.5 text-[10px] font-black rounded-full flex items-center gap-1 ${statusColor}">
+                                <i class="fas ${statusIcon}"></i> ${item.status}
+                            </span>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-base leading-relaxed pl-1">${item.content.replace(/\n/g, '<br>')}</h4>
+                        ${replyHtml}
+                    </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = '<div class="text-center py-10 text-red-400 bg-white rounded-3xl border border-red-100 font-bold"><p>載入紀錄失敗，請檢查網路連線</p></div>';
+            }
         }
     </script>
 </body>
