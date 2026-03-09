@@ -10,9 +10,9 @@
         body { background-color: #f4f6f8; font-family: 'Noto Sans TC', sans-serif; }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen py-8">
+<body class="flex items-center justify-center min-h-screen py-8 relative">
 
-    <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+    <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-gray-100 relative z-10">
         <div class="text-center mb-6">
             <div class="w-12 h-12 bg-blue-600 rounded-lg text-white flex items-center justify-center font-bold text-2xl mx-auto mb-4 shadow-lg"><i class="fas fa-user-plus"></i></div>
             <h2 class="text-2xl font-bold text-gray-800">建立新帳號</h2>
@@ -73,18 +73,47 @@
             </button>
         </form>
 
-        <div class="mt-6 text-center text-sm">
-            <a href="index.html" class="text-gray-500 hover:text-blue-600 font-bold">已有帳號？返回登入</a>
+        <div class="mt-6 text-center text-sm flex justify-center items-center gap-4 divide-x divide-gray-300">
+            <a href="index.html" class="text-gray-500 hover:text-blue-600 font-bold pr-4">已有帳號？返回登入</a>
+            <button onclick="openForgotModal()" class="text-gray-500 hover:text-red-500 font-bold pl-4 transition">忘記密碼？</button>
         </div>
     </div>
 
-    
+    <div id="forgotModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden border border-slate-100 transform scale-95 transition-transform duration-300" id="forgotModalContent">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-black text-slate-800"><i class="fas fa-key text-red-500 mr-2"></i>重設密碼</h3>
+                    <button onclick="closeForgotModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times text-lg"></i></button>
+                </div>
+                <p class="text-xs text-slate-500 font-bold mb-5 leading-relaxed">請輸入您的「登入帳號」與「真實姓名」進行身分驗證，驗證成功即可設定新密碼。</p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <input type="text" id="fp-username" placeholder="請輸入登入帳號" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-red-400 font-bold text-sm">
+                    </div>
+                    <div>
+                        <input type="text" id="fp-name" placeholder="請輸入真實姓名" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-red-400 font-bold text-sm">
+                    </div>
+                    <div class="pt-2 border-t border-slate-100">
+                        <input type="password" id="fp-newpassword" placeholder="請輸入新的密碼" class="w-full p-3 bg-red-50 border border-red-200 rounded-xl focus:outline-none focus:border-red-500 font-bold text-sm">
+                    </div>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button onclick="closeForgotModal()" class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold hover:bg-slate-200 transition">取消</button>
+                    <button onclick="submitForgotPassword()" id="fp-btn" class="flex-1 bg-red-500 text-white py-3 rounded-xl font-bold hover:bg-red-600 shadow-lg shadow-red-200 transition">確認重設</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 <script>
-        // ⚠️ 請確認這是你最新部署的 Google Apps Script 網址
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
 
-        // 🌟 1. 處理身份切換的 UI 變化
+        // ==========================================
+        // 1. 註冊邏輯 (保留你原本的程式碼)
+        // ==========================================
         function toggleRoleUI() {
             const role = document.querySelector('input[name="role"]:checked').value;
             const studentFields = document.getElementById('studentFields');
@@ -93,80 +122,53 @@
             const childUsernameInput = document.getElementById('childUsername');
 
             if (role === 'parent') {
-                studentFields.classList.add('hidden');
-                studentFields.classList.remove('block');
-                parentFields.classList.add('block');
-                parentFields.classList.remove('hidden');
-                
-                // 調整必填屬性
+                studentFields.classList.add('hidden'); studentFields.classList.remove('block');
+                parentFields.classList.add('block'); parentFields.classList.remove('hidden');
                 gradeInput.removeAttribute('required');
                 childUsernameInput.setAttribute('required', 'true');
             } else {
-                studentFields.classList.add('block');
-                studentFields.classList.remove('hidden');
-                parentFields.classList.add('hidden');
-                parentFields.classList.remove('block');
-                
-                // 調整必填屬性
+                studentFields.classList.add('block'); studentFields.classList.remove('hidden');
+                parentFields.classList.add('hidden'); parentFields.classList.remove('block');
                 gradeInput.setAttribute('required', 'true');
                 childUsernameInput.removeAttribute('required');
             }
         }
 
-        // 🌟 2. 處理註冊表單送出
         document.getElementById('regForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-
             const submitBtn = document.getElementById('submitBtn');
             const originalBtnText = submitBtn.innerHTML;
-
-            // 鎖定按鈕避免重複點擊
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 註冊處理中...';
             submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
 
             const role = document.querySelector('input[name="role"]:checked').value;
-            const name = document.getElementById('name').value.trim();
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
-            
-            // 根據身份取對應的資料
-            const grade = role === 'student' ? document.getElementById('grade').value : "";
-            const childUsername = role === 'parent' ? document.getElementById('childUsername').value.trim() : "";
-
-            // 準備傳送給 GAS 的資料格式
             const registerData = {
                 action: "register",
                 role: role,
-                name: name,
-                username: username,
-                password: password,
-                grade: grade,
-                childUsername: childUsername
+                name: document.getElementById('name').value.trim(),
+                username: document.getElementById('username').value.trim(),
+                password: document.getElementById('password').value.trim(),
+                grade: role === 'student' ? document.getElementById('grade').value : "",
+                childUsername: role === 'parent' ? document.getElementById('childUsername').value.trim() : ""
             };
 
             try {
-                // 傳送資料至後端
                 const response = await fetch(GAS_URL, {
-                    method: "POST",
-                    redirect: "follow",
+                    method: "POST", redirect: "follow",
                     headers: { "Content-Type": "text/plain;charset=utf-8" },
                     body: JSON.stringify(registerData)
                 });
-
                 const data = await response.json();
-
                 if (data.result === "success") {
                     alert("🎉 註冊成功！請使用新帳號登入。");
-                    window.location.href = "index.html"; // 跳轉回登入頁
+                    window.location.href = "index.html";
                 } else {
                     alert("❌ 註冊失敗：" + (data.message || "未知錯誤"));
                     resetButton();
                 }
-
             } catch (error) {
-                console.error('Fetch Error:', error);
-                alert("⚠️ 無法連線至伺服器，請檢查網路狀態或稍後再試。");
+                alert("⚠️ 無法連線至伺服器，請檢查網路狀態。");
                 resetButton();
             }
 
@@ -177,7 +179,78 @@
             }
         });
 
-        // 頁面載入時先執行一次，確保初始狀態正確
+        // ==========================================
+        // 🌟 2. 忘記密碼邏輯 (新增)
+        // ==========================================
+        function openForgotModal() {
+            const modal = document.getElementById('forgotModal');
+            const content = document.getElementById('forgotModalContent');
+            modal.classList.remove('hidden');
+            // 小小的延遲讓動畫生效
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeForgotModal() {
+            const modal = document.getElementById('forgotModal');
+            const content = document.getElementById('forgotModalContent');
+            modal.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                // 清空輸入框
+                document.getElementById('fp-username').value = '';
+                document.getElementById('fp-name').value = '';
+                document.getElementById('fp-newpassword').value = '';
+            }, 300);
+        }
+
+        async function submitForgotPassword() {
+            const username = document.getElementById('fp-username').value.trim();
+            const name = document.getElementById('fp-name').value.trim();
+            const newPassword = document.getElementById('fp-newpassword').value.trim();
+            const btn = document.getElementById('fp-btn');
+
+            if (!username || !name || !newPassword) {
+                return alert("請完整填寫帳號、姓名與新密碼！");
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 處理中...';
+
+            const payload = {
+                action: "reset_password", // 對應後端的 action
+                username: username,
+                name: name,
+                newPassword: newPassword
+            };
+
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: "POST",
+                    redirect: "follow",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === "success") {
+                    alert("✅ 密碼已成功重設！請使用新密碼登入。");
+                    closeForgotModal();
+                } else {
+                    alert("❌ 驗證失敗：" + data.message);
+                }
+            } catch (err) {
+                alert("網路異常，請稍後再試。");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '確認重設';
+            }
+        }
+
         window.onload = toggleRoleUI;
     </script>
 </body>
