@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>幫助中心 - 雲端學院</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
+        .faq-card:hover { border-color: #3b82f6; }
+    </style>
+</head>
+<body class="min-h-screen pb-12">
+
+    <header class="bg-white border-b sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <a href="dashboard.html" class="text-gray-400 hover:text-blue-600 transition">
+                    <i class="fas fa-arrow-left text-xl"></i>
+                </a>
+                <h1 class="text-xl font-bold text-slate-800">幫助中心</h1>
+            </div>
+            <div class="text-sm text-slate-500">遇到問題了嗎？</div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-8">
+        <div class="bg-blue-600 rounded-3xl p-8 mb-10 text-center shadow-lg shadow-blue-200">
+            <h2 class="text-2xl font-bold text-white mb-4">有什麼我們可以幫您的？</h2>
+            <div class="relative max-w-xl mx-auto">
+                <input type="text" placeholder="搜尋問題..." class="w-full py-3 px-12 rounded-full focus:outline-none shadow-inner">
+                <i class="fas fa-search absolute left-5 top-4 text-gray-400"></i>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <section>
+                <h3 class="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-question-circle text-blue-500"></i> 常見問題
+                </h3>
+                <div class="space-y-3">
+                    <details class="group bg-white border rounded-xl overflow-hidden shadow-sm">
+                        <summary class="p-4 font-medium cursor-pointer hover:bg-slate-50 flex justify-between items-center list-none">
+                            如何查看測驗解析？
+                            <i class="fas fa-chevron-down text-xs transition-transform group-open:rotate-180"></i>
+                        </summary>
+                        <div class="p-4 border-t text-sm text-slate-600 bg-slate-50">
+                            測驗結束後，系統會自動跳轉至「診斷分析」頁面。您也可以在「課程總覽」中點擊過往的測驗紀錄查看。
+                        </div>
+                    </details>
+                    <details class="group bg-white border rounded-xl overflow-hidden shadow-sm">
+                        <summary class="p-4 font-medium cursor-pointer hover:bg-slate-50 flex justify-between items-center list-none">
+                            公式顯示不正確怎麼辦？
+                            <i class="fas fa-chevron-down text-xs transition-transform group-open:rotate-180"></i>
+                        </summary>
+                        <div class="p-4 border-t text-sm text-slate-600 bg-slate-50">
+                            請確保您的網路連線正常，並重新整理頁面。系統需要一點時間載入 MathJax 數學引擎。
+                        </div>
+                    </details>
+                </div>
+            </section>
+
+            <section id="contact-teacher">
+                <h3 class="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-paper-plane text-green-500"></i> 聯絡老師 / 回報問題
+                </h3>
+                <div class="bg-white border rounded-2xl p-6 shadow-sm">
+                    <form id="helpForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">問題類型</label>
+                            <select id="issueType" class="w-full p-2 bg-slate-50 border rounded-lg outline-none focus:border-blue-500">
+                                <option>題目內容錯誤</option>
+                                <option>系統功能異常</option>
+                                <option>學習進度問題</option>
+                                <option>其他</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">詳細說明</label>
+                            <textarea id="issueContent" rows="4" class="w-full p-2 bg-slate-50 border rounded-lg outline-none focus:border-blue-500" placeholder="請詳細描述您的問題..."></textarea>
+                        </div>
+                        <button type="button" onclick="sendToTeacher()" id="btnSubmit" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition flex items-center justify-center gap-2">
+                            <i class="fas fa-paper-plane"></i> 傳送給老師
+                        </button>
+                    </form>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="assets/js/auth.js"></script>
+    <script>
+        const GAS_URL = "你的教師後台GAS網址"; // 填入你的 GAS Web App URL
+
+        function sendToTeacher() {
+            const user = Auth.getCurrentUser();
+            if (!user) return alert("請先登入！");
+
+            const type = document.getElementById('issueType').value;
+            const content = document.getElementById('issueContent').value;
+            const btn = document.getElementById('btnSubmit');
+
+            if (!content.trim()) return alert("請輸入說明內容");
+
+            // UI 狀態
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 傳送中...';
+
+            const payload = {
+                action: "save_help_request", // 在 GAS 中判斷這個 action
+                username: user.username,
+                name: user.name,
+                grade: user.grade,
+                type: type,
+                content: content,
+                timestamp: new Date().toLocaleString()
+            };
+
+            fetch(GAS_URL, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify(payload)
+            }).then(() => {
+                alert("訊息已成功傳送給老師！");
+                document.getElementById('issueContent').value = "";
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> 傳送給老師';
+            }).catch(err => {
+                console.error(err);
+                alert("傳送失敗，請檢查網路連線");
+            });
+        }
+    </script>
+</body>
+</html>
