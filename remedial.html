@@ -106,23 +106,23 @@
     </aside>
 
     <main class="flex-grow flex flex-col h-full relative overflow-hidden">
-        <div class="bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 md:p-6 z-10 sticky top-0">
-            <div class="flex justify-between items-center mb-4">
-                <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
-                    <span class="w-2 h-8 bg-blue-500 rounded-full"></span>
+        <div class="bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 md:p-6 z-10 shrink-0">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                <h1 class="text-xl md:text-2xl font-bold text-gray-800 flex items-center gap-3">
+                    <span class="w-2 h-6 md:h-8 bg-blue-500 rounded-full"></span>
                     學習歷程與錯題
                 </h1>
-                <div class="flex gap-2">
+                <div class="flex gap-2 self-end md:self-auto w-full md:w-auto justify-end">
                     <button onclick="location.reload()" class="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg font-bold text-sm transition" title="重新整理與同步">
                         <i class="fas fa-sync-alt"></i>
                     </button>
-                    <a href="dashboard.html" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg font-bold transition text-sm">
+                    <a href="dashboard.html" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg font-bold transition text-sm flex items-center">
                         <i class="fas fa-arrow-left mr-2"></i>返回
                     </a>
                 </div>
             </div>
             
-            <div class="flex space-x-6 border-b border-gray-200">
+            <div class="flex space-x-6 border-b border-gray-200 overflow-x-auto whitespace-nowrap">
                 <button onclick="switchTab('history')" id="tab-history" class="pb-3 px-2 tab-active transition">
                     <i class="fas fa-list-ul mr-2"></i> 考試紀錄 (<span id="historyCount">0</span>)
                 </button>
@@ -131,7 +131,6 @@
                 </button>
             </div>
         </div>
-
         <div class="flex-grow overflow-y-auto p-4 md:p-8 scroll-smooth bg-slate-50">
             <div class="max-w-4xl mx-auto pb-10">
                 
@@ -190,124 +189,107 @@
     </div>
 </div>
     </main>
+<div id="announcementModal" class="hidden fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300" id="announcementContent">
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-center relative">
+                <button onclick="closeAnnouncement()" class="absolute top-4 right-4 text-white/70 hover:text-white transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+                <div class="w-16 h-16 bg-white/20 rounded-2xl backdrop-blur-md mx-auto flex items-center justify-center mb-4 shadow-inner">
+                    <i class="fas fa-bullhorn text-3xl text-white"></i>
+                </div>
+                <h3 class="text-2xl font-black text-white tracking-widest">系統最新公告</h3>
+            </div>
+            <div class="p-8">
+                <div class="mb-8">
+                    <span id="annDateDisplay" class="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-lg tracking-widest mb-3 border border-blue-100"></span>
+                    <h4 id="annTitleDisplay" class="text-xl font-black text-slate-800 mb-3 leading-snug"></h4>
+                    <div id="annContentDisplay" class="text-sm text-slate-500 leading-relaxed space-y-2 font-medium"></div>
+                </div>
+                <button onclick="closeAnnouncement()" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-blue-600 transition-colors shadow-lg shadow-slate-200 flex items-center justify-center gap-2">
+                    <span>我知道了，開始使用</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
 
-  <script>
+    <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
 
-      // ==========================================
-// ✏️ 個人資料編輯功能
-// ==========================================
-// 手機側邊欄開關
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    
-    if (sidebar.classList.contains('-translate-x-full')) {
-        // 開啟
-        sidebar.classList.remove('-translate-x-full');
-        overlay.classList.remove('hidden');
-    } else {
-        // 關閉
-        sidebar.classList.add('-translate-x-full');
-        overlay.classList.add('hidden');
-    }
-}
-// 1. 開啟編輯視窗
-function openProfileModal() {
-    const user = Auth.getCurrentUser();
-    if (!user) {
-        alert("請先登入！");
-        return;
-    }
-
-    // 設定下拉選單為目前的年級
-    const select = document.getElementById('editGradeSelect');
-    if (user.grade) {
-        select.value = user.grade;
-    }
-    
-    // 顯示視窗
-    document.getElementById('profileModal').classList.remove('hidden');
-}
-
-// 2. 關閉編輯視窗
-function closeProfileModal() {
-    document.getElementById('profileModal').classList.add('hidden');
-}
-
-
-async function saveProfile() {
-    const newGrade = document.getElementById('editGradeSelect').value;
-    const user = Auth.getCurrentUser();
-    if (!user) return alert("請先登入！");
-
-    const saveBtn = document.querySelector('#profileModal button[onclick="saveProfile()"]');
-    const originalBtnText = saveBtn.innerText;
-
-    // 1. 進入載入狀態
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 儲存中...';
-
-    try {
-        // 2. 發送請求給 GAS 後端
-        const response = await fetch(GAS_URL, {
-            method: 'POST',
-            body: JSON.stringify({
-                action: "update_grade", // 此 action 需與 GAS 後端對應
-                account: user.account || user.username,
-                newGrade: newGrade
-            })
-        });
-
-        const result = await response.json();
-
-        if (result.status === "success") {
-            // 3. 伺服器成功更新後，才更新本地資料
-            if (Auth.updateUser) {
-                Auth.updateUser('grade', newGrade);
+        // ==========================================
+        // 📱 UI 與個人資料編輯功能
+        // ==========================================
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
             }
-            
-            const roleEl = document.getElementById('sideUserRole');
-            if (roleEl) roleEl.innerText = newGrade;
-
-            alert(`✅ 修改成功！目前年級已更新為：${newGrade}`);
-            closeProfileModal();
-        } else {
-            alert("❌ 修改失敗：" + (result.message || "未知錯誤"));
         }
-    } catch (error) {
-        console.error("更新年級發生錯誤:", error);
-        alert("網路連線異常，請稍後再試。");
-    } finally {
-        saveBtn.disabled = false;
-        saveBtn.innerText = originalBtnText;
-    }
-}
-        // ============================================
-        // ★ 設定你的 GAS 網址 (請換成新的部署網址) ★
-        // ============================================
-      
-        // 變數宣告
+
+        function openProfileModal() {
+            const user = Auth.getCurrentUser();
+            if (!user) return alert("請先登入！");
+            const select = document.getElementById('editGradeSelect');
+            if (user.grade) select.value = user.grade;
+            document.getElementById('profileModal').classList.remove('hidden');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').classList.add('hidden');
+        }
+
+        async function saveProfile() {
+            const newGrade = document.getElementById('editGradeSelect').value;
+            const user = Auth.getCurrentUser();
+            if (!user) return alert("請先登入！");
+
+            const saveBtn = document.querySelector('#profileModal button[onclick="saveProfile()"]');
+            const originalBtnText = saveBtn.innerText;
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 儲存中...';
+
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: "update_grade", account: user.account || user.username, newGrade: newGrade })
+                });
+                const result = await response.json();
+                if (result.status === "success") {
+                    if (Auth.updateUser) Auth.updateUser('grade', newGrade);
+                    const roleEl = document.getElementById('sideUserRole');
+                    if (roleEl) roleEl.innerText = newGrade;
+                    alert(`✅ 修改成功！目前年級已更新為：${newGrade}`);
+                    closeProfileModal();
+                } else {
+                    alert("❌ 修改失敗：" + (result.message || "未知錯誤"));
+                }
+            } catch (error) {
+                console.error("更新年級發生錯誤:", error);
+                alert("網路連線異常，請稍後再試。");
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerText = originalBtnText;
+            }
+        }
+
+        // ==========================================
+        // 💾 資料處理與渲染核心 (學習歷程 & 錯題)
+        // ==========================================
         let historyDB = [];
         let wrongDB = [];
         let historyKey = "";
         let wrongKey = "";
 
         window.onload = function() {
-            init();
-        };
-
-        // 初始化系統
-        function init() {
-            // 檢查 Auth 是否載入
-            if (typeof Auth === 'undefined') {
-                console.error("Auth module missing");
-                return;
-            }
-
+            if (typeof Auth === 'undefined') return;
             const user = Auth.getCurrentUser();
             
-            // 1. 設定使用者介面
             if(user) {
                 const nameEl = document.getElementById('sideUserName');
                 const roleEl = document.getElementById('sideUserRole');
@@ -315,92 +297,63 @@ async function saveProfile() {
                 if(roleEl) roleEl.textContent = user.grade;
             }
 
-            // 2. 設定 localStorage Key
             historyKey = user ? `history_${user.username}` : `history_guest`;
             wrongKey = user ? `wrong_questions_${user.username}` : `wrong_questions_guest`;
 
-            // 3. 先讀取「本機」舊資料
             loadLocalData();
             renderAll();
+            fetchAnnouncement(); // 啟動公告檢查
 
-            // 4. 背景執行「雲端同步」 (如果已登入)
             if (user && user.username !== 'guest') {
                 syncFromCloud(user.username);
             }
-        }
-
-        // ==========================================
-        //  資料處理核心
-        // ==========================================
+        };
 
         function loadLocalData() {
-            historyDB = [];
-            wrongDB = [];
-        
-            // 1. 讀取歷史
+            historyDB = []; wrongDB = [];
             if (historyKey) {
                 try {
                     const data = JSON.parse(localStorage.getItem(historyKey));
                     if (Array.isArray(data)) historyDB = data;
                 } catch(e) { console.error(e); }
             }
-        
-            // 2. 讀取錯題
             if (wrongKey) {
                 try {
                     const data = JSON.parse(localStorage.getItem(wrongKey));
                     if (Array.isArray(data)) wrongDB = data;
                 } catch(e) { console.error(e); }
             }
-        
             sortAndFilter();
         }
 
-        // ★ 從雲端同步資料
         function syncFromCloud(username) {
             const hCount = document.getElementById('historyCount');
             const wCount = document.getElementById('wrongCount');
-            
             if(hCount) hCount.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             if(wCount) wCount.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
             fetch(`${GAS_URL}?username=${username}`)
             .then(res => res.json())
             .then(cloudData => {
-                console.log("雲端資料:", cloudData.length);
-
-                // 過濾屬於我的資料
-                const myData = cloudData.filter(item => {
-                    const owner = item.owner || item.username; 
-                    return owner === username;
-                });
-
-                // ★ 讀取「已解決錯題黑名單」
-                const resolvedKey = `resolved_${username}`;
-                const resolvedList = JSON.parse(localStorage.getItem(resolvedKey) || "[]");
-
-                // 合併歷史紀錄
+                const myData = cloudData.filter(item => (item.owner || item.username) === username);
                 const localIds = new Set(historyDB.map(item => item.id));
+                
                 myData.forEach(item => {
                     if (!localIds.has(item.id)) historyDB.push(item);
                 });
 
-                // 合併錯題資料 (加入黑名單過濾)
                 let cloudWrongQuestions = [];
                 myData.forEach(exam => {
                     if (exam.wrongList && Array.isArray(exam.wrongList)) {
-                        const activeWrongs = exam.wrongList.filter(q => !resolvedList.includes(q.question));
-                        cloudWrongQuestions = cloudWrongQuestions.concat(activeWrongs);
+                        cloudWrongQuestions = cloudWrongQuestions.concat(exam.wrongList);
                     }
                 });
 
                 wrongDB = wrongDB.concat(cloudWrongQuestions);
-                
                 sortAndFilter();
                 
                 if(historyKey) localStorage.setItem(historyKey, JSON.stringify(historyDB));
                 if(wrongKey) localStorage.setItem(wrongKey, JSON.stringify(wrongDB));
-                
                 renderAll();
             })
             .catch(err => {
@@ -410,10 +363,7 @@ async function saveProfile() {
         }
 
         function sortAndFilter() {
-            // 歷史紀錄：最新的在上面
             historyDB.sort((a, b) => b.id - a.id);
-
-            // 錯題去重
             const uniqueWrongs = [];
             const seen = new Set();
             wrongDB.forEach(q => {
@@ -424,10 +374,6 @@ async function saveProfile() {
             });
             wrongDB = uniqueWrongs;
         }
-
-        // ==========================================
-        //  UI 渲染邏輯
-        // ==========================================
 
         function renderAll() {
             renderHistory();
@@ -446,7 +392,6 @@ async function saveProfile() {
             const container = document.getElementById('historyList');
             const empty = document.getElementById('historyEmpty');
             if(!container) return;
-            
             container.innerHTML = '';
 
             if (historyDB.length === 0) {
@@ -456,16 +401,11 @@ async function saveProfile() {
             if(empty) empty.classList.add('hidden');
 
             historyDB.forEach(record => {
-                let scoreColor = "text-gray-600";
-                if (record.score >= 90) scoreColor = "text-green-600";
-                else if (record.score < 60) scoreColor = "text-red-600";
-
+                let scoreColor = record.score >= 90 ? "text-green-600" : (record.score < 60 ? "text-red-600" : "text-gray-600");
                 const html = `
                     <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition flex items-center justify-between cursor-pointer" onclick="viewResult(${record.id})">
                         <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 font-bold text-lg">
-                                ${record.score}
-                            </div>
+                            <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 font-bold text-lg">${record.score}</div>
                             <div>
                                 <h3 class="font-bold text-gray-800">${record.title}</h3>
                                 <p class="text-xs text-gray-500">${record.date || '未知日期'} • 答對 ${record.correctCount}/${record.totalCount}</p>
@@ -485,7 +425,6 @@ async function saveProfile() {
             const container = document.getElementById('wrongList');
             const empty = document.getElementById('wrongEmpty');
             if(!container) return;
-
             container.innerHTML = '';
 
             if (wrongDB.length === 0) {
@@ -509,7 +448,7 @@ async function saveProfile() {
                 const explain = (q.explanation && Array.isArray(q.explanation)) ? q.explanation.join('<br>') : (q.explanation || "無解析");
                 const safeQuestion = q.question.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                 
-                // --- ✨ 修改重點開始：加入「提問」按鈕 ---
+                // ✨ 已徹底移除「已懂」按鈕，只保留 AI 解題
                 const html = `
                     <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm group hover:border-blue-200 transition">
                         <div class="flex justify-between items-start mb-4">
@@ -517,9 +456,6 @@ async function saveProfile() {
                             <div class="flex gap-2 shrink-0">
                                 <button onclick="askInForum('${safeQuestion}')" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition flex items-center gap-1">
                                     <i class="fas fa-comment-dots"></i> AI 解題
-                                </button>
-                                <button onclick="removeQuestion('${safeQuestion}')" class="px-3 py-1.5 bg-gray-50 text-gray-400 rounded-lg text-xs font-bold hover:bg-green-50 hover:text-green-600 transition" title="標記為已懂 (移除)">
-                                    <i class="fas fa-check"></i> 已懂
                                 </button>
                             </div>
                         </div>
@@ -529,36 +465,24 @@ async function saveProfile() {
                         </div>
                     </div>
                 `;
-                // --- 修改重點結束 ---
-                
                 container.insertAdjacentHTML('beforeend', html);
             });
             if (window.MathJax) MathJax.typesetPromise();
         }
-// ✨ 跳轉到論壇並自動填寫
+
         window.askInForum = function(qText) {
-            // 找出完整的題目物件
             const targetQ = wrongDB.find(q => q.question.replace(/'/g, "\\'").replace(/"/g, '&quot;') === qText || q.question === qText);
-            
             if (targetQ) {
-                // 準備草稿資料
                 const draftPost = {
                     title: `[請教] 關於錯題：${targetQ.question.substring(0, 15)}...`,
                     content: `AI 老師您好，我在練習時做錯了這題，請幫我詳細解說觀念：\n\n**題目**：\n${targetQ.question}\n\n**我的選項**：${targetQ.options[targetQ.yourAns]}\n**正確答案**：${targetQ.options[targetQ.answer]}\n\n**我不懂的地方**：\n(請在此輸入您的疑問)`
                 };
-                
-                // 存入 LocalStorage 讓論壇頁面讀取
                 localStorage.setItem('forum_draft', JSON.stringify(draftPost));
-                
-                // 跳轉
                 window.location.href = 'forum.html';
             } else {
                 alert("發生錯誤：找不到該題目資料");
             }
         };
-        // ==========================================
-        //  互動功能
-        // ==========================================
 
         window.viewResult = function(recordId) {
             const record = historyDB.find(r => r.id === recordId);
@@ -568,32 +492,6 @@ async function saveProfile() {
             }
         };
 
-        // 移除錯題 (修正版：將 Key 的定義放進函式內)
-        window.removeQuestion = function(qText) {
-            if(!confirm("恭喜弄懂了！確定移除此題？(將不再顯示)")) return;
-            
-            // 1. 從記憶體資料庫中移除
-            wrongDB = wrongDB.filter(q => q.question !== qText);
-            
-            // 2. 更新 LocalStorage
-            if(wrongKey) localStorage.setItem(wrongKey, JSON.stringify(wrongDB));
-
-            // 3. 加入黑名單
-            const user = Auth.getCurrentUser();
-            const currentUsername = user ? user.username : 'guest';
-            const resolvedKey = `resolved_${currentUsername}`;
-            
-            let resolvedList = JSON.parse(localStorage.getItem(resolvedKey) || "[]");
-            if (!resolvedList.includes(qText)) {
-                resolvedList.push(qText);
-                localStorage.setItem(resolvedKey, JSON.stringify(resolvedList));
-            }
-            
-            renderWrong();
-            updateCounts();
-        };
-
-        // 切換分頁
         window.switchTab = function(tab) {
             const histBtn = document.getElementById('tab-history');
             const wrongBtn = document.getElementById('tab-wrong');
@@ -613,117 +511,60 @@ async function saveProfile() {
                 if (window.MathJax) MathJax.typesetPromise();
             }
         };
-    </script>
-        <div id="announcementModal" class="hidden fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
-        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300" id="announcementContent">
-            
-            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-center relative">
-                <button onclick="closeAnnouncement()" class="absolute top-4 right-4 text-white/70 hover:text-white transition-colors">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-                <div class="w-16 h-16 bg-white/20 rounded-2xl backdrop-blur-md mx-auto flex items-center justify-center mb-4 shadow-inner">
-                    <i class="fas fa-bullhorn text-3xl text-white"></i>
-                </div>
-                <h3 class="text-2xl font-black text-white tracking-widest">系統最新公告</h3>
-            </div>
 
-            <div class="p-8">
-                <div class="mb-8">
-                    <span id="annDateDisplay" class="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-lg tracking-widest mb-3 border border-blue-100">
-                        </span>
-                    <h4 id="annTitleDisplay" class="text-xl font-black text-slate-800 mb-3 leading-snug">
-                        </h4>
-                    <div id="annContentDisplay" class="text-sm text-slate-500 leading-relaxed space-y-2 font-medium">
-                        </div>
-                </div>
-
-                <button onclick="closeAnnouncement()" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-blue-600 transition-colors shadow-lg shadow-slate-200 flex items-center justify-center gap-2">
-                    <span>我知道了，開始使用</span>
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-   <script>
-    // 🌟 全站公告邏輯：確保每個帳號在每則新公告發布時都只顯示一次
-    let currentAnnVersion = null; 
-
-    async function fetchAnnouncement() {
-        // GAS URL 檢查
-        const url = typeof GAS_URL !== 'undefined' ? GAS_URL : "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
-        
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                body: JSON.stringify({ action: "get_announcement" })
-            });
-            const resData = await response.json();
-            
-            // 判斷公告是否處於「啟用」狀態
-            if (resData.result === "success" && resData.data && resData.data.isActive) {
-                const ann = resData.data;
-                currentAnnVersion = ann.version; 
-
-                // 🌟 關鍵邏輯：取得當前登入者 ID（確保不同帳號登入有獨立的已讀紀錄）
-                // 請確認你的 HTML 導覽列中有 id="teacherName" 的元素，或改用你的用戶變數
-                const currentUser = document.getElementById('teacherName')?.innerText.trim() || "guest";
-                const storageKey = `read_ann_${currentUser}`;
+        // ==========================================
+        // 📢 系統公告功能 
+        // ==========================================
+        let currentAnnVersion = null; 
+        async function fetchAnnouncement() {
+            try {
+                const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: "get_announcement" }) });
+                const resData = await response.json();
                 
-                // 從瀏覽器取出該使用者最後讀過的版本號
-                const lastReadVersion = localStorage.getItem(storageKey);
+                if (resData.result === "success" && resData.data && resData.data.isActive) {
+                    const ann = resData.data;
+                    currentAnnVersion = ann.version; 
+                    const currentUser = Auth.getCurrentUser()?.username || "guest";
+                    const storageKey = `read_ann_${currentUser}`;
+                    const lastReadVersion = localStorage.getItem(storageKey);
 
-                // 如果 版本號不一致（代表有新公告）或 從未讀過
-                if (lastReadVersion !== currentAnnVersion) {
-                    renderAnnouncement(ann);
+                    if (lastReadVersion !== currentAnnVersion) {
+                        renderAnnouncement(ann);
+                    }
                 }
+            } catch (error) { console.error("無法抓取公告:", error); }
+        }
+
+        function renderAnnouncement(ann) {
+            document.getElementById('annDateDisplay').innerText = ann.date || "最新消息";
+            document.getElementById('annTitleDisplay').innerText = ann.title;
+            document.getElementById('annContentDisplay').innerHTML = ann.content.replace(/\n/g, '<br>');
+            setTimeout(showAnnouncement, 500);
+        }
+
+        function showAnnouncement() {
+            const modal = document.getElementById('announcementModal');
+            const content = document.getElementById('announcementContent');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeAnnouncement() {
+            const modal = document.getElementById('announcementModal');
+            const content = document.getElementById('announcementContent');
+            modal.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+            
+            if (currentAnnVersion) {
+                const currentUser = Auth.getCurrentUser()?.username || "guest";
+                localStorage.setItem(`read_ann_${currentUser}`, currentAnnVersion);
             }
-        } catch (error) {
-            console.error("無法抓取公告:", error);
         }
-    }
-
-    // 將資料塞入 HTML 並顯示
-    function renderAnnouncement(ann) {
-        document.getElementById('annDateDisplay').innerText = ann.date || "最新消息";
-        document.getElementById('annTitleDisplay').innerText = ann.title;
-        // 支援換行符號
-        document.getElementById('annContentDisplay').innerHTML = ann.content.replace(/\n/g, '<br>');
-        
-        // 延遲顯示，增加視覺緩衝感
-        setTimeout(showAnnouncement, 500);
-    }
-
-    function showAnnouncement() {
-        const modal = document.getElementById('announcementModal');
-        const content = document.getElementById('announcementContent');
-        modal.classList.remove('hidden');
-        // Tailwind 動畫觸發
-        setTimeout(() => {
-            modal.classList.remove('opacity-0');
-            content.classList.remove('scale-95');
-        }, 10);
-    }
-
-    function closeAnnouncement() {
-        const modal = document.getElementById('announcementModal');
-        const content = document.getElementById('announcementContent');
-        
-        modal.classList.add('opacity-0');
-        content.classList.add('scale-95');
-        
-        setTimeout(() => { 
-            modal.classList.add('hidden'); 
-        }, 300);
-        
-        // 🌟 使用者點擊「我知道了」後，立即標記該帳號已讀取此版本
-        if (currentAnnVersion) {
-            const currentUser = document.getElementById('teacherName')?.innerText.trim() || "guest";
-            localStorage.setItem(`read_ann_${currentUser}`, currentAnnVersion);
-        }
-    }
-
-    window.addEventListener('DOMContentLoaded', fetchAnnouncement);
-</script>
+    </script>
 </body>
 </html>
+
