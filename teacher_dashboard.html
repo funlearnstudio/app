@@ -58,6 +58,13 @@
     <button onclick="switchTab('tab-forum', this)" class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
         <i class="fas fa-comments w-5"></i><span>討論區管理</span>
     </button>
+    <button onclick="switchTab('tab-help-center', this)" class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
+    <div class="relative">
+        <i class="fas fa-headset w-5"></i>
+        <span class="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full border border-slate-900 animate-pulse"></span>
+    </div>
+    <span>幫助中心管理</span>
+</button>
 </nav>
 
     <div class="p-6 border-t border-slate-800">
@@ -180,7 +187,52 @@
                     </button>
                 </div>
             </div>
+<div id="tab-help-center" class="tab-content hidden space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center space-x-4 border-l-4 border-l-orange-500">
+            <div class="w-12 h-12 bg-orange-50 text-orange-500 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-envelope-open-text"></i></div>
+            <div><p class="text-slate-400 text-xs font-bold uppercase">待處理問題</p><h2 class="text-2xl font-black text-slate-800" id="stat-help-pending">--</h2></div>
+        </div>
+        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center space-x-4">
+            <div class="w-12 h-12 bg-green-50 text-green-500 rounded-2xl flex items-center justify-center text-xl"><i class="fas fa-check-double"></i></div>
+            <div><p class="text-slate-400 text-xs font-bold uppercase">今日已解決</p><h2 class="text-2xl font-black text-slate-800" id="stat-help-solved">--</h2></div>
+        </div>
+        <button onclick="fetchHelpRequests()" class="bg-slate-800 text-white rounded-3xl font-bold hover:bg-slate-900 transition flex items-center justify-center gap-2 shadow-lg">
+            <i class="fas fa-sync-alt"></i> 重新整理
+        </button>
+    </div>
 
+    <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <h3 class="font-bold text-slate-800 text-lg"><i class="fas fa-list text-orange-500 mr-2"></i> 學生提報清單</h3>
+            <select id="helpFilter" class="text-xs font-bold border rounded-xl px-4 py-2 bg-white outline-none focus:ring-2 focus:ring-orange-200">
+                <option value="all">顯示全部類型</option>
+                <option value="題目內容錯誤">題目內容錯誤</option>
+                <option value="系統功能異常">系統功能異常</option>
+                <option value="其他建議">其他建議</option>
+            </select>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+               <thead class="bg-slate-50 text-slate-400 text-[10px] uppercase font-bold tracking-widest border-b border-slate-100">
+    <tr>
+        <th class="px-8 py-4 text-center">狀態</th>
+        <th class="px-8 py-4">學生 / 時間</th>
+        <th class="px-8 py-4">提報類型</th>
+        <th class="px-8 py-4 w-1/4">問題內容</th>
+        <th class="px-8 py-4">老師回覆</th> <th class="px-8 py-4 text-right">操作</th>
+    </tr>
+</thead>
+<tbody id="helpTableBody" class="divide-y divide-slate-50 text-sm">
+    </tbody>
+            </table>
+        </div>
+        <div id="helpLoading" class="p-20 text-center text-slate-300 hidden">
+            <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
+            <p class="text-sm font-bold">正在同步雲端資料...</p>
+        </div>
+    </div>
+</div>
           <div id="tab-questions" class="tab-content hidden max-w-4xl mx-auto space-y-6">
                 <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
                     <h2 class="text-2xl font-black text-slate-800 mb-2 flex items-center"><i class="fas fa-cloud-upload-alt text-purple-500 mr-3"></i> 建立自訂雲端題庫</h2>
@@ -381,7 +433,9 @@
                 </div>
                 <div id="forumList" class="space-y-4">
                     </div>
-            </div> <div id="tab-announcement" class="tab-content hidden">
+            </div> 
+        
+        <div id="tab-announcement" class="tab-content hidden">
                 <div class="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 mb-8 relative overflow-hidden">
                     <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
                     
@@ -550,7 +604,8 @@ function switchTab(tabId, element) {
         'tab-questions': '雲端出題 & 模擬',
         'tab-students': '學生名單 & 成績',
         'tab-announcement': '全站公告管理',
-        'tab-forum': '討論區管理' // ✨ 新增這行：討論區標題
+        'tab-forum': '討論區管理' ,// ✨ 新增這行：討論區標題
+        'tab-help-center': '幫助中心管理' // 新增這行
     };
     if (pageTitle && titleMap[tabId]) {
         pageTitle.innerText = titleMap[tabId];
@@ -566,7 +621,11 @@ function switchTab(tabId, element) {
     // 如果在手機模式，切換後自動收起側邊欄
     if (window.innerWidth < 1024) {
         if (typeof toggleSidebar === 'function') toggleSidebar(); 
+        
     }
+         if (tabId === 'tab-help-center') {
+    fetchHelpRequests();
+}
 }
         // 處理全域快速搜尋
         function handleQuickSearch(e) {
@@ -1448,7 +1507,117 @@ function toggleSidebar() {
             forumList.innerHTML = '<div class="text-center p-10 text-red-500 font-bold bg-red-50 rounded-2xl border border-red-100"><i class="fas fa-exclamation-triangle text-3xl mb-3"></i><p>無法連線至資料庫，請檢查您的 GAS 網址是否正確設定。</p></div>';
         }
     }
-         
+         // 3. 幫助中心專用函數
+async function fetchHelpRequests() {
+    const tableBody = document.getElementById('helpTableBody');
+    const loading = document.getElementById('helpLoading');
+    
+    tableBody.innerHTML = '';
+    loading.classList.remove('hidden');
+
+    try {
+        const response = await fetch(`${GAS_URL}?action=get_help_requests`);
+        const data = await response.json();
+        
+        // 更新統計數字
+        document.getElementById('stat-help-pending').innerText = data.filter(d => d.status === '待處理').length;
+        document.getElementById('stat-help-solved').innerText = data.filter(d => d.status === '已解決').length;
+
+        data.forEach((item, index) => {
+            const statusColor = item.status === '待處理' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600';
+            tableBody.innerHTML += `
+                <tr class="hover:bg-slate-50 transition group">
+                    <td class="px-8 py-5 text-center">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-black ${statusColor}">${item.status}</span>
+                    </td>
+                    <td class="px-8 py-5">
+                        <p class="font-black text-slate-700">${item.name}</p>
+                        <p class="text-[10px] text-slate-400 font-medium">${item.timestamp}</p>
+                    </td>
+                    <td class="px-8 py-5">
+                        <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">${item.type}</span>
+                    </td>
+                    <td class="px-8 py-5">
+                        <p class="text-slate-600 leading-relaxed truncate max-w-xs font-medium">${item.content}</p>
+                    </td>
+                    <td class="px-8 py-5 text-right">
+                        <button onclick="updateHelpStatus('${item.id}', '已解決')" class="text-blue-600 hover:text-blue-800 font-black text-xs transition active:scale-95">標記為解決</button>
+                    </td>
+                </tr>
+            `;
+        });
+    } catch (e) {
+        console.error("載入幫助中心失敗", e);
+        tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-10 text-slate-400">目前尚無待處理的學生回報。</td></tr>';
+    } finally {
+        loading.classList.add('hidden');
+    }
+}
+         function openReplyModal(id, name) {
+    document.getElementById('currentReplyId').value = id;
+    document.getElementById('replyToName').innerText = `對象：${name}`;
+    document.getElementById('replyModal').classList.remove('hidden');
+    document.getElementById('replyTextarea').value = '';
+}
+
+function closeReplyModal() {
+    document.getElementById('replyModal').classList.add('hidden');
+}
+
+async function submitReply() {
+    const id = document.getElementById('currentReplyId').value;
+    const content = document.getElementById('replyTextarea').value;
+    
+    if (!content.trim()) return alert("請輸入回覆內容");
+
+    // UI 狀態
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 傳送中...';
+
+    try {
+        const response = await fetch(GAS_URL, {
+            method: "POST",
+            mode: "no-cors",
+            body: JSON.stringify({
+                action: "reply_help_request",
+                id: id,
+                reply: content,
+                status: "已解決"
+            })
+        });
+
+        alert("已成功回覆並將該問題標記為已解決！");
+        closeReplyModal();
+        fetchHelpRequests(); // 重新整理列表
+    } catch (e) {
+        alert("傳送失敗，請確認網路連線");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '確認送出';
+    }
+}
 </script>
+    <div id="replyModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100">
+        <div class="p-8">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h3 class="text-xl font-black text-slate-800">回覆學生訊息</h3>
+                    <p id="replyToName" class="text-sm text-slate-400 font-bold mt-1">對象：張小明</p>
+                </div>
+                <button onclick="closeReplyModal()" class="text-slate-300 hover:text-slate-500"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            
+            <input type="hidden" id="currentReplyId">
+            <textarea id="replyTextarea" rows="4" class="w-full bg-slate-50 border border-slate-200 rounded-3xl p-5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold" placeholder="輸入您的回覆或指導建議..."></textarea>
+            
+            <div class="grid grid-cols-2 gap-4 mt-8">
+                <button onclick="closeReplyModal()" class="py-4 rounded-2xl font-black text-slate-400 hover:bg-slate-50 transition">取消</button>
+                <button onclick="submitReply()" class="py-4 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 shadow-lg shadow-blue-200 transition active:scale-95">確認送出</button>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
