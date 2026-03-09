@@ -1597,6 +1597,50 @@ async function submitReply() {
         btn.innerHTML = '確認送出';
     }
 }
+         function openReplyModal(id, name) {
+    document.getElementById('currentReplyId').value = id;
+    document.getElementById('replyToName').innerText = `對象：${name}`;
+    document.getElementById('replyModal').classList.remove('hidden');
+    document.getElementById('replyTextarea').value = '';
+}
+
+function closeReplyModal() {
+    document.getElementById('replyModal').classList.add('hidden');
+}
+
+async function submitReply() {
+    const id = document.getElementById('currentReplyId').value;
+    const content = document.getElementById('replyTextarea').value;
+    
+    if (!content.trim()) return alert("請輸入回覆內容");
+
+    // UI 狀態
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 傳送中...';
+
+    try {
+        const response = await fetch(GAS_URL, {
+            method: "POST",
+            mode: "no-cors",
+            body: JSON.stringify({
+                action: "reply_help_request",
+                id: id,
+                reply: content,
+                status: "已解決"
+            })
+        });
+
+        alert("已成功回覆並將該問題標記為已解決！");
+        closeReplyModal();
+        fetchHelpRequests(); // 重新整理列表
+    } catch (e) {
+        alert("傳送失敗，請確認網路連線");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '確認送出';
+    }
+}
 </script>
     <div id="replyModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100">
