@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
     <title>教師管理中心 - 雲端學院</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -23,7 +22,6 @@
 <div id="sidebarBackdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 hidden lg:hidden transition-opacity duration-300 opacity-0"></div>
 
 <aside id="mobileSidebar" class="w-64 bg-slate-900 text-white flex flex-col fixed inset-y-0 left-0 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out lg:sticky lg:top-0 lg:translate-x-0 lg:flex lg:h-screen shadow-xl shrink-0">
-    
     <div class="p-6 flex items-center justify-between">
         <div class="flex items-center space-x-3">
             <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/50">
@@ -35,117 +33,227 @@
             <i class="fas fa-times"></i>
         </button>
     </div>
-<nav class="flex-1 px-4 space-y-2 mt-4" id="sidebarNav">
-    <button onclick="switchTab('tab-overview', this)" class="nav-item active w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
-        <i class="fas fa-th-large w-5"></i><span>數據總覽</span>
-    </button>
-    
-    <button onclick="switchTab('tab-announcement', this)" class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
-        <i class="fas fa-bullhorn w-5"></i><span>全站公告管理</span>
-    </button>
-    
-    <button onclick="switchTab('tab-dispatch', this)" class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
-        <i class="fas fa-paper-plane w-5"></i><span>派送任務</span>
-    </button>
-    
-    <button onclick="switchTab('tab-questions', this)" class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
-        <i class="fas fa-pen-nib w-5"></i><span>雲端出題 & 模擬</span>
-    </button>
-    
-    <button id="btn-tab-students" onclick="switchTab('tab-students', this)" class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
-        <i class="fas fa-users w-5"></i><span>學生名單 & 成績</span>
-    </button>
-
-    <button onclick="switchTab('tab-forum', this)" class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
-        <i class="fas fa-comments w-5"></i><span>討論區管理</span>
-    </button>
-    <button onclick="switchTab('tab-help-center', this)" class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
-    <div class="relative">
-        <i class="fas fa-headset w-5"></i>
-        <span class="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full border border-slate-900 animate-pulse"></span>
-    </div>
-    <span>幫助中心管理</span>
-</button>
-</nav>
-
+    <nav class="flex-1 px-4 space-y-2 mt-4" id="sidebarNav">
+        <button onclick="switchTab('tab-overview', this)" class="nav-item active w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
+            <i class="fas fa-th-large w-5"></i><span>數據總覽</span>
+        </button>
+        <button onclick="switchTab('tab-announcement', this)" class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
+            <i class="fas fa-bullhorn w-5"></i><span>全站公告管理</span>
+        </button>
+        <button onclick="switchTab('tab-dispatch', this)" class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
+            <i class="fas fa-paper-plane w-5"></i><span>派送任務</span>
+        </button>
+        <button onclick="switchTab('tab-questions', this)" class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
+            <i class="fas fa-pen-nib w-5"></i><span>雲端出題 & 模擬</span>
+        </button>
+        <button id="btn-tab-students" onclick="switchTab('tab-students', this)" class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
+            <i class="fas fa-users w-5"></i><span>學生名單 & 成績</span>
+        </button>
+        <button onclick="switchTab('tab-forum', this)" class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
+            <i class="fas fa-comments w-5"></i><span>討論區管理</span>
+        </button>
+        <button onclick="switchTab('tab-help-center', this)" class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl transition text-slate-400 hover:bg-slate-800 hover:text-white">
+            <div class="relative">
+                <i class="fas fa-headset w-5"></i>
+                <span class="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full border border-slate-900 animate-pulse"></span>
+            </div>
+            <span>幫助中心管理</span>
+        </button>
+    </nav>
     <div class="p-6 border-t border-slate-800">
         <button onclick="logout()" class="flex items-center space-x-3 text-red-400 hover:text-red-300 transition w-full">
             <i class="fas fa-sign-out-alt"></i><span>登出系統</span>
         </button>
     </div>
 </aside>
-    <main class="flex-1 overflow-y-auto bg-slate-50 flex justify-center p-6 md:p-10">
-    <div class="w-full max-w-6xl">
-            
-       <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-10 gap-4">
-    
-    <div class="flex items-center gap-3 w-full md:w-auto">
-        
-        <button onclick="toggleSidebar()" class="lg:hidden w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-200 flex items-center justify-center text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition active:scale-95 flex-shrink-0">
-            <i class="fas fa-bars text-lg"></i>
-        </button>
-        
-        <div class="min-w-0 flex-1">
-            <h1 class="text-2xl md:text-3xl font-black text-slate-800 truncate" id="pageTitle">學習數據中心</h1>
-            <p class="text-sm md:text-base text-slate-500 font-medium mt-1 truncate">歡迎回來，<span id="teacherName" class="text-blue-600 font-bold">老師</span></p>
-        </div>
-    </div>
-        
-    <div class="relative w-full md:w-80 flex-shrink-0">
-        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <i class="fas fa-search text-slate-400"></i>
-        </div>
-        <input type="text" id="quickSearchInput" onkeypress="handleQuickSearch(event)" placeholder="快速尋找同學..." class="w-full pl-10 pr-14 py-2.5 md:py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition">
-        <button onclick="executeQuickSearch()" class="absolute inset-y-0 right-0 pr-4 flex items-center text-blue-500 hover:text-blue-700 font-bold text-sm">
-            尋找
-        </button>
-    </div>
-    
-</header>
 
-            <div id="tab-overview" class="tab-content">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center space-x-4">
-                        <div class="w-14 h-14 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center text-2xl"><i class="fas fa-user-graduate"></i></div>
-                        <div><p class="text-slate-400 text-xs font-bold uppercase">全班總人數</p><h2 class="text-2xl font-black text-slate-800" id="stat-total">--</h2></div>
-                    </div>
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center space-x-4">
-                        <div class="w-14 h-14 bg-green-50 text-green-500 rounded-2xl flex items-center justify-center text-2xl"><i class="fas fa-chart-line"></i></div>
-                        <div><p class="text-slate-400 text-xs font-bold uppercase">班級平均分數</p><h2 class="text-2xl font-black text-slate-800" id="stat-avg">--</h2></div>
-                    </div>
-                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center space-x-4">
-                        <div class="w-14 h-14 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center text-2xl"><i class="fas fa-exclamation-circle"></i></div>
-                        <div><p class="text-slate-400 text-xs font-bold uppercase">待關注學生 (<60分)</p><h2 class="text-2xl font-black text-slate-800" id="stat-alert">--</h2></div>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 max-w-2xl flex flex-col">
-                    <h3 class="font-bold text-slate-800 mb-6 flex items-center"><i class="fas fa-chart-pie mr-2 text-blue-500"></i> 成績分佈比例</h3>
-                    <div class="flex-1 relative min-h-[250px]"><canvas id="scoreChart"></canvas></div>
+<main class="flex-1 overflow-y-auto bg-slate-50 flex justify-center p-6 md:p-10">
+    <div class="w-full max-w-6xl">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-10 gap-4">
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <button onclick="toggleSidebar()" class="lg:hidden w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-200 flex items-center justify-center text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition active:scale-95 flex-shrink-0">
+                    <i class="fas fa-bars text-lg"></i>
+                </button>
+                <div class="min-w-0 flex-1">
+                    <h1 class="text-2xl md:text-3xl font-black text-slate-800 truncate" id="pageTitle">學習數據中心</h1>
+                    <p class="text-sm md:text-base text-slate-500 font-medium mt-1 truncate">歡迎回來，<span id="teacherName" class="text-blue-600 font-bold">老師</span></p>
                 </div>
             </div>
+            <div class="relative w-full md:w-80 flex-shrink-0">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fas fa-search text-slate-400"></i>
+                </div>
+                <input type="text" id="quickSearchInput" onkeypress="handleQuickSearch(event)" placeholder="快速尋找同學..." class="w-full pl-10 pr-14 py-2.5 md:py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition">
+                <button onclick="executeQuickSearch()" class="absolute inset-y-0 right-0 pr-4 flex items-center text-blue-500 hover:text-blue-700 font-bold text-sm">
+                    尋找
+                </button>
+            </div>
+        </header>
 
-            <div id="tab-dispatch" class="tab-content hidden max-w-4xl mx-auto">
-                <div class="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 rounded-3xl shadow-lg text-white">
-                    <h2 class="text-2xl font-black mb-2 flex items-center"><i class="fas fa-rocket mr-3"></i> 智慧任務派送</h2>
-                    <p class="text-blue-100 mb-6 text-sm">指定特定學生或全班，發送測驗卷或是文字公告。</p>
-                    
-                    <div class="bg-white/10 p-6 rounded-2xl border border-white/20 mb-6">
-                        <div class="grid grid-cols-2 gap-4 mb-4">
+        <div id="tab-overview" class="tab-content">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                    <div class="w-14 h-14 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center text-2xl"><i class="fas fa-user-graduate"></i></div>
+                    <div><p class="text-slate-400 text-xs font-bold uppercase">全班總人數</p><h2 class="text-2xl font-black text-slate-800" id="stat-total">--</h2></div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                    <div class="w-14 h-14 bg-green-50 text-green-500 rounded-2xl flex items-center justify-center text-2xl"><i class="fas fa-chart-line"></i></div>
+                    <div><p class="text-slate-400 text-xs font-bold uppercase">班級平均分數</p><h2 class="text-2xl font-black text-slate-800" id="stat-avg">--</h2></div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                    <div class="w-14 h-14 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center text-2xl"><i class="fas fa-exclamation-circle"></i></div>
+                    <div><p class="text-slate-400 text-xs font-bold uppercase">待關注學生 (<60分)</p><h2 class="text-2xl font-black text-slate-800" id="stat-alert">--</h2></div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 max-w-2xl flex flex-col">
+                <h3 class="font-bold text-slate-800 mb-6 flex items-center"><i class="fas fa-chart-pie mr-2 text-blue-500"></i> 成績分佈比例</h3>
+                <div class="flex-1 relative min-h-[250px]"><canvas id="scoreChart"></canvas></div>
+            </div>
+        </div>
+
+        <div id="tab-dispatch" class="tab-content hidden max-w-4xl mx-auto">
+            <div class="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 rounded-3xl shadow-lg text-white">
+                <h2 class="text-2xl font-black mb-2 flex items-center"><i class="fas fa-rocket mr-3"></i> 智慧任務派送</h2>
+                <p class="text-blue-100 mb-6 text-sm">指定特定學生或全班，發送測驗卷或是文字公告。</p>
+                <div class="bg-white/10 p-6 rounded-2xl border border-white/20 mb-6">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs font-bold text-blue-200 mb-2">派送對象</label>
+                            <select id="dispatchTarget" class="w-full bg-white text-slate-800 rounded-xl px-4 py-3 outline-none text-sm font-bold shadow-sm">
+                                <option value="all">📢 全班廣播 (所有人)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-blue-200 mb-2">任務類型</label>
+                            <select id="dispatchType" onchange="toggleDispatchType()" class="w-full bg-white text-slate-800 rounded-xl px-4 py-3 outline-none text-sm font-bold shadow-sm">
+                                <option value="exam">📝 測驗卷</option>
+                                <option value="message">💬 文字公告</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="dispatchExamSettings" class="space-y-4 pt-2 border-t border-white/10">
+                        <div>
+                            <label class="block text-xs font-bold text-blue-200 mb-2">測驗標題</label>
+                            <input type="text" id="assignTitle" placeholder="例: 週末地科特訓" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-white/60 focus:bg-white/30 outline-none text-sm">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-bold text-blue-200 mb-2">派送對象</label>
-                                <select id="dispatchTarget" class="w-full bg-white text-slate-800 rounded-xl px-4 py-3 outline-none text-sm font-bold shadow-sm">
-                                    <option value="all">📢 全班廣播 (所有人)</option>
+                                <label class="block text-xs font-bold text-blue-200 mb-2">科目</label>
+                                <select id="assignSubject" onchange="updateUnitDropdown()" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white outline-none text-sm">
+                                    <option value="">請選擇科目</option>
+                                    <option value="chinese">國文</option>
+                                    <option value="math">數學</option>
+                                    <option value="english">英文</option>
+                                    <option value="biology">生物</option>
+                                    <option value="physics">理化(物理)</option>
+                                    <option value="chemistry">理化(化學)</option>
+                                    <option value="earth_science">地球科學</option>
+                                    <option value="history">歷史</option>
+                                    <option value="geography">地理</option>
+                                    <option value="civics">公民</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-blue-200 mb-2">任務類型</label>
-                                <select id="dispatchType" onchange="toggleDispatchType()" class="w-full bg-white text-slate-800 rounded-xl px-4 py-3 outline-none text-sm font-bold shadow-sm">
-                                    <option value="exam">📝 測驗卷</option>
-                                    <option value="message">💬 文字公告</option>
+                                <label class="block text-xs font-bold text-blue-200 mb-2">選擇單元 (連動)</label>
+                                <select id="assignUnit" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white outline-none text-sm">
+                                    <option value="">-- 請先選擇科目 --</option>
                                 </select>
+                                <input type="hidden" id="assignTags">
                             </div>
                         </div>
-<div id="dispatchExamSettings" class="space-y-4 pt-2 border-t border-white/10">
+                    </div>
+                    <div id="dispatchMessageSettings" class="hidden pt-2 border-t border-white/10">
+                        <label class="block text-xs font-bold text-blue-200 mb-2">公告內容</label>
+                        <textarea id="assignMessage" rows="3" placeholder="提醒同學記得帶圓規..." class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-white/60 focus:bg-white/30 outline-none text-sm resize-none"></textarea>
+                    </div>
+                </div>
+                <button onclick="sendDispatch(this)" class="w-full bg-yellow-400 text-blue-900 font-black py-4 rounded-xl shadow-lg hover:bg-yellow-300 transition text-lg">
+                    <i class="fas fa-paper-plane mr-2"></i> 立即發布任務
+                </button>
+            </div>
+        </div>
+
+        <div id="tab-questions" class="tab-content hidden max-w-4xl mx-auto space-y-6">
+            <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                <h2 class="text-2xl font-black text-slate-800 mb-2 flex items-center"><i class="fas fa-cloud-upload-alt text-purple-500 mr-3"></i> 建立自訂雲端題庫</h2>
+                <p class="text-slate-400 text-sm mb-6 border-b pb-4">透過結構化的單元與章節分類，讓未來的組卷與派題更加精準。</p>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5 bg-purple-50 p-4 rounded-2xl border border-purple-100">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-2">1. 科目</label>
+                        <select id="qSubject" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-700 outline-none focus:ring-2 focus:ring-purple-400 font-bold shadow-sm">
+                            <option value="chinese">國文</option>
+                            <option value="math">數學</option>
+                            <option value="english">英文</option>
+                            <option value="biology">生物</option>
+                            <option value="physics">理化(物理)</option>
+                            <option value="chemistry">理化(化學)</option>
+                            <option value="earth_science">地球科學</option>
+                            <option value="history">歷史</option>
+                            <option value="geography">地理</option>
+                            <option value="civics">公民</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-2">2. 適用年級/冊別</label>
+                        <select id="qGrade" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-700 outline-none focus:ring-2 focus:ring-purple-400 shadow-sm">
+                            <option value="七上">七上</option>
+                            <option value="七下">七下</option>
+                            <option value="八上">八上</option>
+                            <option value="八下">八下</option>
+                            <option value="九上">九上</option>
+                            <option value="九下">九下</option>
+                            <option value="全冊複習">全冊複習</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-2">3. 單元 / 章節名稱</label>
+                        <input type="text" id="qChapter" placeholder="例: 1-1 相似形" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-purple-400 shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-2">4. 題目難易度</label>
+                        <select id="qLevel" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-700 outline-none focus:ring-2 focus:ring-purple-400 shadow-sm">
+                            <option value="基礎">🟢 基礎題</option>
+                            <option value="進階">🟡 進階題</option>
+                            <option value="難題">🔴 挑戰難題</option>
+                            <option value="素養">📚 素養題</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-5">
+                    <label class="block text-xs font-bold text-slate-500 mb-2">題目敘述</label>
+                    <textarea id="qText" rows="3" placeholder="請輸入完整的題目敘述..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 outline-none resize-none focus:ring-2 focus:ring-purple-400"></textarea>
+                </div>
+                <div class="mb-6 p-6 bg-slate-50 border border-slate-100 rounded-2xl">
+                    <label class="block text-sm font-black text-green-600 mb-2"><i class="fas fa-check-circle mr-1"></i> 正確答案</label>
+                    <input type="text" id="qCorrect" placeholder="輸入正確答案..." class="w-full bg-white border border-green-300 rounded-xl px-4 py-3 mb-5 text-sm font-bold text-green-700 outline-none focus:ring-2 focus:ring-green-400">
+                    <label class="block text-sm font-black text-red-500 mb-2"><i class="fas fa-times-circle mr-1"></i> 錯誤干擾項 (3個)</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input type="text" id="qWrong1" placeholder="干擾項 1" class="bg-white border border-red-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-red-400">
+                        <input type="text" id="qWrong2" placeholder="干擾項 2" class="bg-white border border-red-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-red-400">
+                        <input type="text" id="qWrong3" placeholder="干擾項 3" class="bg-white border border-red-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-red-400">
+                    </div>
+                </div>
+                <button onclick="createSmartQuestion(this)" class="w-full bg-purple-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-purple-700 transition text-lg flex justify-center items-center">
+                    <i class="fas fa-save mr-2"></i> 寫入雲端題庫
+                </button>
+            </div>
+            <div class="bg-indigo-50 border border-indigo-100 p-8 rounded-3xl shadow-sm">
+                <h3 class="text-xl font-bold text-indigo-900 mb-2"><i class="fas fa-play-circle text-indigo-500 mr-2"></i>模擬出題與預覽</h3>
+                <p class="text-sm text-indigo-700 mb-5">輸入範圍後立即從題庫抓題，以教師專屬的「上帝視角」（包含解答標示）預覽考卷。</p>
+                <div class="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-3">
+                    <select id="mockSubject" class="bg-white border border-indigo-200 rounded-xl px-4 py-3 text-sm outline-none font-bold text-indigo-900 focus:ring-2 focus:ring-indigo-400">
+                        <option value="chinese">國文</option>
+                        <option value="math">數學</option>
+                        <option value="english">英文</option>
+                        <option value="biology">生物</option>
+                        <option value="physics">理化(物理)</option>
+                        <option value="chemistry">理化(化學)</option>
+                        <option value="earth_science">地球科學</option>
+                        <option value="history">歷史</option>
+                        <option value="geography">地理</option>
+                        <option value="civics">公民</option>
+                    </select>
+                    <input type="text" id="mockTags" placeholder="欲測試之標籤 (例: 單元測試)" class="flex-1 bg-white border border-indigo-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 ispatchExamSettings" class="space-y-4 pt-2 border-t border-white/10">
     <div>
         <label class="block text-xs font-bold text-blue-200 mb-2">測驗標題</label>
         <input type="text" id="assignTitle" placeholder="例: 週末地科特訓" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-white/60 focus:bg-white/30 outline-none text-sm">
