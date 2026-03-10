@@ -256,6 +256,151 @@
             
             <textarea id="replyTextarea" rows="4" class="w-full bg-slate-50 border border-slate-200 rounded-2xl md:rounded-3xl p-4 md:p-5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold resize-none shrink-0" placeholder="輸入您的回覆或指導建議..."></textarea>
             
+            <div class="grid grid-cols-2 gap-3 md:gap-4 mt-5 md:mt-8 shrink-0">
+                <button onclick="closeReplyModal()" class="py-3 md:py-4 rounded-xl md:rounded-2xl font-black text-slate-500 hover:bg-slate-100 transition border border-slate-200 md:border-transparent">取消</button>
+                <button onclick="submitReply()" class="py-3 md:py-4 bg-blue-600 text-white rounded-xl md:rounded-2xl font-black hover:bg-blue-700 shadow-lg shadow-blue-200 transition active:scale-95">確認送出</button>
+            </div>
+            
+        </div>
+    </div>
+</div>
+          <div id="tab-questions" class="tab-content hidden max-w-4xl mx-auto space-y-6">
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                    <h2 class="text-2xl font-black text-slate-800 mb-2 flex items-center"><i class="fas fa-cloud-upload-alt text-purple-500 mr-3"></i> 建立自訂雲端題庫</h2>
+                    <p class="text-slate-400 text-sm mb-6 border-b pb-4">透過結構化的單元與章節分類，讓未來的組卷與派題更加精準。</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5 bg-purple-50 p-4 rounded-2xl border border-purple-100">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-2">1. 科目</label>
+                            <select id="qSubject" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-700 outline-none focus:ring-2 focus:ring-purple-400 font-bold shadow-sm">
+                                <option value="chinese">國文</option>
+                                <option value="math">數學</option>
+                                <option value="english">英文</option>
+                                <option value="biology">生物</option>
+                                <option value="physics">理化(物理)</option>
+                                <option value="chemistry">理化(化學)</option>
+                                <option value="earth_science">地球科學</option>
+                                <option value="history">歷史</option>
+                                <option value="geography">地理</option>
+                                <option value="civics">公民</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-2">2. 適用年級/冊別</label>
+                            <select id="qGrade" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-700 outline-none focus:ring-2 focus:ring-purple-400 shadow-sm">
+                                <option value="七上">七上</option>
+                                <option value="七下">七下</option>
+                                <option value="八上ispatchExamSettings" class="space-y-4 pt-2 border-t border-white/10">
+    <div>
+        <label class="block text-xs font-bold text-blue-200 mb-2">測驗標題</label>
+        <input type="text" id="assignTitle" placeholder="例: 週末地科特訓" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-white/60 focus:bg-white/30 outline-none text-sm">
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+        <div>
+            <label class="block text-xs font-bold text-blue-200 mb-2">科目</label>
+            <select id="assignSubject" onchange="updateUnitDropdown()" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white outline-none text-sm">
+                <option value="">請選擇科目</option>
+                <option value="chinese">國文</option>
+                <option value="math">數學</option>
+                <option value="english">英文</option>
+                <option value="biology">生物</option>
+                <option value="physics">理化(物理)</option>
+                <option value="chemistry">理化(化學)</option>
+                <option value="earth_science">地球科學</option>
+                <option value="history">歷史</option>
+                <option value="geography">地理</option>
+                <option value="civics">公民</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-blue-200 mb-2">選擇單元 (連動)</label>
+            <select id="assignUnit" class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white outline-none text-sm">
+                <option value="">-- 請先選擇科目 --</option>
+            </select>
+            <input type="hidden" id="assignTags">
+        </div>
+    </div>
+</div>
+
+                        <div id="dispatchMessageSettings" class="hidden pt-2 border-t border-white/10">
+                            <label class="block text-xs font-bold text-blue-200 mb-2">公告內容</label>
+                            <textarea id="assignMessage" rows="3" placeholder="提醒同學記得帶圓規..." class="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-white/60 focus:bg-white/30 outline-none text-sm resize-none"></textarea>
+                        </div>
+                    </div>
+
+                    <button onclick="sendDispatch(this)" class="w-full bg-yellow-400 text-blue-900 font-black py-4 rounded-xl shadow-lg hover:bg-yellow-300 transition text-lg">
+                        <i class="fas fa-paper-plane mr-2"></i> 立即發布任務
+                    </button>
+                </div>
+            </div>
+<div id="tab-help-center" class="tab-content hidden space-y-4 md:space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+        <div class="bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center space-x-4 border-l-4 border-l-orange-500">
+            <div class="w-12 h-12 bg-orange-50 text-orange-500 rounded-2xl flex shrink-0 items-center justify-center text-xl"><i class="fas fa-envelope-open-text"></i></div>
+            <div><p class="text-slate-400 text-xs font-bold uppercase">待處理問題</p><h2 class="text-2xl font-black text-slate-800" id="stat-help-pending">--</h2></div>
+        </div>
+        
+        <div class="bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center space-x-4">
+            <div class="w-12 h-12 bg-green-50 text-green-500 rounded-2xl flex shrink-0 items-center justify-center text-xl"><i class="fas fa-check-double"></i></div>
+            <div><p class="text-slate-400 text-xs font-bold uppercase">今日已解決</p><h2 class="text-2xl font-black text-slate-800" id="stat-help-solved">--</h2></div>
+        </div>
+        
+        <button onclick="fetchHelpRequests()" class="bg-slate-800 text-white rounded-3xl font-bold hover:bg-slate-900 transition flex items-center justify-center gap-2 shadow-lg py-4 md:py-0 h-full min-h-[3.5rem] active:scale-95">
+            <i class="fas fa-sync-alt"></i> 重新整理
+        </button>
+    </div>
+
+    <div class="bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-4 md:p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 md:gap-0 bg-slate-50">
+            <h3 class="font-bold text-slate-800 text-base md:text-lg flex items-center"><i class="fas fa-list text-orange-500 mr-2"></i> 學生提報清單</h3>
+            <select id="helpFilter" class="w-full sm:w-auto text-xs font-bold border rounded-xl px-4 py-2.5 bg-white outline-none focus:ring-2 focus:ring-orange-200 shadow-sm">
+                <option value="all">顯示全部類型</option>
+                <option value="題目內容錯誤">題目內容錯誤</option>
+                <option value="系統功能異常">系統功能異常</option>
+                <option value="其他建議">其他建議</option>
+            </select>
+        </div>
+        
+        <div class="overflow-x-auto w-full">
+            <table class="w-full text-left border-collapse min-w-[800px]"> <thead class="bg-slate-50 text-slate-400 text-[10px] uppercase font-bold tracking-widest border-b border-slate-100">
+                    <tr>
+                        <th class="px-4 md:px-8 py-3 md:py-4 text-center">狀態</th>
+                        <th class="px-4 md:px-8 py-3 md:py-4">學生 / 時間</th>
+                        <th class="px-4 md:px-8 py-3 md:py-4">提報類型</th>
+                        <th class="px-4 md:px-8 py-3 md:py-4 w-1/4">問題內容</th>
+                        <th class="px-4 md:px-8 py-3 md:py-4">老師回覆</th> 
+                        <th class="px-4 md:px-8 py-3 md:py-4 text-right">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="helpTableBody" class="divide-y divide-slate-50 text-sm">
+                    </tbody>
+            </table>
+        </div>
+        
+        <div id="helpLoading" class="p-12 md:p-20 text-center text-slate-300 hidden">
+            <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
+            <p class="text-sm font-bold">正在同步雲端資料...</p>
+        </div>
+    </div>
+</div>
+
+<div id="replyModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-[2rem] md:rounded-[2.5rem] shadow-2xl border border-slate-100 flex flex-col max-h-[85dvh]">
+        
+        <div class="p-5 md:p-8 overflow-y-auto flex-1 custom-scrollbar">
+            
+            <div class="flex justify-between items-start mb-4 md:mb-6 shrink-0">
+                <div>
+                    <h3 class="text-lg md:text-xl font-black text-slate-800">回覆學生訊息</h3>
+                    <p id="replyToName" class="text-xs md:text-sm text-slate-400 font-bold mt-1">對象：張小明</p>
+                </div>
+                <button onclick="closeReplyModal()" class="text-slate-300 hover:text-slate-500 p-1"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            
+            <input type="hidden" id="currentReplyId">
+            
+            <textarea id="replyTextarea" rows="4" class="w-full bg-slate-50 border border-slate-200 rounded-2xl md:rounded-3xl p-4 md:p-5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold resize-none shrink-0" placeholder="輸入您的回覆或指導建議..."></textarea>
+            
             <div class="flex flex-col sm:flex-row gap-2 pt-4 border-t border-slate-100 mt-4">
     <input id="admin-input-${post.id}" type="text" placeholder="補充回覆或訂正..." class="w-full sm:flex-grow bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold">
     <div class="flex gap-2 w-full sm:w-auto">
