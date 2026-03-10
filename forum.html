@@ -424,16 +424,24 @@ function renderPostTemplate(post) {
     const hasAI = aiContent.trim() !== "";
     let aiSection = ""; 
     
-    if (hasAI) {
+   if (hasAI) {
         const parsedAI = typeof marked !== 'undefined' ? marked.parse(aiContent) : aiContent;
+        // 使用貼文的 id 來做為 AI 內容區塊的唯一識別碼
+        const aiBodyId = `ai-content-${id}`;
+        
         aiSection = `
             <div class="mt-4 p-5 rounded-2xl border ai-reply-card flex gap-4 bg-blue-50/30">
                 <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md shrink-0"><i class="fas fa-robot"></i></div>
                 <div class="flex-grow min-w-0">
-                    <div class="flex items-center gap-2 mb-2">
+                    <div class="flex items-center justify-between mb-2">
                         <span class="font-bold text-sm text-slate-800">AI 助教</span>
+                        <button onclick="toggleAIReply('${aiBodyId}', this)" class="text-[11px] font-bold text-blue-500 hover:text-blue-700 bg-blue-100/50 hover:bg-blue-100 px-2 py-1 rounded transition flex items-center">
+                            <i class="fas fa-chevron-up mr-1"></i> 收起
+                        </button>
                     </div>
-                    <div class="text-sm text-slate-700 markdown-body">${parsedAI}</div>
+                    <div id="${aiBodyId}" class="text-sm text-slate-700 markdown-body transition-all duration-300">
+                        ${parsedAI}
+                    </div>
                 </div>
             </div>`;
     } else {
@@ -675,7 +683,23 @@ function checkForumDraft() {
         } catch (e) { console.error(e); }
     }
 }
-
+// ==========================================
+// 🤖 切換 AI 回覆收起/展開
+// ==========================================
+function toggleAIReply(contentId, btn) {
+    const contentEl = document.getElementById(contentId);
+    
+    // 如果目前是隱藏狀態 -> 展開
+    if (contentEl.classList.contains('hidden')) {
+        contentEl.classList.remove('hidden');
+        btn.innerHTML = '<i class="fas fa-chevron-up mr-1"></i> 收起';
+    } 
+    // 如果目前是顯示狀態 -> 收起
+    else {
+        contentEl.classList.add('hidden');
+        btn.innerHTML = '<i class="fas fa-chevron-down mr-1"></i> 展開';
+    }
+}
 // 初始化執行
 window.addEventListener('DOMContentLoaded', () => {
     loadPosts();
