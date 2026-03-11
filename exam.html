@@ -898,25 +898,29 @@
 
     function closeSubmitModal() { document.getElementById('submitModal').classList.add('hidden'); }
 
-    async function finalSubmit() {
+   async function finalSubmit() {
         const submitBtn = document.getElementById('confirmSubmitBtn');
         if (submitBtn.disabled) return; 
         submitBtn.disabled = true;      
         submitBtn.textContent = "評分中..."; 
         
-        if (timerInterval) clearInterval(timerInterval);
-        isSubmitting = true; 
-        document.getElementById('submitModal').classList.add('hidden');
-        document.getElementById('loadingOverlay').classList.remove('hidden');
+        if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval);
+        if (typeof isSubmitting !== 'undefined') isSubmitting = true; 
+        
+        const submitModal = document.getElementById('submitModal');
+        if(submitModal) submitModal.classList.add('hidden');
+        
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if(loadingOverlay) loadingOverlay.classList.remove('hidden');
 
         let correctCount = 0, totalCount = 0, fastCount = 0, wrongList = [];
 
         mockQuestions.forEach((item, idx) => {
-            const timeSpent = timeLog[idx] || 0;
+            const timeSpent = (typeof timeLog !== 'undefined' && timeLog[idx]) ? timeLog[idx] : 0;
             if (item.type === 'group') {
                 item.questions.forEach((subQ, sIdx) => {
                     totalCount++;
-                    const userAns = userAnswers[idx][sIdx];
+                    const userAns = userAnswers[idx] ? userAnswers[idx][sIdx] : null;
                     const isCorrect = (userAns === subQ.answer); 
                     if (isCorrect) correctCount++;
                     else wrongList.push({ question: subQ.question, options: subQ.options, answer: subQ.answer, yourAns: userAns, concept: item.concept });
@@ -942,26 +946,36 @@
         let isLevelUp = (window.Auth && user.username !== 'guest') ? Auth.addXP(totalXP) : false;
 
         const urlParams = new URLSearchParams(window.location.search);
-const recordData = {
-        action: "save_record",
-        username: user.username,
-        activity: examResult.title || "單元測驗",
-        score: examResult.score,
-        detail: JSON.stringify({
-            grade: user.grade, 
-            totalCount: examResult.totalCount,
-            correctCount: examResult.correctCount,
-            wrongList: examResult.wrongList || [],
-            
-            // 🌟 關鍵修復：就是補上這一行！讓完整題目跟著一起飛上雲端
-            questions: examResult.questions || [], 
-            
-            cheat: examResult.cheat,
-            tabSwitches: examResult.tabSwitches,
-            syncTime: new Date().toISOString()
-        })
-    };
+        
+        // 🌟 這裡才是 exam.html 該有的正確打包方式！
+        const resultData = {
+            owner: user.username,
+            id: Date.now(),
+            subject: (typeof examInfo !== 'undefined' && examInfo.subject) ? examInfo.subject : (urlParams.get('subject') || "english"),
+            title: (typeof examInfo !== 'undefined' && examInfo.title) ? examInfo.title : (urlParams.get('title') || "綜合測驗"),
+            score: finalScore,
+            correctCount: correctCount,
+            totalCount: totalCount,
+            // ✨ 成功把所有題目都帶上！
+            questions: mockQuestions.map((q, index) => ({
+                ...q,
+                yourAns: userAnswers[index]
+            })),
+            wrongList: wrongList,
+            tabSwitches: (typeof tabLog !== 'undefined') ? tabLog.length : 0,
+            xpGained: totalXP,
+            isLevelUp: isLevelUp,
+            cheat: {
+                cheatLevel: (fastCount > 3 || (typeof tabLog !== 'undefined' && tabLog.length > 5)) ? 'HIGH' : 'NORMAL',
+                fastCount: fastCount
+            },
+            analysis: { 
+                timeLog: (typeof timeLog !== 'undefined') ? timeLog : [], 
+                tabLogDetails: (typeof tabLog !== 'undefined') ? tabLog : [] 
+            }
+        };
 
+        // 將考卷存入瀏覽器，交給 analysis.html 接手
         localStorage.setItem('examResult', JSON.stringify(resultData));
         const historyKey = `history_${user.username}`;
         let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
@@ -970,10 +984,12 @@ const recordData = {
 
         if (user.username !== 'guest') {
             try {
-                await Promise.race([
-                    uploadToCloud(user.username, examInfo.title, finalScore, resultData),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
-                ]);
+                if(typeof uploadToCloud === 'function') {
+                    await Promise.race([
+                        uploadToCloud(user.username, resultData.title, finalScore, resultData),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+                    ]);
+                }
             } catch (e) { console.error("雲端備份跳過:", e); }
         }
 
