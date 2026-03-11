@@ -391,7 +391,9 @@
             sortAndFilter();
         }
 
-        // 🌟 修復雲端同步問題的核心
+       // ==========================================
+        // 🌟 1. 修復雲端同步：改用固定特徵產生 ID，並重構錯題收集邏輯
+        // ==========================================
         function syncFromCloud(username) {
             const hCount = document.getElementById('historyCount');
             const wCount = document.getElementById('wrongCount');
@@ -402,28 +404,26 @@
             .then(res => res.json())
             .then(cloudData => {
                 const myData = cloudData.filter(item => (item.owner || item.username) === username);
-                const localIds = new Set(historyDB.map(item => String(item.id)));
                 
                 myData.forEach(item => {
-                    // 🌟 關鍵修復：如果雲端資料沒有 id，利用時間自動產生一個，否則會被當成重複資料丟棄！
+                    // ✨ 關鍵修復：拔除亂數！改用「時間+分數」產生固定的專屬 ID
                     if (!item.id) {
-                        item.id = new Date(item.date).getTime() + "_" + Math.floor(Math.random() * 10000);
+                        const safeTime = new Date(item.date).getTime() || 0;
+                        item.id = `cloud_${safeTime}_${item.score}`;
                     }
-                    
-                    if (!localIds.has(String(item.id))) {
-                        historyDB.push(item);
-                        localIds.add(String(item.id));
-                    }
+                    // 將雲端資料加入 (待會 sortAndFilter 會做終極去重)
+                    historyDB.push(item);
                 });
 
-                let cloudWrongQuestions = [];
-                myData.forEach(exam => {
+                // ✨ 修正錯題暴增問題：直接從「所有歷史紀錄」中重新萃取錯題，最乾淨！
+                let newWrongDB = [];
+                historyDB.forEach(exam => {
                     if (exam.wrongList && Array.isArray(exam.wrongList)) {
-                        cloudWrongQuestions = cloudWrongQuestions.concat(exam.wrongList);
+                        newWrongDB = newWrongDB.concat(exam.wrongList);
                     }
                 });
+                wrongDB = newWrongDB;
 
-                wrongDB = wrongDB.concat(cloudWrongQuestions);
                 sortAndFilter();
                 
                 if(historyKey) localStorage.setItem(historyKey, JSON.stringify(historyDB));
@@ -436,25 +436,45 @@
             });
         }
 
+        // ==========================================
+        // 🌟 2. 終極去重防護：清除之前因為 Bug 產生的重複資料
+        // ==========================================
         function sortAndFilter() {
-            // 🌟 確保依照最新時間安全排序
+            // -- 考卷去重 (把之前暴增的考卷清掉) --
+            const uniqueHistory = [];
+            const seenHistory = new Set();
+            
+            historyDB.forEach(record => {
+                // 利用「時間 + 分數 + 標題」作為唯一特徵，過濾掉一模一樣的考卷
+                const timeKey = new Date(record.date).getTime() || 0;
+                const dedupeKey = `${timeKey}_${record.score}_${record.title}`;
+                
+                if (!seenHistory.has(dedupeKey)) {
+                    seenHistory.add(dedupeKey);
+                    uniqueHistory.push(record);
+                }
+            });
+            historyDB = uniqueHistory;
+
+            // -- 排序 (最新的在最上面) --
             historyDB.sort((a, b) => {
                 const timeA = new Date(a.date).getTime() || Number(a.id) || 0;
                 const timeB = new Date(b.date).getTime() || Number(b.id) || 0;
                 return timeB - timeA;
             });
             
+            // -- 錯題去重 --
             const uniqueWrongs = [];
-            const seen = new Set();
+            const seenWrongs = new Set();
             wrongDB.forEach(q => {
-                if(!seen.has(q.question)) {
-                    seen.add(q.question);
+                // 只要題目敘述一模一樣，就當作同一題
+                if(!seenWrongs.has(q.question)) {
+                    seenWrongs.add(q.question);
                     uniqueWrongs.push(q);
                 }
             });
             wrongDB = uniqueWrongs;
         }
-
         function renderAll() {
             renderHistory();
             renderWrong();
