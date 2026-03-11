@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>診斷分析 - 雲端學院</title>
 
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -14,19 +13,14 @@
     <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
 
     <style>
-        /* 當螢幕寬度小於 300px (通常是手錶) 時隱藏 */
-@media (max-width: 300px) {
-    .watch-hidden {
-        display: none !important;
-    }
-}
+        @media (max-width: 300px) {
+            .watch-hidden { display: none !important; }
+        }
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
         .sidebar-glass { background: rgba(255, 255, 255, 0.98); border-right: 1px solid #e2e8f0; }
         .fade-in { animation: fadeIn 0.5s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* 請加入這行 CSS */
-.sidebar-transition { transition: transform 0.3s ease-in-out; }
-        /* 自定義捲軸 */
+        .sidebar-transition { transition: transform 0.3s ease-in-out; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
@@ -36,21 +30,16 @@
     <script src="mockdata/users.js"></script>
     <script src="assets/js/auth.js"></script>
 </head>
-    <script>
+<script>
     document.addEventListener('DOMContentLoaded', () => {
-        // 1. 檢查 Auth 是否載入
         if (typeof Auth === 'undefined') {
             console.error("Auth 模組未載入");
             return;
         }
-
-        // 2. 檢查是否有登入者
         const currentUser = Auth.getCurrentUser();
-
-        // 3. 如果沒人登入，或者是 Guest (如果你不想讓 Guest 用)，就踢走
         if (!currentUser) {
             alert("⚠️ 您尚未登入，請先進行登入！");
-            window.location.href = 'index.html'; // 假設你的登入頁是 index.html
+            window.location.href = 'index.html'; 
         }
     });
 </script>
@@ -69,89 +58,86 @@
     <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden backdrop-blur-sm"></div>
 
     <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-100 flex flex-col z-50 transform -translate-x-full lg:translate-x-0 lg:static lg:h-full sidebar-transition shadow-2xl lg:shadow-none">
-        
         <div class="h-16 hidden lg:flex items-center px-6 border-b border-slate-50">
             <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
             <span class="text-lg font-bold text-slate-800">雲端學院</span>
         </div>
 
        <div class="p-6 lg:block watch-hidden">
-    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
-        <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
-            <i class="fas fa-user-graduate"></i>
-        </div>
-        <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
-        <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
-        <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
-            <i class="fas fa-pen mr-1"></i> 編輯年級
-        </button>
-    </div>
-</div>
-
-<nav class="flex-grow px-3 space-y-2 overflow-y-auto no-scrollbar">
-    <p class="text-[10px] font-bold text-slate-400 mb-2 px-4 uppercase tracking-widest">學習導航</p>
-
-    <a href="mission.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-purple-50 hover:text-purple-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
-        <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-            <i class="fas fa-rocket text-sm"></i>
-        </div>
-        <span class="font-bold">任務中心</span>
-        <span class="ml-auto bg-purple-100 text-purple-600 text-[10px] px-2 py-0.5 rounded-full font-black">NEW</span>
-    </a>
-
-    <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
-        <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-            <i class="fas fa-book-open text-sm"></i>
-        </div>
-        <span class="font-bold">課程總覽</span>
-    </a>
-
-    <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-red-50 hover:text-red-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
-        <div class="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-            <i class="fas fa-fire text-sm"></i>
-        </div>
-        <span class="font-bold">錯題補救</span>
-    </a>
-
-    <a href="study.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-amber-50 hover:text-amber-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
-        <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-            <i class="fas fa-star text-sm"></i>
-        </div>
-        <span class="font-bold">重點複習</span>
-    </a>
-
-    <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
-        <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:animate-bounce">
-            <i class="fas fa-gamepad text-sm"></i>
-        </div>
-        <span class="font-bold">遊戲場</span>
-    </a>
-
-    <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
-        <div class="w-8 h-8 rounded-lg bg-cyan-100 text-cyan-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-            <i class="fas fa-comments text-sm"></i>
-        </div>
-        <span class="font-bold">解題論壇</span>
-    </a>
-    
-    <div class="pt-4 mt-4 border-t border-slate-100">
-        <p class="text-[10px] font-bold text-slate-400 mb-2 px-4 uppercase tracking-widest">系統支援</p>
-        
-        <a href="help.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-orange-50 hover:text-orange-600 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
-            <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center group-hover:rotate-12 transition-transform">
-                <i class="fas fa-headset text-sm"></i>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
+                <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
+                <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
+                    <i class="fas fa-pen mr-1"></i> 編輯年級
+                </button>
             </div>
-            <span class="font-bold">幫助中心 & 聯絡老師</span>
-        </a>
+        </div>
 
-        <a href="change_password.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-500 hover:bg-slate-100 transition-all group">
-            <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center group-hover:text-slate-600">
-                <i class="fas fa-key text-xs"></i>
+        <nav class="flex-grow px-3 space-y-2 overflow-y-auto no-scrollbar">
+            <p class="text-[10px] font-bold text-slate-400 mb-2 px-4 uppercase tracking-widest">學習導航</p>
+
+            <a href="mission.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-purple-50 hover:text-purple-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+                <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i class="fas fa-rocket text-sm"></i>
+                </div>
+                <span class="font-bold">任務中心</span>
+                <span class="ml-auto bg-purple-100 text-purple-600 text-[10px] px-2 py-0.5 rounded-full font-black">NEW</span>
+            </a>
+
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+                <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i class="fas fa-book-open text-sm"></i>
+                </div>
+                <span class="font-bold">課程總覽</span>
+            </a>
+
+            <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-red-50 hover:text-red-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+                <div class="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i class="fas fa-fire text-sm"></i>
+                </div>
+                <span class="font-bold">錯題補救</span>
+            </a>
+
+            <a href="study.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-amber-50 hover:text-amber-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+                <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i class="fas fa-star text-sm"></i>
+                </div>
+                <span class="font-bold">重點複習</span>
+            </a>
+
+            <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+                <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:animate-bounce">
+                    <i class="fas fa-gamepad text-sm"></i>
+                </div>
+                <span class="font-bold">遊戲場</span>
+            </a>
+
+            <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+                <div class="w-8 h-8 rounded-lg bg-cyan-100 text-cyan-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i class="fas fa-comments text-sm"></i>
+                </div>
+                <span class="font-bold">解題論壇</span>
+            </a>
+            
+            <div class="pt-4 mt-4 border-t border-slate-100">
+                <p class="text-[10px] font-bold text-slate-400 mb-2 px-4 uppercase tracking-widest">系統支援</p>
+                <a href="help.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-orange-50 hover:text-orange-600 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+                    <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center group-hover:rotate-12 transition-transform">
+                        <i class="fas fa-headset text-sm"></i>
+                    </div>
+                    <span class="font-bold">幫助中心 & 聯絡老師</span>
+                </a>
+                <a href="change_password.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-500 hover:bg-slate-100 transition-all group">
+                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center group-hover:text-slate-600">
+                        <i class="fas fa-key text-xs"></i>
+                    </div>
+                    <span class="text-sm font-medium">更改密碼</span>
+                </a>
             </div>
-            <span class="text-sm font-medium">更改密碼</span>
-        </a>
-    </div>
-</nav>
+        </nav>
 
         <div class="p-4 border-t border-slate-50">
             <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs"><i class="fas fa-sign-out-alt"></i> 登出系統</button>
@@ -159,36 +145,32 @@
     </aside>
 
     <main class="flex-grow flex flex-col min-w-0 h-full overflow-y-auto">
-        
-       <div class="bg-white/80 backdrop-blur-md border-b border-gray-200 p-3 md:p-6 sticky top-0 z-30 flex justify-between items-center shrink-0">
-    <div class="min-w-0 flex-1 mr-2"> <h1 class="text-lg md:text-2xl font-bold text-gray-800 flex items-center gap-2 md:gap-3 truncate">
-            <span class="w-1.5 h-6 md:w-2 md:h-8 bg-blue-600 rounded-full shrink-0"></span>
-            <span class="truncate">測驗結果診斷</span>
-        </h1>
-        <p class="text-xs md:text-sm text-gray-500 mt-1 pl-4 md:pl-5 truncate" id="examMetaInfo">正在載入數據...</p>
-    </div>
-    <div class="flex gap-2 shrink-0">
-        <button id="btnSave" onclick="saveToCloud()" class="flex items-center gap-2 text-white bg-blue-600 hover:bg-blue-700 font-bold transition px-3 py-2 rounded-lg shadow-md text-sm">
-            <i class="fas fa-cloud-upload-alt"></i> 
-            <span class="hidden sm:inline">儲存雲端</span>
-        </button>
-        <a href="dashboard.html" class="flex items-center gap-2 text-gray-500 hover:text-blue-600 font-bold px-3 py-2 rounded-lg hover:bg-gray-100 text-sm">
-            <i class="fas fa-arrow-left"></i> 
-            <span class="hidden sm:inline">返回</span>
-        </a>
-    </div>
-</div>
-<div id="reportContent" class="p-4 md:p-8 w-full max-w-7xl mx-auto space-y-8">
-            
+        <div class="bg-white/80 backdrop-blur-md border-b border-gray-200 p-3 md:p-6 sticky top-0 z-30 flex justify-between items-center shrink-0">
+            <div class="min-w-0 flex-1 mr-2"> 
+                <h1 class="text-lg md:text-2xl font-bold text-gray-800 flex items-center gap-2 md:gap-3 truncate">
+                    <span class="w-1.5 h-6 md:w-2 md:h-8 bg-blue-600 rounded-full shrink-0"></span>
+                    <span class="truncate">測驗結果診斷</span>
+                </h1>
+                <p class="text-xs md:text-sm text-gray-500 mt-1 pl-4 md:pl-5 truncate" id="examMetaInfo">正在載入數據...</p>
+            </div>
+            <div class="flex gap-2 shrink-0">
+                <button id="btnSave" onclick="saveToCloud()" class="flex items-center gap-2 text-white bg-blue-600 hover:bg-blue-700 font-bold transition px-3 py-2 rounded-lg shadow-md text-sm">
+                    <i class="fas fa-cloud-upload-alt"></i> 
+                    <span class="hidden sm:inline">儲存雲端</span>
+                </button>
+                <a href="dashboard.html" class="flex items-center gap-2 text-gray-500 hover:text-blue-600 font-bold px-3 py-2 rounded-lg hover:bg-gray-100 text-sm">
+                    <i class="fas fa-arrow-left"></i> 
+                    <span class="hidden sm:inline">返回</span>
+                </a>
+            </div>
+        </div>
+
+        <div id="reportContent" class="p-4 md:p-8 w-full max-w-7xl mx-auto space-y-8">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 fade-in">
-    
                 <div class="lg:col-span-4 bg-white rounded-2xl shadow-sm border border-gray-200 p-5 md:p-8 flex flex-col items-center justify-center relative overflow-hidden h-full">
                     <div class="absolute top-0 left-0 w-full h-1.5 bg-blue-600"></div>
-                    
                     <h3 class="text-gray-500 font-bold mb-2 text-sm uppercase">本次測驗得分</h3>
-                    
                     <div class="text-6xl md:text-7xl font-extrabold text-blue-600 mb-6" id="scoreDisplay">--</div>
-                    
                     <div class="flex gap-4 w-full">
                         <div class="flex-1 bg-green-50 rounded-xl p-3 text-center border border-green-100">
                             <div class="text-xs text-green-600 font-bold mb-1">答對</div>
@@ -209,8 +191,8 @@
                         <canvas id="radarChart"></canvas>
                     </div>
                 </div>
-
             </div> 
+
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 fade-in">
                 <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2 border-b pb-3">
                     <i class="fas fa-user-shield text-red-500"></i> 考試行為診斷
@@ -233,30 +215,28 @@
                 </div>
             </div>
 
-           <div class="fade-in">
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b pb-4">
-        <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <i class="fas fa-list-check text-blue-600"></i> 題目詳細解析
-        </h2>
-        
-        <div class="flex p-1 bg-slate-100 rounded-xl shadow-inner w-full md:w-auto">
-            <button onclick="changeFilter('all', this)" class="filter-btn flex-1 md:flex-none py-2 px-6 rounded-lg text-sm font-bold transition-all duration-200 bg-white text-blue-600 shadow-sm">
-                全部 <span id="countAll" class="ml-1 opacity-60 text-xs"></span>
-            </button>
-            <button onclick="changeFilter('correct', this)" class="filter-btn flex-1 md:flex-none py-2 px-6 rounded-lg text-sm font-bold transition-all duration-200 text-slate-500 hover:text-slate-700">
-                答對 <span id="countCorrect" class="ml-1 opacity-60 text-xs"></span>
-            </button>
-            <button onclick="changeFilter('wrong', this)" class="filter-btn flex-1 md:flex-none py-2 px-6 rounded-lg text-sm font-bold transition-all duration-200 text-slate-500 hover:text-slate-700">
-                答錯 <span id="countWrong" class="ml-1 opacity-60 text-xs"></span>
-            </button>
+            <div class="fade-in">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b pb-4">
+                    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-list-check text-blue-600"></i> 題目詳細解析
+                    </h2>
+                    
+                    <div class="flex p-1 bg-slate-100 rounded-xl shadow-inner w-full md:w-auto">
+                        <button onclick="changeFilter('all', this)" class="filter-btn flex-1 md:flex-none py-2 px-6 rounded-lg text-sm font-bold transition-all duration-200 bg-white text-blue-600 shadow-sm">
+                            全部 <span id="countAll" class="ml-1 opacity-60 text-xs"></span>
+                        </button>
+                        <button onclick="changeFilter('correct', this)" class="filter-btn flex-1 md:flex-none py-2 px-6 rounded-lg text-sm font-bold transition-all duration-200 text-slate-500 hover:text-slate-700">
+                            答對 <span id="countCorrect" class="ml-1 opacity-60 text-xs"></span>
+                        </button>
+                        <button onclick="changeFilter('wrong', this)" class="filter-btn flex-1 md:flex-none py-2 px-6 rounded-lg text-sm font-bold transition-all duration-200 text-slate-500 hover:text-slate-700">
+                            答錯 <span id="countWrong" class="ml-1 opacity-60 text-xs"></span>
+                        </button>
+                    </div>
+                </div>
+                <div id="wrongList" class="space-y-6"></div>
+            </div>
         </div>
-    </div>
 
-    <div id="wrongList" class="space-y-6">
-        </div>
-</div>
-
-        </div>
         <div id="noDataMessage" class="hidden flex-grow flex flex-col items-center justify-center text-center p-10 bg-white">
             <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center text-4xl text-gray-400 mb-6 animate-bounce">
                 <i class="fas fa-clipboard-list"></i>
@@ -267,52 +247,51 @@
                 前往測驗中心
             </a>
         </div>
-        <div id="profileModal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm fade-in">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100">
-        <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
-            <h3 class="text-white font-bold text-lg"><i class="fas fa-user-edit mr-2"></i> 修改年級</h3>
-            <button onclick="closeProfileModal()" class="text-white/80 hover:text-white transition">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
         
-        <div class="p-6">
-            <label class="block text-gray-700 text-sm font-bold mb-2">請選擇目前的年級：</label>
-            <div class="relative">
-                <select id="editGradeSelect" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white appearance-none transition text-gray-700 font-bold">
-                    <option value="國七">國七</option>
-                    <option value="國八">國八</option>
-                    <option value="國九">國九</option>
-                    <hr>
-                    <option value="高一">高一</option>
-                    <option value="高二">高二</option>
-                    <option value="高三">高三</option>
-                </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-                    <i class="fas fa-chevron-down"></i>
+        <div id="profileModal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm fade-in">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100">
+                <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+                    <h3 class="text-white font-bold text-lg"><i class="fas fa-user-edit mr-2"></i> 修改年級</h3>
+                    <button onclick="closeProfileModal()" class="text-white/80 hover:text-white transition">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="p-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">請選擇目前的年級：</label>
+                    <div class="relative">
+                        <select id="editGradeSelect" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white appearance-none transition text-gray-700 font-bold">
+                            <option value="國七">國七</option>
+                            <option value="國八">國八</option>
+                            <option value="國九">國九</option>
+                            <hr>
+                            <option value="高一">高一</option>
+                            <option value="高二">高二</option>
+                            <option value="高三">高三</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-3">※ 修改後，系統將會優先推薦該年級的題目。</p>
+                </div>
+
+                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
+                    <button onclick="closeProfileModal()" class="px-4 py-2 text-gray-500 hover:text-gray-700 font-bold text-sm">取消</button>
+                    <button onclick="saveProfile()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-md hover:shadow-lg transition">
+                        確認修改
+                    </button>
                 </div>
             </div>
-            <p class="text-xs text-gray-400 mt-3">※ 修改後，系統將會優先推薦該年級的題目。</p>
         </div>
-
-        <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
-            <button onclick="closeProfileModal()" class="px-4 py-2 text-gray-500 hover:text-gray-700 font-bold text-sm">取消</button>
-            <button onclick="saveProfile()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-md hover:shadow-lg transition">
-                確認修改
-            </button>
-        </div>
-    </div>
-</div>
     </main>
+
 <script>
 // ==========================================
 // 1. 全域設定與工具
 // ==========================================
-// 替換為你的 GAS Web App URL
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
 
-
-    
 document.addEventListener('DOMContentLoaded', () => {
     try {
         initUserInterface();
@@ -324,7 +303,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initUserInterface() {
-    // 初始化使用者資訊
     const user = Auth.getCurrentUser();
     if (user) {
         const nameEl = document.getElementById('sideUserName');
@@ -332,19 +310,22 @@ function initUserInterface() {
         if (nameEl) nameEl.textContent = user.name;
         if (roleEl) roleEl.textContent = user.grade || "學生";
         
-        // 初始化編輯視窗的下拉選單
         const select = document.getElementById('editGradeSelect');
         if (select && user.grade) select.value = user.grade;
+
+        // ✨ 啟動檢查：如果已經改過年級，直接拔掉按鈕！
+        if (localStorage.getItem(`hasUpdatedGrade_${user.username}`)) {
+            const editBtn = document.querySelector('button[onclick="openProfileModal()"]');
+            if (editBtn) editBtn.style.display = 'none';
+        }
     }
 }
 
 // ==========================================
 // 2. 核心邏輯：載入並渲染
 // ==========================================
-// ==========================================
-// ✨ 修改後的核心邏輯
-// ==========================================
-let allQuestionsData = []; // 全域變數，儲存本次測驗所有題目
+let allQuestionsData = []; 
+
 function loadExamResult() {
     const resultStr = localStorage.getItem('examResult');
     const reportContent = document.getElementById('reportContent');
@@ -360,17 +341,15 @@ function loadExamResult() {
     try {
         let rawResult = JSON.parse(resultStr);
         
-        // ✨ 關鍵防護 1：網頁一載入，立刻檢查這份考卷是不是已經存過了
+        // ✨ 網頁一載入，立刻檢查這份考卷是不是已經存過了
         if (rawResult.isSaved) {
-            hasSaved = true; // 更新全域變數
-            setTimeout(markButtonAsSaved, 0); // 確保 UI 渲染後把按鈕鎖死
+            hasSaved = true; 
+            setTimeout(markButtonAsSaved, 0); 
         }
 
         const result = normalizeExamData(rawResult);
-
         allQuestionsData = result.questions || result.wrongList || [];
 
-        // --- UI 渲染 ---
         updateScoreBoard(result);
         renderRadarChart(result.score, result.wrongList);
         applyCheatResult(result);
@@ -378,9 +357,8 @@ function loadExamResult() {
         updateFilterCounts();
         renderQuestionList(allQuestionsData); 
 
-        // --- 自動同步判斷 ---
+        // 自動同步判斷（如果沒存過才發送）
         const urlParams = new URLSearchParams(window.location.search);
-        // 如果是新測驗進來，且還沒存檔過，才觸發自動存檔
         if (urlParams.get('mode') === 'new' && !rawResult.isSaved) {
             saveToCloud();
             window.history.replaceState({}, document.title, window.location.pathname);
@@ -391,7 +369,6 @@ function loadExamResult() {
     }
 }
 
-// ✨ 新增：更新按鈕上的計數
 function updateFilterCounts() {
     const correctCount = allQuestionsData.filter(q => q.answer === q.yourAns).length;
     const wrongCount = allQuestionsData.filter(q => q.answer !== q.yourAns).length;
@@ -401,9 +378,7 @@ function updateFilterCounts() {
     if(document.getElementById('countWrong')) document.getElementById('countWrong').innerText = wrongCount;
 }
 
-// ✨ 新增：切換分頁功能
 function changeFilter(type, btn) {
-    // 1. 切換按鈕樣式
     document.querySelectorAll('.filter-btn').forEach(b => {
         b.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
         b.classList.add('text-slate-500');
@@ -411,15 +386,14 @@ function changeFilter(type, btn) {
     btn.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
     btn.classList.remove('text-slate-500');
 
-    // 2. 過濾資料
     let filteredData = [];
     if (type === 'all') filteredData = allQuestionsData;
     else if (type === 'correct') filteredData = allQuestionsData.filter(q => q.answer === q.yourAns);
     else if (type === 'wrong') filteredData = allQuestionsData.filter(q => q.answer !== q.yourAns);
 
-    // 3. 執行渲染
     renderQuestionList(filteredData);
 }
+
 // ==========================================
 // 3. 雲端同步邏輯 (防重複存檔優化)
 // ==========================================
@@ -481,11 +455,11 @@ function saveToCloud() {
         hasSaved = true; 
         isSyncing = false; 
         
-        // ✨ 關鍵防護 2：存檔成功後，在 localStorage 寫入「已存檔標記」
+        // ✨ 存檔成功後，在 localStorage 寫入標記
         examResult.isSaved = true;
         localStorage.setItem('examResult', JSON.stringify(examResult));
 
-        markButtonAsSaved(); // 變更按鈕外觀
+        markButtonAsSaved();
     })
     .catch(err => {
         console.error("同步失敗:", err);
@@ -501,16 +475,17 @@ function saveToCloud() {
     });
 }
 
-// ✨ 新增：獨立出來的 UI 函數，專門用來把按鈕變成「已送出」狀態並鎖死
+// ✨ 按鈕鎖死專用函數
 function markButtonAsSaved() {
     const btn = document.getElementById('btnSave');
     if (btn) {
         btn.className = "flex items-center gap-2 text-white bg-green-600 font-bold px-3 py-2 rounded-lg cursor-default shadow-none text-sm opacity-100";
         btn.innerHTML = '<i class="fas fa-check-circle"></i> 紀錄已送出';
-        btn.onclick = null; // 移除點擊事件，徹底防止再按
-        btn.disabled = true; // 保持禁用狀態
+        btn.onclick = null; 
+        btn.disabled = true; 
     }
 }
+
 // ==========================================
 // 4. 圖表渲染 (Radar Chart)
 // ==========================================
@@ -518,27 +493,19 @@ function renderRadarChart(baseScore = 0, wrongList = []) {
     const canvas = document.getElementById('radarChart');
     if (!canvas) return;
     
-    // 銷毀舊圖表 (如果存在)，避免重繪時閃爍或重疊
     if (window.myRadarChart) {
         window.myRadarChart.destroy();
     }
 
     const ctx = canvas.getContext('2d');
-    
-    // 定義維度 (需與題目資料庫的 concept 欄位對應)
     const labels = ["觀念理解", "邏輯推演", "運算能力", "圖表分析", "素養應用"];
-    
-    // 初始分數演算法：以 (得分 + 40) 為基礎，再根據錯題扣分
-    // 這樣即使考 0 分，圖表也不會縮成一點，比較好看
     let chartData = labels.map(() => Math.min(100, Math.max(40, baseScore + 20)));
 
-    // 錯題扣分邏輯
     wrongList.forEach(q => {
         const concept = q.concept || "";
         labels.forEach((label, index) => {
-            // 模糊比對：如果題目的 concept 包含標籤文字 (例如 "代數運算能力" 包含 "運算能力")
             if (concept.indexOf(label) > -1) {
-                chartData[index] = Math.max(20, chartData[index] - 15); // 每個維度最低 20 分
+                chartData[index] = Math.max(20, chartData[index] - 15);
             }
         });
     });
@@ -550,7 +517,7 @@ function renderRadarChart(baseScore = 0, wrongList = []) {
             datasets: [{
                 label: '能力分佈',
                 data: chartData,
-                backgroundColor: 'rgba(37, 99, 235, 0.2)', // blue-600 with opacity
+                backgroundColor: 'rgba(37, 99, 235, 0.2)',
                 borderColor: '#2563eb',
                 pointBackgroundColor: '#2563eb',
                 pointBorderColor: '#fff',
@@ -569,9 +536,9 @@ function renderRadarChart(baseScore = 0, wrongList = []) {
                     ticks: { display: false, stepSize: 20 },
                     pointLabels: {
                         font: { size: 12, family: "'Noto Sans TC', sans-serif", weight: 'bold' },
-                        color: '#4b5563' // gray-600
+                        color: '#4b5563'
                     },
-                    grid: { color: '#e5e7eb' }, // gray-200
+                    grid: { color: '#e5e7eb' },
                     angleLines: { color: '#e5e7eb' }
                 } 
             },
@@ -581,9 +548,8 @@ function renderRadarChart(baseScore = 0, wrongList = []) {
 }
 
 // ==========================================
-// 5. 錯題列表渲染 (含 MathJax)
+// 5. 錯題列表渲染
 // ==========================================
-// ✨ 修改：渲染題目列表 (整合對錯判斷)
 function renderQuestionList(list) {
     const listContainer = document.getElementById('wrongList');
     if (!listContainer) return;
@@ -600,11 +566,9 @@ function renderQuestionList(list) {
 
     let fullHtml = '';
     list.forEach((q, idx) => {
-        const isCorrect = (q.answer === q.yourAns); // 判斷這題是對是錯
-        
+        const isCorrect = (q.answer === q.yourAns); 
         let explainText = q.explanation ? (Array.isArray(q.explanation) ? q.explanation.join('<br>') : q.explanation) : "暫無詳細解析";
         
-        // 選項渲染
         let optionsHtml = '';
         if (q.options && Array.isArray(q.options)) {
             q.options.forEach((opt, optIdx) => {
@@ -665,11 +629,11 @@ function renderQuestionList(list) {
     listContainer.innerHTML = fullHtml;
     if (window.MathJax) MathJax.typesetPromise([listContainer]);
 }
+
 // ==========================================
 // 6. 輔助函式與 UI 操作
 // ==========================================
 function normalizeExamData(data) {
-    // 確保物件結構完整，防止渲染時報錯
     if (!data.tabCheat) {
         const switches = data.tabSwitches || 0;
         let level = (switches > 5) ? 'HIGH' : (switches > 2 ? 'MEDIUM' : 'NORMAL');
@@ -725,7 +689,6 @@ function applyCheatResult(result) {
     }
 }
 
-// Sidebar 與 Modal 控制
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
@@ -738,9 +701,18 @@ function toggleSidebar() {
     }
 }
 
+// ==========================================
+// 🛡️ 年級修改：永久單次鎖定
+// ==========================================
 function openProfileModal() {
     const user = Auth.getCurrentUser();
     if (!user) return alert("請先登入！");
+    
+    // ✨ 開啟前攔截：如果已經修改過，禁止開啟
+    if (localStorage.getItem(`hasUpdatedGrade_${user.username}`)) {
+        return alert("⚠️ 您已經修改過年級，系統限制只能存檔一次！");
+    }
+
     const select = document.getElementById('editGradeSelect');
     if (user.grade) select.value = user.grade;
     document.getElementById('profileModal').classList.remove('hidden');
@@ -751,39 +723,37 @@ function closeProfileModal() {
 }
 
 async function saveProfile() {
+    const newGrade = document.getElementById('editGradeSelect').value;
     const user = Auth.getCurrentUser();
     if (!user) return alert("請先登入！");
 
-    // 🌟 1. 檢查是否已經成功存檔過
-    if (localStorage.getItem(`hasUpdatedGrade_${user.account || user.username}`)) {
-        alert("⚠️ 您已經修改過年級，系統限制只能存檔一次！");
-        closeProfileModal(); // 關閉彈窗
-        return; // 直接中斷，不執行後續動作
+    // ✨ 送出前攔截
+    if (localStorage.getItem(`hasUpdatedGrade_${user.username}`)) {
+        alert("⚠️ 系統限制只能存檔一次！");
+        closeProfileModal();
+        return;
     }
 
-    const newGrade = document.getElementById('editGradeSelect').value;
     const saveBtn = document.querySelector('#profileModal button[onclick="saveProfile()"]');
     const originalBtnText = saveBtn.innerText;
 
-    // 2. 進入載入狀態，防連點
     saveBtn.disabled = true;
     saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 儲存中...';
 
     try {
-        // 3. 發送請求給 GAS 後端
         const response = await fetch(GAS_URL, {
             method: 'POST',
             body: JSON.stringify({
-                action: "update_grade", // 此 action 需與 GAS 後端對應
-                account: user.account || user.username,
+                action: "update_grade", 
+                account: user.username,
                 newGrade: newGrade
             })
         });
 
         const result = await response.json();
 
-        if (result.status === "success") {
-            // 4. 伺服器成功更新後，更新本地資料
+        // 兼容各種成功回傳
+        if (result.result === "success" || result.status === "success") {
             if (Auth.updateUser) {
                 Auth.updateUser('grade', newGrade);
             }
@@ -791,26 +761,27 @@ async function saveProfile() {
             const roleEl = document.getElementById('sideUserRole');
             if (roleEl) roleEl.innerText = newGrade;
 
-            // 🌟 5. 重點：成功後寫入標記，鎖死未來的存檔權限
-            localStorage.setItem(`hasUpdatedGrade_${user.account || user.username}`, 'true');
+            // ✨ 存檔成功，永久寫入防呆標記
+            localStorage.setItem(`hasUpdatedGrade_${user.username}`, 'true');
 
-            alert(`✅ 修改成功！目前年級已更新為：${newGrade}\n🔒 注意：基於系統限制，您已無法再次修改年級。`);
+            alert(`✅ 修改成功！目前年級已更新為：${newGrade}`);
             closeProfileModal();
-            
-            // 將按鈕隱藏，避免使用者再次看到
-            saveBtn.style.display = 'none';
+
+            // 成功後，立刻把側邊欄的「編輯年級」按鈕拔掉
+            const editBtn = document.querySelector('button[onclick="openProfileModal()"]');
+            if (editBtn) editBtn.style.display = 'none';
+
         } else {
             alert("❌ 修改失敗：" + (result.message || "未知錯誤"));
-            // 失敗的話恢復按鈕，讓它可以重試
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = originalBtnText;
         }
     } catch (error) {
         console.error("更新年級發生錯誤:", error);
-        alert("網路連線錯誤，請稍後再試！");
-        // 失敗的話恢復按鈕
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = originalBtnText;
+        alert("網路連線異常，請稍後再試。");
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerText = originalBtnText;
+        }
     }
 }
 </script>
