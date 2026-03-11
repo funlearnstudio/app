@@ -436,8 +436,10 @@ const recordData = {
             totalCount: examResult.totalCount,
             correctCount: examResult.correctCount,
             wrongList: examResult.wrongList || [],
-            // 🌟 新增下面這行：把包含正確題目的「完整試卷」也存上雲端！
+            
+            // 🌟 關鍵修復：就是補上這一行！讓完整題目跟著一起飛上雲端
             questions: examResult.questions || [], 
+            
             cheat: examResult.cheat,
             tabSwitches: examResult.tabSwitches,
             syncTime: new Date().toISOString()
