@@ -80,6 +80,27 @@
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
 }
+        /* 🍎 蘋果極簡風 - 選項選中狀態 */
+.option-card.selected {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-color: #3b82f6 !important;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06);
+    transform: translateY(-2px);
+}
+
+.fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.group-context-content {
+    font-size: 1.05rem;
+    line-height: 1.8;
+}
         /* 自定義滾動條 */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -685,158 +706,141 @@
         startTimer();
     }
 
-// ==========================================
-    // 🎨 渲染考卷畫面 (🍎 蘋果極簡風 + ABCD 字母標示)
-    // ==========================================
+// 🎨 渲染考卷畫面 (精緻 UI 版)
     function renderQuestion() {
-        const q = mockQuestions[currentQIndex];
-        if (!q) return;
+        if (typeof recordTime === 'function') recordTime(); 
+        questionStartTime = Date.now();
 
-        // 1. 更新上方題號與標籤
+        const item = mockQuestions[currentQIndex];
+        if (!item) return;
+
+        // 更新題號與進度
         document.getElementById('currentQNumDisplay').textContent = currentQIndex + 1;
-        document.getElementById('conceptBadge').textContent = q.concept || (q.type === 'group' ? '閱讀題組' : '綜合測驗');
         document.getElementById('currentQIdx').textContent = currentQIndex + 1;
         document.getElementById('totalQCount').textContent = mockQuestions.length;
-
-        // 2. 更新題目內容區
-        const questionTextEl = document.getElementById('questionText');
-        const optionsContainer = document.getElementById('optionsContainer');
+        document.getElementById('conceptBadge').textContent = item.concept || (item.type === 'group' ? "閱讀題組" : "一般題型");
+      
+        const container = document.getElementById('optionsContainer');
+        const questionTextBox = document.getElementById('questionText');
         
-        let optionsHtml = '';
+        container.innerHTML = '';
+        
+        // 📖 題組模式
+        if (item.type === 'group') {
+            questionTextBox.innerHTML = `
+                <div class="bg-blue-50/50 p-5 md:p-6 rounded-2xl border-l-8 border-blue-400 mb-8 text-slate-700 leading-relaxed shadow-sm fade-in">
+                    <div class="font-bold text-blue-600 mb-3 flex items-center text-lg">
+                        <i class="fas fa-book-open mr-2"></i> 閱讀引文
+                    </div>
+                    <div class="group-context-content text-slate-700">
+                        ${item.article || item.context || item.question}
+                    </div>
+                </div>
+            `;
 
-        // 📖 判斷如果是【題組】
-        if (q.type === 'group' || q.questions) {
-            questionTextEl.innerHTML = `<div class="bg-slate-50 p-5 md:p-6 rounded-2xl border-l-4 border-blue-400 text-slate-700 text-base md:text-lg leading-relaxed shadow-sm"><i class="fas fa-book-open mr-3 text-blue-400"></i>${q.article || q.question}</div>`;
-            
-            q.questions.forEach((subQ, sIdx) => {
-                optionsHtml += `
-                    <div class="mb-8 p-5 md:p-6 bg-white/80 backdrop-blur-sm rounded-3xl shadow-sm border border-slate-100">
-                        <p class="text-base md:text-lg font-medium text-slate-800 mb-5 leading-relaxed">
-                            <span class="text-blue-500 font-bold mr-2">(${sIdx + 1})</span>${subQ.question}
-                        </p>
-                        <div class="space-y-4" id="subq-container-${sIdx}">`; 
+            const subQuestions = item.questions || [];
+            subQuestions.forEach((subQ, subIdx) => {
+                const subCard = document.createElement('div');
+                subCard.className = "mb-8 p-6 bg-white/80 backdrop-blur-sm rounded-3xl border border-slate-100 shadow-md fade-in";
                 
-                subQ.options.forEach((opt, oIdx) => {
-                    const isSelected = (userAnswers[currentQIndex] && userAnswers[currentQIndex][sIdx] === oIdx);
-                    const letter = String.fromCharCode(65 + oIdx); // 產生 A, B, C, D
+                let optionsHtml = subQ.options.map((opt, optIdx) => {
+                    const isSelected = (userAnswers[currentQIndex] && userAnswers[currentQIndex][subIdx] === optIdx);
+                    const letter = String.fromCharCode(65 + optIdx);
                     
-                    const activeClass = isSelected 
-                        ? 'bg-blue-50/80 border-blue-400 shadow-sm ring-4 ring-blue-50' 
-                        : 'bg-white border-slate-200 hover:bg-slate-50 hover:shadow-md hover:-translate-y-1';
-                    
-                    // 🔠 字母圓徽章樣式
-                    const letterClass = isSelected 
-                        ? 'w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-blue-500 text-white font-bold text-sm md:text-base mr-4 transition-colors duration-300' 
-                        : 'w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-slate-300 text-slate-400 font-bold text-sm md:text-base mr-4 transition-colors duration-300 group-hover:border-slate-400 group-hover:text-slate-500';
-                    
-                    optionsHtml += `
-                        <label class="group flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 ${activeClass}" 
-                               onclick="selectGroupOption(${currentQIndex}, ${sIdx}, ${oIdx})">
-                            <span class="opt-letter ${letterClass}">${letter}</span>
-                            <span class="text-slate-700 text-base md:text-lg flex-1 leading-relaxed">${opt}</span>
-                        </label>`;
-                });
-                optionsHtml += `</div></div>`;
+                    return `
+                        <div onclick="selectAnswer(${currentQIndex}, ${optIdx}, ${subIdx})" 
+                             class="option-card group w-full p-4 rounded-2xl flex items-center gap-4 mt-3 cursor-pointer transition-all duration-300 ${isSelected ? 'selected' : 'bg-slate-50 border border-slate-100 hover:border-blue-300 hover:bg-white'}">
+                            <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm transition-all ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-400 border-slate-300 group-hover:border-blue-300 group-hover:text-blue-400'}">
+                                ${letter}
+                            </div>
+                            <div class="text-slate-700 font-medium text-base md:text-lg">${opt}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                subCard.innerHTML = `
+                    <div class="font-bold text-slate-800 mb-5 text-lg leading-relaxed">
+                        <span class="bg-blue-100 text-blue-600 px-3 py-1 rounded-xl mr-3 text-sm">第 ${subIdx + 1} 小題</span>
+                        ${highlightKeywords(subQ.question)}
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${optionsHtml}
+                    </div>
+                `;
+                container.appendChild(subCard);
             });
+
         } 
-        // 🎯 判斷如果是【單選題】
+        // 🎯 一般單選題
         else {
-            questionTextEl.innerHTML = `<div class="text-lg md:text-xl font-medium text-slate-800 leading-relaxed px-2">${q.question}</div>`;
-            
-            optionsHtml += `<div class="space-y-4 mt-6" id="single-q-container">`; 
-            q.options.forEach((opt, oIdx) => {
-                const isSelected = (userAnswers[currentQIndex] === oIdx);
-                const letter = String.fromCharCode(65 + oIdx); // 產生 A, B, C, D
+            questionTextBox.innerHTML = `
+                <div class="text-xl md:text-2xl font-bold text-slate-800 mb-8 px-2 leading-relaxed fade-in">
+                    ${highlightKeywords(item.question)}
+                </div>
+            `;
+
+            item.options.forEach((opt, idx) => {
+                const isSelected = userAnswers[currentQIndex] === idx;
+                const letter = String.fromCharCode(65 + idx);
+                const optDiv = document.createElement('div');
+                optDiv.className = `option-card group w-full p-5 rounded-3xl flex items-center gap-5 cursor-pointer transition-all duration-300 mb-4 fade-in ${isSelected ? 'selected' : 'bg-white border border-slate-100 text-slate-700 shadow-sm hover:border-blue-300 hover:shadow-md'}`;
                 
-                const activeClass = isSelected 
-                    ? 'bg-blue-50/80 border-blue-400 shadow-sm ring-4 ring-blue-50' 
-                    : 'bg-white border-slate-200 hover:bg-slate-50 hover:shadow-md hover:-translate-y-1';
+                optDiv.innerHTML = `
+                    <div class="w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold text-lg transition-all ${isSelected ? 'border-blue-500 bg-blue-600 text-white' : 'border-slate-200 text-slate-400 group-hover:border-blue-300 group-hover:text-blue-400'}">
+                        ${letter}
+                    </div>
+                    <div class="flex-grow font-medium text-lg md:text-xl">${opt}</div>
+                `;
                 
-                // 🔠 字母圓徽章樣式
-                const letterClass = isSelected 
-                    ? 'w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-blue-500 text-white font-bold text-sm md:text-base mr-4 transition-colors duration-300' 
-                    : 'w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-slate-300 text-slate-400 font-bold text-sm md:text-base mr-4 transition-colors duration-300 group-hover:border-slate-400 group-hover:text-slate-500';
-                
-                optionsHtml += `
-                    <label class="group flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 ${activeClass}" 
-                           onclick="selectOption(${currentQIndex}, ${oIdx})">
-                        <span class="opt-letter ${letterClass}">${letter}</span>
-                        <span class="text-slate-700 text-base md:text-lg flex-1 leading-relaxed">${opt}</span>
-                    </label>`;
+                optDiv.onclick = () => selectAnswer(currentQIndex, idx);
+                container.appendChild(optDiv);
             });
-            optionsHtml += `</div>`;
         }
 
-        optionsContainer.innerHTML = optionsHtml;
-        
-        updateNavButtons(); 
-        updatePalette();    
-        
+        // MathJax 處理
         if (window.MathJax) {
-            MathJax.typesetPromise([questionTextEl, optionsContainer]).catch(err => console.log('MathJax error: ', err));
+            MathJax.typesetPromise().catch(err => console.log('MathJax Error:', err));
         }
+        updateNavButtons();
+        updatePalette();
     }
 
-    // ==========================================
-    // 🌟 點擊選項機制 (無痕變色 + 字母徽章切換)
-    // ==========================================
-    window.selectOption = function(qIndex, optIndex) {
-        userAnswers[qIndex] = optIndex; 
-        
-        const container = document.getElementById('single-q-container');
-        if(!container) return;
-        
-        const labels = container.querySelectorAll('label');
-        labels.forEach((label, idx) => {
-            const letterSpan = label.querySelector('.opt-letter');
-            if (idx === optIndex) {
-                label.className = "group flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 bg-blue-50/80 border-blue-400 shadow-sm ring-4 ring-blue-50";
-                letterSpan.className = "opt-letter w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-blue-500 text-white font-bold text-sm md:text-base mr-4 transition-colors duration-300";
-            } else {
-                label.className = "group flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 bg-white border-slate-200 hover:bg-slate-50 hover:shadow-md hover:-translate-y-1";
-                letterSpan.className = "opt-letter w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-slate-300 text-slate-400 font-bold text-sm md:text-base mr-4 transition-colors duration-300 group-hover:border-slate-400 group-hover:text-slate-500";
-            }
-        });
-        updatePalette(); 
+    // 🌟 點擊選取邏輯
+    window.selectAnswer = (mainIdx, optIdx, subIdx = null) => {
+        if (subIdx !== null) {
+            if (!userAnswers[mainIdx]) userAnswers[mainIdx] = [];
+            userAnswers[mainIdx][subIdx] = optIdx;
+        } else {
+            userAnswers[mainIdx] = optIdx;
+        }
+
+        // 重新渲染該題的按鈕狀態 (手感更即時)
+        renderQuestion();
+        updatePalette();
     };
 
-    window.selectGroupOption = function(qIndex, subQIndex, optIndex) {
-        if (!userAnswers[qIndex]) userAnswers[qIndex] = [];
-        userAnswers[qIndex][subQIndex] = optIndex; 
-        
-        const container = document.getElementById(`subq-container-${subQIndex}`);
-        if(!container) return;
-        
-        const labels = container.querySelectorAll('label');
-        labels.forEach((label, idx) => {
-            const letterSpan = label.querySelector('.opt-letter');
-            if (idx === optIndex) {
-                label.className = "group flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 bg-blue-50/80 border-blue-400 shadow-sm ring-4 ring-blue-50";
-                letterSpan.className = "opt-letter w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-blue-500 text-white font-bold text-sm md:text-base mr-4 transition-colors duration-300";
-            } else {
-                label.className = "group flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 bg-white border-slate-200 hover:bg-slate-50 hover:shadow-md hover:-translate-y-1";
-                letterSpan.className = "opt-letter w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-slate-300 text-slate-400 font-bold text-sm md:text-base mr-4 transition-colors duration-300 group-hover:border-slate-400 group-hover:text-slate-500";
-            }
-        });
-        updatePalette(); 
-    };
+    // 🚀 更新導覽按鈕
     function updateNavButtons() {
         const nextBtn = document.getElementById('nextBtn');
         const prevBtn = document.getElementById('prevBtn');
+        
+        // 上一題按鈕樣式
         prevBtn.disabled = currentQIndex === 0;
-        prevBtn.className = currentQIndex === 0 ? "hidden" : "text-slate-500 font-bold hover:text-blue-600 flex items-center gap-2 px-3 py-2 cursor-pointer transition";
+        prevBtn.className = currentQIndex === 0 
+            ? "invisible" 
+            : "flex items-center gap-2 px-5 py-2.5 rounded-2xl text-slate-500 font-bold hover:bg-slate-100 transition-all cursor-pointer";
 
+        // 下一題 / 交卷按鈕樣式
         if (currentQIndex === mockQuestions.length - 1) {
-            nextBtn.innerHTML = `<span class="hidden md:inline">完成交卷</span><span class="md:hidden">交卷</span> <i class="fas fa-check-circle"></i>`;
-            nextBtn.className = "bg-slate-800 text-white px-4 md:px-6 py-2 rounded-lg md:rounded-xl font-bold shadow-md hover:bg-slate-700 transition flex items-center gap-2 text-sm md:text-base";
+            nextBtn.innerHTML = `完成交卷 <i class="fas fa-check-circle ml-1"></i>`;
+            nextBtn.className = "flex items-center gap-2 bg-slate-900 text-white px-8 py-3 rounded-2xl font-bold shadow-lg shadow-slate-200 hover:bg-blue-600 hover:shadow-blue-100 transition-all transform active:scale-95";
             nextBtn.onclick = trySubmit;
         } else {
-            nextBtn.innerHTML = `<span class="hidden md:inline">下一題</span><span class="md:hidden">下題</span> <i class="fas fa-arrow-right"></i>`;
-            nextBtn.className = "bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 text-slate-700 px-4 md:px-6 py-2 rounded-lg md:rounded-xl font-bold shadow-sm flex items-center gap-2 transition text-sm md:text-base";
-            nextBtn.onclick = () => { currentQIndex++; renderQuestion(); };
+            nextBtn.innerHTML = `下一題 <i class="fas fa-arrow-right ml-1"></i>`;
+            nextBtn.className = "flex items-center gap-2 bg-white border-2 border-slate-200 text-slate-700 px-8 py-3 rounded-2xl font-bold hover:border-blue-400 hover:text-blue-500 transition-all shadow-sm transform active:scale-95";
+            nextBtn.onclick = () => { currentQIndex++; renderQuestion(); window.scrollTo({top: 0, behavior: 'smooth'}); };
         }
     }
-
     function updatePalette() {
         const p = document.getElementById('questionPalette');
         p.innerHTML = '';
@@ -906,21 +910,24 @@
 
     function closeSubmitModal() { document.getElementById('submitModal').classList.add('hidden'); }
 
-   async function finalSubmit() {
-        // 1. 鎖定按鈕避免重複點擊
+async function finalSubmit() {
         const submitBtn = document.getElementById('confirmSubmitBtn');
-        if (submitBtn) {
-            if (submitBtn.disabled) return; 
-            submitBtn.disabled = true;      
-            submitBtn.textContent = "資料上傳中..."; 
-        }
+        if (submitBtn.disabled) return; 
+        submitBtn.disabled = true;      
+        submitBtn.textContent = "評分與上傳中..."; 
 
         if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval);
+        
         const submitModal = document.getElementById('submitModal');
         if(submitModal) submitModal.classList.add('hidden');
+        
+        // 顯示一個讀取遮罩（如果有這個 ID 的話）
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if(loadingOverlay) loadingOverlay.classList.remove('hidden');
 
-        // 2. 計算分數與封裝資料
         let correctCount = 0, totalCount = 0, fastCount = 0, wrongList = [];
+
+        // 1. 計算分數邏輯
         mockQuestions.forEach((item, idx) => {
             const timeSpent = (typeof timeLog !== 'undefined' && timeLog[idx]) ? timeLog[idx] : 0;
             if (item.type === 'group') {
@@ -940,86 +947,92 @@
         });
 
         const finalScore = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+        const user = (window.Auth && Auth.getCurrentUser()) || { username: 'guest', name: '訪客' };
         const totalXP = 20 + (correctCount * 10);
-        
+        let isLevelUp = (window.Auth && user.username !== 'guest') ? Auth.addXP(totalXP) : false;
+
         const urlParams = new URLSearchParams(window.location.search);
+        
+        // 2. 打包資料 (重要：名稱必須是 examResult)
         const resultData = {
+            owner: user.username,
+            id: Date.now(),
+            subject: urlParams.get('subject') || "english",
             title: urlParams.get('title') || "綜合測驗",
-            totalCount: totalCount,
+            score: finalScore,
             correctCount: correctCount,
+            totalCount: totalCount,
+            questions: mockQuestions.map((q, index) => ({
+                ...q,
+                yourAns: userAnswers[index]
+            })),
             wrongList: wrongList,
-            cheat: { cheatLevel: 'NORMAL', fastCount: fastCount },
             tabSwitches: (typeof tabLog !== 'undefined') ? tabLog.length : 0,
-            syncTime: new Date().toISOString(),
-            subject: urlParams.get('subject') || "unknown", 
-            grade: urlParams.get('grade') || "國九",       
-            xpGained: totalXP        
+            xpGained: totalXP,
+            isLevelUp: isLevelUp,
+            cheat: {
+                cheatLevel: (fastCount > 3 || (typeof tabLog !== 'undefined' && tabLog.length > 5)) ? 'HIGH' : 'NORMAL',
+                fastCount: fastCount
+            },
+            analysis: { 
+                timeLog: (typeof timeLog !== 'undefined') ? timeLog : [], 
+                tabLogDetails: (typeof tabLog !== 'undefined') ? tabLog : [] 
+            }
         };
 
-        // 3. 儲存到本地（防止跳轉失敗資料遺失）
-        localStorage.setItem('lastExamResult', JSON.stringify(resultData));
+        // 3. 存入本地 (這是 analysis.html 的生命線)
+        localStorage.setItem('examResult', JSON.stringify(resultData));
+        
+        // 存入歷史紀錄
+        const historyKey = `history_${user.username}`;
+        let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
+        history.push(resultData);
+        localStorage.setItem(historyKey, JSON.stringify(history.slice(-50)));
 
-        // 4. 上傳雲端 (確保使用 await 等待)
-        const currentUser = window.Auth ? Auth.getCurrentUser() : null;
-        if (window.Auth && currentUser && currentUser.username !== 'guest') {
+        // 4. 同步雲端
+        if (user.username !== 'guest' && typeof GAS_URL !== 'undefined') {
             try {
-                // 這裡呼叫你下方的上傳函式，並加上 await
-                await uploadToCloud(currentUser.username, resultData.title, finalScore, resultData);
-                Auth.addXP(totalXP); 
+                // 不使用 no-cors，讓它正常跑完
+                await uploadToCloud(user.username, resultData.title, finalScore, resultData);
             } catch (e) { 
-                console.error("雲端備份出錯:", e);
-                alert("上傳失敗，但資料已保存在本地。");
+                console.error("雲端同步失敗，但本地已儲存:", e); 
             }
         }
 
-        // 5. 所有的事都做完了，才解除警報並跳轉
+        // 5. 解除警告並跳轉
         window.onbeforeunload = null; 
         setTimeout(() => { 
-            // 將原本這行：
-// window.location.href = "analysis.html?mode=new"; 
-
-// 改成這行（確保在同一個資料夾層級）：
-window.location.assign("./analysis.html?mode=new");
-        }, 500);
+            window.location.href = "analysis.html?mode=new"; 
+        }, 800);
     }
-async function uploadToCloud(username, activityName, score, fullData) {
-    const urlParams = new URLSearchParams(window.location.search);
-    const currentSubject = urlParams.get('subject') || "unknown";
-    
-    const detailToSave = {
-        subject: currentSubject,           
-        unitName: activityName,            
-        grade: fullData.grade || "國九",
-        totalCount: fullData.totalCount,
-        correctCount: fullData.correctCount,
-        xpGained: fullData.xpGained, 
-        wrongList: fullData.wrongList,
-        cheat: fullData.cheat,
-        tabSwitches: fullData.tabSwitches
-    };
 
-    const payload = {
-        action: "save_record",
-        username: username,
-        activity: activityName,
-        score: score,
-        detail: JSON.stringify(detailToSave) 
-    };
+    // 修正後的上傳函式
+    async function uploadToCloud(username, activityName, score, fullData) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const detailToSave = {
+            subject: urlParams.get('subject') || "unknown",           
+            unitName: activityName,            
+            grade: fullData.grade || "國九",
+            totalCount: fullData.totalCount,
+            correctCount: fullData.correctCount,
+            wrongList: fullData.wrongList,
+            cheat: fullData.cheat,
+            tabSwitches: fullData.tabSwitches
+        };
 
-    alert("⏳ 正在將資料送往 Google 試算表...\n如果接下來跳出錯誤，請照著指示做！");
+        const payload = {
+            action: "save_record",
+            username: username,
+            activity: activityName,
+            score: score,
+            detail: JSON.stringify(detailToSave) 
+        };
 
-    try {
-        const response = await fetch(GAS_URL, {
+        return fetch(GAS_URL, {
             method: 'POST',
             body: JSON.stringify(payload)
-        });
-        
-        const resultText = await response.text(); 
-        alert("✅ 【成功連線到後台】\n後台說：" + resultText + "\n\n👉 如果裡面寫了「攔截重複」，代表你要去試算表把舊紀錄刪掉！");
-    } catch (err) {
-        alert("❌ 【連線被 Google 擋住了】\n錯誤訊息：" + err.message + "\n\n💡 抓到兇手了！這代表你的 GAS 部署權限設定錯誤。\n請去 GAS 將「誰可以存取」改為「所有人 (Anyone)」！");
+        }).catch(err => console.log("Fetch Error:", err));
     }
-}
 </script>
 </body>
 </html>
