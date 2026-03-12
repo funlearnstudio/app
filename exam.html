@@ -491,7 +491,10 @@
     // ==========================================
     // ⚡ 雲端題庫融合器
     // ==========================================
-    async function injectCustomQuestionsToRepo() {
+// ==========================================
+    // ⚡ 雲端題庫融合器 (0.1秒極速秒開版)
+    // ==========================================
+    function injectCustomQuestionsToRepo() {
         const repoMap = {
             'chinese': '__CHINESE_REPO__',
             'math': '__MATH_REPO__',
@@ -505,38 +508,24 @@
             'civics': '__CIVICS_REPO__'
         };
 
-        try {
-            const res = await fetch(`${GAS_URL}?action=get_custom_questions`);
-            const customQs = await res.json();
-
-            if (customQs && customQs.length > 0) {
-                customQs.forEach((item, idx) => {
-                    let repoName = repoMap[item.subject];
-                    if (!repoName) return; 
-
-                    window[repoName] = window[repoName] || {};
-                    const id = `custom_${item.subject}_${idx}`;
-                    
-                    window[repoName][id] = {
-                        func: () => {
-                            const opts = [item.a, ...item.o].sort(() => Math.random() - 0.5);
-                            return {
-                                question: `【教師出題】${item.q}`, 
-                                options: opts,
-                                answer: opts.indexOf(item.a),
-                                explanation: [`✅ 正確答案：${item.a}`, `🏷️ 標籤：${item.t.join(" / ")}`],
-                                concept: item.t[item.t.length - 1] || "自訂題目"
-                            };
-                        },
-                        tags: item.t,
-                        type: "normal"
-                    };
-                });
-                console.log(`✅ 成功載入 ${customQs.length} 題教師雲端題庫！`);
-            }
-        } catch (e) {
-            console.warn("雲端題庫注入跳過或連線失敗:", e);
+        // 1. 🌟 秒開關鍵：先瞬間讀取瀏覽器記憶體裡的題庫 (0秒完成，不卡畫面)
+        const cachedData = localStorage.getItem('custom_questions_cache');
+        if (cachedData) {
+            try {
+                const customQs = JSON.parse(cachedData);
+                loadQuestionsToRepo(customQs, repoMap);
+            } catch(e) {}
         }
+
+        // 2. 背景偷偷連線 Google 更新題庫，等它拿回來再存起來給下次用
+        fetch(`${GAS_URL}?action=get_custom_questions`)
+            .then(res => res.json())
+            .then(customQs => {
+                if (customQs && customQs.length > 0) {
+                    localStorage.setItem('custom_questions_cache', JSON.stringify(customQs));
+                }
+            })
+            .catch(e => console.warn("雲端題庫連線跳過:", e));
     }
 
     window.onload = function() {
@@ -987,7 +976,8 @@ async function finalSubmit() {
     }
 
     // 6. 等待 1 秒後，自動順利跳轉到成績分析單
-    (() => { window.location.href = "analysis.html?mode=new"; }, 1000);
+   // 6. 等待 1 秒後，自動順利跳轉到成績分析單
+    setTimeout(() => { window.location.href = "analysis.html?mode=new"; }, 1000);
 }
     // 🌟 注意：我把  跳轉到分析頁面的程式碼刪掉了！
     // 這樣網頁就會「停在原地」，方便你把跳出來的訊息截圖或看清楚！
