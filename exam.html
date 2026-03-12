@@ -977,6 +977,8 @@ async function finalSubmit() {
 
     // 6. 等待 1 秒後，自動順利跳轉到成績分析單
    // 6. 等待 1 秒後，自動順利跳轉到成績分析單
+   // 6. 解除防呆警報，然後等待 1 秒後自動跳轉
+    window.onbeforeunload = null; // 🌟 加上這行！告訴瀏覽器不要再阻擋了
     setTimeout(() => { window.location.href = "analysis.html?mode=new"; }, 1000);
 }
     // 🌟 注意：我把  跳轉到分析頁面的程式碼刪掉了！
