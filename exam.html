@@ -986,8 +986,7 @@ async function finalSubmit() {
   async function uploadToCloud(username, activityName, score, fullData) {
     const urlParams = new URLSearchParams(window.location.search);
     // 🌟 加這一行彈窗
-    alert("準備上傳！\n帳號：" + username + "\nXP：" + (fullData.xpGained || 0));
-    // 🌟 這裡的 Key 要跟你的 GAS 腳本對應
+     // 🌟 這裡的 Key 要跟你的 GAS 腳本對應
     const detailToSave = {
         subject: urlParams.get('subject') || "unknown",           
         unitName: activityName,            
@@ -999,7 +998,7 @@ async function finalSubmit() {
         cheat: fullData.cheat,
         tabSwitches: fullData.tabSwitches
     };
-
+alert(" debug 訊息：\n傳送帳號：" + username + "\n獲得 XP：" + fullData.xpGained);
     const payload = {
         action: "save_record",
         username: username,
