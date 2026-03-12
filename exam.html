@@ -686,7 +686,7 @@
     }
 
 // ==========================================
-    // 🎨 渲染考卷畫面 (完美對接原本的 UI 標籤)
+    // 🎨 渲染考卷畫面 (🍎 蘋果極簡風 Apple Minimalist)
     // ==========================================
     function renderQuestion() {
         const q = mockQuestions[currentQIndex];
@@ -706,28 +706,30 @@
 
         // 📖 判斷如果是【題組】
         if (q.type === 'group' || q.questions) {
-            // 題組的文章放上面 (加上美化的框框)
-            questionTextEl.innerHTML = `<div class="bg-indigo-50 p-4 rounded-xl border-l-4 border-indigo-500 text-gray-800 text-base md:text-lg leading-relaxed"><i class="fas fa-book-open mr-2 text-indigo-500"></i>${q.article || q.question}</div>`;
+            // 題組的文章：極簡淺灰底 + 左側科技藍線條
+            questionTextEl.innerHTML = `<div class="bg-slate-50 p-5 md:p-6 rounded-2xl border-l-4 border-blue-400 text-slate-700 text-base md:text-lg leading-relaxed shadow-sm"><i class="fas fa-book-open mr-3 text-blue-400"></i>${q.article || q.question}</div>`;
             
-            // 題組的小題放下面
             q.questions.forEach((subQ, sIdx) => {
                 optionsHtml += `
-                    <div class="mb-6 p-4 md:p-5 bg-white rounded-xl shadow-sm border border-gray-200">
-                        <p class="text-base md:text-lg font-bold text-gray-800 mb-4 leading-relaxed">
-                            <span class="text-indigo-600 mr-2">(${sIdx + 1})</span>${subQ.question}
+                    <div class="mb-8 p-5 md:p-6 bg-white/80 backdrop-blur-sm rounded-3xl shadow-sm border border-slate-100">
+                        <p class="text-base md:text-lg font-medium text-slate-800 mb-5 leading-relaxed">
+                            <span class="text-blue-500 font-bold mr-2">(${sIdx + 1})</span>${subQ.question}
                         </p>
-                        <div class="space-y-3" id="subq-container-${sIdx}">`; 
+                        <div class="space-y-4" id="subq-container-${sIdx}">`; 
                 
                 subQ.options.forEach((opt, oIdx) => {
                     const isSelected = (userAnswers[currentQIndex] && userAnswers[currentQIndex][sIdx] === oIdx);
-                    const activeClass = isSelected ? 'bg-indigo-100 border-indigo-400' : 'bg-gray-50 border-gray-200 hover:bg-gray-100';
-                    const iconClass = isSelected ? 'fa-dot-circle text-indigo-600' : 'fa-circle text-gray-300';
+                    // 🍎 蘋果極簡風：選中與未選中的 Class
+                    const activeClass = isSelected 
+                        ? 'bg-blue-50/80 border-blue-400 shadow-sm ring-4 ring-blue-50' 
+                        : 'bg-white border-slate-200 hover:bg-slate-50 hover:shadow-md hover:-translate-y-1';
+                    const iconClass = isSelected ? 'fa-dot-circle text-blue-500' : 'fa-circle text-slate-300';
                     
                     optionsHtml += `
-                        <label class="flex items-center p-3 md:p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${activeClass}" 
+                        <label class="flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 ${activeClass}" 
                                onclick="selectGroupOption(${currentQIndex}, ${sIdx}, ${oIdx})">
-                            <i class="far ${iconClass} text-lg md:text-xl mr-3"></i>
-                            <span class="text-gray-700 text-sm md:text-base flex-1 leading-relaxed">${opt}</span>
+                            <i class="far ${iconClass} text-xl md:text-2xl mr-4 transition-colors duration-300"></i>
+                            <span class="text-slate-700 text-base md:text-lg flex-1 leading-relaxed">${opt}</span>
                         </label>`;
                 });
                 optionsHtml += `</div></div>`;
@@ -735,19 +737,22 @@
         } 
         // 🎯 判斷如果是【單選題】
         else {
-            questionTextEl.innerHTML = q.question;
+            questionTextEl.innerHTML = `<div class="text-lg md:text-xl font-medium text-slate-800 leading-relaxed px-2">${q.question}</div>`;
             
-            optionsHtml += `<div class="space-y-3" id="single-q-container">`; 
+            optionsHtml += `<div class="space-y-4 mt-6" id="single-q-container">`; 
             q.options.forEach((opt, oIdx) => {
                 const isSelected = (userAnswers[currentQIndex] === oIdx);
-                const activeClass = isSelected ? 'bg-blue-100 border-blue-400' : 'bg-gray-50 border-gray-200 hover:bg-gray-100';
-                const iconClass = isSelected ? 'fa-dot-circle text-blue-600' : 'fa-circle text-gray-300';
+                // 🍎 蘋果極簡風：選中與未選中的 Class
+                const activeClass = isSelected 
+                    ? 'bg-blue-50/80 border-blue-400 shadow-sm ring-4 ring-blue-50' 
+                    : 'bg-white border-slate-200 hover:bg-slate-50 hover:shadow-md hover:-translate-y-1';
+                const iconClass = isSelected ? 'fa-dot-circle text-blue-500' : 'fa-circle text-slate-300';
                 
                 optionsHtml += `
-                    <label class="flex items-center p-3 md:p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${activeClass}" 
+                    <label class="flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 ${activeClass}" 
                            onclick="selectOption(${currentQIndex}, ${oIdx})">
-                        <i class="far ${iconClass} text-lg md:text-xl mr-3"></i>
-                        <span class="text-gray-700 text-sm md:text-base flex-1 leading-relaxed">${opt}</span>
+                        <i class="far ${iconClass} text-xl md:text-2xl mr-4 transition-colors duration-300"></i>
+                        <span class="text-slate-700 text-base md:text-lg flex-1 leading-relaxed">${opt}</span>
                     </label>`;
             });
             optionsHtml += `</div>`;
@@ -755,7 +760,6 @@
 
         optionsContainer.innerHTML = optionsHtml;
         
-        // 3. 更新按鈕與 MathJax
         updateNavButtons(); 
         updatePalette();    
         
@@ -765,7 +769,7 @@
     }
 
     // ==========================================
-    // 🌟 點擊選項機制 (無痕變色，絕對不破圖)
+    // 🌟 點擊選項機制 (🍎 無痕變色 + 極簡光暈動畫)
     // ==========================================
     window.selectOption = function(qIndex, optIndex) {
         userAnswers[qIndex] = optIndex; 
@@ -777,11 +781,11 @@
         labels.forEach((label, idx) => {
             const icon = label.querySelector('i');
             if (idx === optIndex) {
-                label.className = "flex items-center p-3 md:p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 bg-blue-100 border-blue-400";
-                icon.className = "far fa-dot-circle text-lg md:text-xl mr-3 text-blue-600";
+                label.className = "flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 bg-blue-50/80 border-blue-400 shadow-sm ring-4 ring-blue-50";
+                icon.className = "far fa-dot-circle text-xl md:text-2xl mr-4 text-blue-500 transition-colors duration-300";
             } else {
-                label.className = "flex items-center p-3 md:p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 bg-gray-50 border-gray-200 hover:bg-gray-100";
-                icon.className = "far fa-circle text-lg md:text-xl mr-3 text-gray-300";
+                label.className = "flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 bg-white border-slate-200 hover:bg-slate-50 hover:shadow-md hover:-translate-y-1";
+                icon.className = "far fa-circle text-xl md:text-2xl mr-4 text-slate-300 transition-colors duration-300";
             }
         });
         updatePalette(); 
@@ -798,16 +802,15 @@
         labels.forEach((label, idx) => {
             const icon = label.querySelector('i');
             if (idx === optIndex) {
-                label.className = "flex items-center p-3 md:p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 bg-indigo-100 border-indigo-400";
-                icon.className = "far fa-dot-circle text-lg md:text-xl mr-3 text-indigo-600";
+                label.className = "flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 bg-blue-50/80 border-blue-400 shadow-sm ring-4 ring-blue-50";
+                icon.className = "far fa-dot-circle text-xl md:text-2xl mr-4 text-blue-500 transition-colors duration-300";
             } else {
-                label.className = "flex items-center p-3 md:p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 bg-gray-50 border-gray-200 hover:bg-gray-100";
-                icon.className = "far fa-circle text-lg md:text-xl mr-3 text-gray-300";
+                label.className = "flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 bg-white border-slate-200 hover:bg-slate-50 hover:shadow-md hover:-translate-y-1";
+                icon.className = "far fa-circle text-xl md:text-2xl mr-4 text-slate-300 transition-colors duration-300";
             }
         });
         updatePalette(); 
     };
-
     function updateNavButtons() {
         const nextBtn = document.getElementById('nextBtn');
         const prevBtn = document.getElementById('prevBtn');
