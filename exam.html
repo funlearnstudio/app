@@ -686,84 +686,90 @@
     }
 
 // ==========================================
-    // 🎨 渲染考卷畫面 (完美防破圖版)
+    // 🎨 渲染考卷畫面 (完美對接原本的 UI 標籤)
     // ==========================================
-   // ==========================================
-    // 🎨 渲染考卷畫面 (加上專屬 ID，方便變色)
-    // ==========================================
-    function renderQuestion(index) {
-        const qContainer = document.getElementById('questionContainer');
-        if (!qContainer) return;
+    function renderQuestion() {
+        const q = mockQuestions[currentQIndex];
+        if (!q) return;
+
+        // 1. 更新上方題號與標籤
+        document.getElementById('currentQNumDisplay').textContent = currentQIndex + 1;
+        document.getElementById('conceptBadge').textContent = q.concept || (q.type === 'group' ? '閱讀題組' : '綜合測驗');
+        document.getElementById('currentQIdx').textContent = currentQIndex + 1;
+        document.getElementById('totalQCount').textContent = mockQuestions.length;
+
+        // 2. 更新題目內容區
+        const questionTextEl = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
         
-        const q = mockQuestions[index];
-        let html = '';
+        let optionsHtml = '';
 
         // 📖 判斷如果是【題組】
         if (q.type === 'group' || q.questions) {
-            html += `<div class="bg-indigo-50 p-5 rounded-xl mb-6 shadow-sm border border-indigo-100">
-                        <p class="font-bold text-indigo-800 mb-3 text-lg"><i class="fas fa-book-open mr-2"></i>【閱讀題組】</p>
-                        <div class="text-gray-800 leading-relaxed prose max-w-none">${q.article || q.question}</div>
-                    </div>`;
+            // 題組的文章放上面 (加上美化的框框)
+            questionTextEl.innerHTML = `<div class="bg-indigo-50 p-4 rounded-xl border-l-4 border-indigo-500 text-gray-800 text-base md:text-lg leading-relaxed"><i class="fas fa-book-open mr-2 text-indigo-500"></i>${q.article || q.question}</div>`;
             
+            // 題組的小題放下面
             q.questions.forEach((subQ, sIdx) => {
-                html += `<div class="mb-6 p-5 bg-white rounded-xl shadow-sm border border-gray-200">
-                            <p class="text-lg font-medium text-gray-800 mb-4 leading-relaxed">
-                                <span class="text-indigo-600 font-bold mr-2">(${sIdx + 1})</span>${subQ.question}
-                            </p>
-                            <div class="space-y-3" id="subq-container-${sIdx}">`; 
+                optionsHtml += `
+                    <div class="mb-6 p-4 md:p-5 bg-white rounded-xl shadow-sm border border-gray-200">
+                        <p class="text-base md:text-lg font-bold text-gray-800 mb-4 leading-relaxed">
+                            <span class="text-indigo-600 mr-2">(${sIdx + 1})</span>${subQ.question}
+                        </p>
+                        <div class="space-y-3" id="subq-container-${sIdx}">`; 
                 
                 subQ.options.forEach((opt, oIdx) => {
-                    const isSelected = (userAnswers[index] && userAnswers[index][sIdx] === oIdx);
+                    const isSelected = (userAnswers[currentQIndex] && userAnswers[currentQIndex][sIdx] === oIdx);
                     const activeClass = isSelected ? 'bg-indigo-100 border-indigo-400' : 'bg-gray-50 border-gray-200 hover:bg-gray-100';
                     const iconClass = isSelected ? 'fa-dot-circle text-indigo-600' : 'fa-circle text-gray-300';
                     
-                    html += `
-                        <label class="flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${activeClass}" 
-                               onclick="selectGroupOption(${index}, ${sIdx}, ${oIdx})">
-                            <i class="far ${iconClass} text-xl mr-3"></i>
-                            <span class="text-gray-700 text-lg flex-1">${opt}</span>
+                    optionsHtml += `
+                        <label class="flex items-center p-3 md:p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${activeClass}" 
+                               onclick="selectGroupOption(${currentQIndex}, ${sIdx}, ${oIdx})">
+                            <i class="far ${iconClass} text-lg md:text-xl mr-3"></i>
+                            <span class="text-gray-700 text-sm md:text-base flex-1 leading-relaxed">${opt}</span>
                         </label>`;
                 });
-                html += `</div></div>`;
+                optionsHtml += `</div></div>`;
             });
         } 
         // 🎯 判斷如果是【單選題】
         else {
-            html += `<p class="text-xl font-medium text-gray-800 mb-6 leading-relaxed">${q.question}</p>
-                     <div class="space-y-4" id="single-q-container">`; 
+            questionTextEl.innerHTML = q.question;
             
+            optionsHtml += `<div class="space-y-3" id="single-q-container">`; 
             q.options.forEach((opt, oIdx) => {
-                const isSelected = (userAnswers[index] === oIdx);
+                const isSelected = (userAnswers[currentQIndex] === oIdx);
                 const activeClass = isSelected ? 'bg-blue-100 border-blue-400' : 'bg-gray-50 border-gray-200 hover:bg-gray-100';
                 const iconClass = isSelected ? 'fa-dot-circle text-blue-600' : 'fa-circle text-gray-300';
                 
-                html += `
-                    <label class="flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${activeClass}" 
-                           onclick="selectOption(${index}, ${oIdx})">
-                        <i class="far ${iconClass} text-xl mr-3"></i>
-                        <span class="text-gray-700 text-lg flex-1">${opt}</span>
+                optionsHtml += `
+                    <label class="flex items-center p-3 md:p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${activeClass}" 
+                           onclick="selectOption(${currentQIndex}, ${oIdx})">
+                        <i class="far ${iconClass} text-lg md:text-xl mr-3"></i>
+                        <span class="text-gray-700 text-sm md:text-base flex-1 leading-relaxed">${opt}</span>
                     </label>`;
             });
-            html += `</div>`;
+            optionsHtml += `</div>`;
         }
 
-        qContainer.innerHTML = html;
+        optionsContainer.innerHTML = optionsHtml;
         
-        if (typeof updateProgress === 'function') updateProgress();
+        // 3. 更新按鈕與 MathJax
+        updateNavButtons(); 
+        updatePalette();    
+        
         if (window.MathJax) {
-            MathJax.typesetPromise([qContainer]).catch(err => console.log('MathJax error: ', err));
+            MathJax.typesetPromise([questionTextEl, optionsContainer]).catch(err => console.log('MathJax error: ', err));
         }
     }
 
     // ==========================================
-    // 🌟 點擊選項機制 (終極防跳動：不重新渲染 HTML，只換顏色！)
+    // 🌟 點擊選項機制 (無痕變色，絕對不破圖)
     // ==========================================
-    
-    // 點擊【單選題】選項
     window.selectOption = function(qIndex, optIndex) {
-        userAnswers[qIndex] = optIndex; // 紀錄答案
+        userAnswers[qIndex] = optIndex; 
         
-        // ⚡ 直接抓取畫面上的按鈕改變顏色，不呼叫 renderQuestion！
         const container = document.getElementById('single-q-container');
         if(!container) return;
         
@@ -771,23 +777,20 @@
         labels.forEach((label, idx) => {
             const icon = label.querySelector('i');
             if (idx === optIndex) {
-                label.className = "flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 bg-blue-100 border-blue-400";
-                icon.className = "far fa-dot-circle text-xl mr-3 text-blue-600";
+                label.className = "flex items-center p-3 md:p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 bg-blue-100 border-blue-400";
+                icon.className = "far fa-dot-circle text-lg md:text-xl mr-3 text-blue-600";
             } else {
-                label.className = "flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 bg-gray-50 border-gray-200 hover:bg-gray-100";
-                icon.className = "far fa-circle text-xl mr-3 text-gray-300";
+                label.className = "flex items-center p-3 md:p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 bg-gray-50 border-gray-200 hover:bg-gray-100";
+                icon.className = "far fa-circle text-lg md:text-xl mr-3 text-gray-300";
             }
         });
-        
-        if (typeof updateProgress === 'function') updateProgress();
+        updatePalette(); 
     };
 
-    // 點擊【題組】選項
     window.selectGroupOption = function(qIndex, subQIndex, optIndex) {
         if (!userAnswers[qIndex]) userAnswers[qIndex] = [];
-        userAnswers[qIndex][subQIndex] = optIndex; // 紀錄答案
+        userAnswers[qIndex][subQIndex] = optIndex; 
         
-        // ⚡ 直接抓取「這個小題」的按鈕改變顏色，不影響其他畫面！
         const container = document.getElementById(`subq-container-${subQIndex}`);
         if(!container) return;
         
@@ -795,58 +798,29 @@
         labels.forEach((label, idx) => {
             const icon = label.querySelector('i');
             if (idx === optIndex) {
-                label.className = "flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 bg-indigo-100 border-indigo-400";
-                icon.className = "far fa-dot-circle text-xl mr-3 text-indigo-600";
+                label.className = "flex items-center p-3 md:p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 bg-indigo-100 border-indigo-400";
+                icon.className = "far fa-dot-circle text-lg md:text-xl mr-3 text-indigo-600";
             } else {
-                label.className = "flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 bg-gray-50 border-gray-200 hover:bg-gray-100";
-                icon.className = "far fa-circle text-xl mr-3 text-gray-300";
+                label.className = "flex items-center p-3 md:p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 bg-gray-50 border-gray-200 hover:bg-gray-100";
+                icon.className = "far fa-circle text-lg md:text-xl mr-3 text-gray-300";
             }
         });
-        
-        if (typeof updateProgress === 'function') updateProgress();
-    };
-    window.selectAnswer = (mainIdx, optIdx, subIdx = null) => {
-        if (subIdx !== null) {
-            userAnswers[mainIdx][subIdx] = optIdx;
-        } else {
-            userAnswers[mainIdx] = optIdx;
-        }
-
-        const container = subIdx !== null 
-            ? document.querySelectorAll('.group-context-content + div, .fade-in')[subIdx + 1] 
-            : document.getElementById('optionsContainer');
-
-        const cards = container.querySelectorAll('.option-card');
-        
-        cards.forEach((card, idx) => {
-            const circle = card.querySelector('.rounded-full');
-            if (idx === optIdx) {
-                card.classList.add('selected');
-                card.classList.remove('bg-white', 'bg-slate-50', 'border-slate-100');
-                if (circle) circle.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
-            } else {
-                card.classList.remove('selected');
-                card.classList.add('bg-white', 'border-slate-100');
-                if (circle) circle.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
-            }
-        });
-
-        updatePalette();
+        updatePalette(); 
     };
 
     function updateNavButtons() {
         const nextBtn = document.getElementById('nextBtn');
         const prevBtn = document.getElementById('prevBtn');
         prevBtn.disabled = currentQIndex === 0;
-        prevBtn.className = currentQIndex === 0 ? "hidden" : "text-slate-500 font-bold hover:text-blue-600 flex items-center gap-2 px-3 py-2 cursor-pointer";
+        prevBtn.className = currentQIndex === 0 ? "hidden" : "text-slate-500 font-bold hover:text-blue-600 flex items-center gap-2 px-3 py-2 cursor-pointer transition";
 
         if (currentQIndex === mockQuestions.length - 1) {
-            nextBtn.innerHTML = `完成交卷 <i class="fas fa-check-circle ml-2"></i>`;
-            nextBtn.className = "bg-slate-800 text-white px-6 py-2 rounded-xl font-bold shadow-md hover:bg-slate-700 transition flex items-center gap-2";
+            nextBtn.innerHTML = `<span class="hidden md:inline">完成交卷</span><span class="md:hidden">交卷</span> <i class="fas fa-check-circle"></i>`;
+            nextBtn.className = "bg-slate-800 text-white px-4 md:px-6 py-2 rounded-lg md:rounded-xl font-bold shadow-md hover:bg-slate-700 transition flex items-center gap-2 text-sm md:text-base";
             nextBtn.onclick = trySubmit;
         } else {
-            nextBtn.innerHTML = `下一題 <i class="fas fa-arrow-right ml-2"></i>`;
-            nextBtn.className = "bg-white border border-slate-300 hover:border-blue-500 text-slate-700 px-6 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition";
+            nextBtn.innerHTML = `<span class="hidden md:inline">下一題</span><span class="md:hidden">下題</span> <i class="fas fa-arrow-right"></i>`;
+            nextBtn.className = "bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 text-slate-700 px-4 md:px-6 py-2 rounded-lg md:rounded-xl font-bold shadow-sm flex items-center gap-2 transition text-sm md:text-base";
             nextBtn.onclick = () => { currentQIndex++; renderQuestion(); };
         }
     }
@@ -857,9 +831,9 @@
         mockQuestions.forEach((item, i) => {
             let isAnswered = false;
             if (item.type === 'group') {
-                isAnswered = userAnswers[i].every(a => a !== null);
+                isAnswered = userAnswers[i] && userAnswers[i].length === item.questions.length && userAnswers[i].every(a => a !== null && a !== undefined);
             } else {
-                isAnswered = userAnswers[i] !== null;
+                isAnswered = userAnswers[i] !== null && userAnswers[i] !== undefined;
             }
 
             const cls = isAnswered ? 'q-dot answered' : (i === currentQIndex ? 'q-dot active' : 'q-dot normal');
@@ -906,7 +880,7 @@
         mockQuestions.forEach((item, i) => {
             if (item.type === 'group') {
                 totalSub += item.questions.length;
-                answeredSub += userAnswers[i].filter(a => a !== null).length;
+                if(userAnswers[i]) answeredSub += userAnswers[i].filter(a => a !== null).length;
             } else {
                 totalSub += 1;
                 if (userAnswers[i] !== null) answeredSub += 1;
@@ -919,96 +893,85 @@
     }
 
     function closeSubmitModal() { document.getElementById('submitModal').classList.add('hidden'); }
-async function finalSubmit() {
-    // 1. 鎖定按鈕與畫面，防止重複點擊
-    const submitBtn = document.getElementById('confirmSubmitBtn');
-    if (submitBtn) {
-        if (submitBtn.disabled) return; 
-        submitBtn.disabled = true;      
-        submitBtn.textContent = "評分中..."; 
-    }
-    if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval);
-    const submitModal = document.getElementById('submitModal');
-    if(submitModal) submitModal.classList.add('hidden');
 
-    // 2. 計算對錯題數與收集錯題
-    let correctCount = 0, totalCount = 0, fastCount = 0, wrongList = [];
-    mockQuestions.forEach((item, idx) => {
-        const timeSpent = (typeof timeLog !== 'undefined' && timeLog[idx]) ? timeLog[idx] : 0;
-        if (item.type === 'group') {
-            item.questions.forEach((subQ, sIdx) => {
-                totalCount++;
-                const userAns = userAnswers[idx] ? userAnswers[idx][sIdx] : null;
-                if (userAns === subQ.answer) correctCount++;
-                else wrongList.push({ question: subQ.question, options: subQ.options, answer: subQ.answer, yourAns: userAns, concept: item.concept });
-            });
-            if (timeSpent < 10) fastCount++; 
-        } else {
-            totalCount++;
-            if (timeSpent < 3) fastCount++;
-            if (userAnswers[idx] === item.answer) correctCount++;
-            else wrongList.push({ question: item.question, options: item.options, answer: item.answer, yourAns: userAnswers[idx], concept: item.concept });
+    async function finalSubmit() {
+        // 1. 鎖定按鈕
+        const submitBtn = document.getElementById('confirmSubmitBtn');
+        if (submitBtn) {
+            if (submitBtn.disabled) return; 
+            submitBtn.disabled = true;      
+            submitBtn.textContent = "評分中..."; 
         }
-    });
+        if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval);
+        const submitModal = document.getElementById('submitModal');
+        if(submitModal) submitModal.classList.add('hidden');
 
-    // 3. 計算分數與 SP (經驗值)
-    const finalScore = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
-    const baseXP = 20; 
-    const bonusXP = correctCount * 10;
-    const totalXP = baseXP + bonusXP;
-    
-    // 4. 動態抓取網址列的「科目」與「年級標籤」
-    const urlParams = new URLSearchParams(window.location.search);
-    const currentSubject = urlParams.get('subject') || "unknown"; // 會正確抓到 math, english 等
-    const title = urlParams.get('title') || "綜合測驗";
-    const gradeInfo = urlParams.get('grade') || "未知年級"; 
-
-    // 打包準備上傳的資料
-    const resultData = {
-        title: title,
-        totalCount: totalCount,
-        correctCount: correctCount,
-        wrongList: wrongList,
-        cheat: { cheatLevel: 'NORMAL', fastCount: fastCount },
-        tabSwitches: (typeof tabLog !== 'undefined') ? tabLog.length : 0,
-        syncTime: new Date().toISOString(),
-        subject: currentSubject, // ✅ 正確寫入科目
-        grade: gradeInfo,        // ✅ 正確寫入年級與章節標籤
-        xpGained: totalXP        // ✅ 確保 SP 傳送
-    };
-
-    // 5. 確保是「已登入學生」才執行雲端上傳
-    if (window.Auth && user && user.username !== 'guest') {
-        try {
-            if (GAS_URL && GAS_URL !== "") {
-                const payload = {
-                    action: "save_record",
-                    username: user.username, // 使用真實登入帳號
-                    activity: resultData.title,
-                    score: finalScore,
-                    detail: JSON.stringify(resultData)
-                };
-
-                // 發送給 GAS (默默在背景發送，不打擾學生)
-                fetch(GAS_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(payload)
+        // 2. 計算分數
+        let correctCount = 0, totalCount = 0, fastCount = 0, wrongList = [];
+        mockQuestions.forEach((item, idx) => {
+            const timeSpent = (typeof timeLog !== 'undefined' && timeLog[idx]) ? timeLog[idx] : 0;
+            if (item.type === 'group') {
+                item.questions.forEach((subQ, sIdx) => {
+                    totalCount++;
+                    const userAns = userAnswers[idx] ? userAnswers[idx][sIdx] : null;
+                    if (userAns === subQ.answer) correctCount++;
+                    else wrongList.push({ question: subQ.question, options: subQ.options, answer: subQ.answer, yourAns: userAns, concept: item.concept });
                 });
-
-                // 本地端直接增加經驗值，這樣他們回首頁看排行榜才會馬上更新！
-                Auth.addXP(totalXP); 
+                if (timeSpent < 10) fastCount++; 
+            } else {
+                totalCount++;
+                if (timeSpent < 3) fastCount++;
+                if (userAnswers[idx] === item.answer) correctCount++;
+                else wrongList.push({ question: item.question, options: item.options, answer: item.answer, yourAns: userAnswers[idx], concept: item.concept });
             }
-        } catch (e) {
-            console.error("雲端備份發生錯誤:", e);
-        }
-    }
+        });
 
-    // 6. 等待 1 秒後，自動順利跳轉到成績分析單
-   // 6. 等待 1 秒後，自動順利跳轉到成績分析單
-   // 6. 解除防呆警報，然後等待 1 秒後自動跳轉
-    window.onbeforeunload = null; // 🌟 加上這行！告訴瀏覽器不要再阻擋了
-    setTimeout(() => { window.location.href = "analysis.html?mode=new"; }, 1000);
-}
+        const finalScore = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+        const totalXP = 20 + (correctCount * 10);
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const resultData = {
+            title: urlParams.get('title') || "綜合測驗",
+            totalCount: totalCount,
+            correctCount: correctCount,
+            wrongList: wrongList,
+            cheat: { cheatLevel: 'NORMAL', fastCount: fastCount },
+            tabSwitches: (typeof tabLog !== 'undefined') ? tabLog.length : 0,
+            syncTime: new Date().toISOString(),
+            subject: urlParams.get('subject') || "unknown", 
+            grade: urlParams.get('grade') || "未知年級",       
+            xpGained: totalXP        
+        };
+
+        // 🌟 修正：確保抓取當前登入者資訊
+        const currentUser = window.Auth ? Auth.getCurrentUser() : null;
+
+        // 5. 上傳雲端
+        if (window.Auth && currentUser && currentUser.username !== 'guest') {
+            try {
+                if (GAS_URL && GAS_URL !== "") {
+                    const payload = {
+                        action: "save_record",
+                        username: currentUser.username,
+                        activity: resultData.title,
+                        score: finalScore,
+                        detail: JSON.stringify(resultData)
+                    };
+
+                    fetch(GAS_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+
+                    Auth.addXP(totalXP); 
+                }
+            } catch (e) { console.error("雲端備份錯誤:", e); }
+        }
+
+        // 6. 解除跳轉警報，跳回成績單
+        window.onbeforeunload = null; 
+        setTimeout(() => { window.location.href = "analysis.html?mode=new"; }, 1000);
+    }
     // 🌟 注意：我把  跳轉到分析頁面的程式碼刪掉了！
     // 這樣網頁就會「停在原地」，方便你把跳出來的訊息截圖或看清楚！
 
