@@ -912,6 +912,7 @@ async function finalSubmit() {
     const btn = document.getElementById('confirmSubmitBtn');
     if (btn) {
         btn.disabled = true;
+        btn.style.backgroundColor = "#94a3b8";
         btn.textContent = "上傳中...";
     }
 
@@ -926,64 +927,79 @@ async function finalSubmit() {
 
         let correctCount = 0;
         let totalCount = 0;
-        let allQuestions = []; // 🌟 新增：用來存「所有」題目紀錄
+        
+        // 🌟 1. 先宣告要用來存資料的陣列
+        let allQuestionsRecord = []; 
+        let wrongList = []; 
 
         const currentQuestions = (typeof mockQuestions !== 'undefined') ? mockQuestions : [];
         
+        // 🌟 2. 開始計算
         currentQuestions.forEach((item, idx) => {
-            // 處理題組或單題
-            const subQs = item.type === 'group' ? item.questions : [item];
-            const userAnsArr = item.type === 'group' ? (userAnswers[idx] || []) : [userAnswers[idx]];
+            if (item.type === 'group') {
+                item.questions.forEach((subQ, sIdx) => {
+                    totalCount++;
+                    const userAns = (userAnswers[idx] && userAnswers[idx][sIdx] !== undefined) ? userAnswers[idx][sIdx] : null;
+                    const isCorrect = (userAns === subQ.answer);
+                    if (isCorrect) correctCount++;
 
-            subQs.forEach((q, sIdx) => {
+                    const questionObj = {
+                        question: subQ.question,
+                        options: subQ.options,
+                        answer: subQ.answer,
+                        yourAns: userAns,
+                        isCorrect: isCorrect,
+                        concept: item.concept || "基礎概念"
+                    };
+                    
+                    allQuestionsRecord.push(questionObj);
+                    if (!isCorrect) wrongList.push(questionObj); // 存入錯題
+                });
+            } else {
                 totalCount++;
-                const uAns = userAnsArr[sIdx] !== undefined ? userAnsArr[sIdx] : null;
-                const isCorrect = (uAns === q.answer);
-                
+                const userAns = (userAnswers[idx] !== undefined) ? userAnswers[idx] : null;
+                const isCorrect = (userAns === item.answer);
                 if (isCorrect) correctCount++;
 
-                // 🌟 把「每一題」都存進陣列，不論對錯
-                allQuestions.push({
-                    question: q.question,
-                    options: q.options,
-                    answer: q.answer,
-                    yourAns: uAns,
+                const questionObj = {
+                    question: item.question,
+                    options: item.options,
+                    answer: item.answer,
+                    yourAns: userAns,
                     isCorrect: isCorrect,
                     concept: item.concept || "基礎概念"
-                });
-            });
+                };
+
+                allQuestionsRecord.push(questionObj);
+                if (!isCorrect) wrongList.push(questionObj); // 存入錯題
+            }
         });
 
-const score = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
-    const xp = 20 + (correctCount * 10); // 計算 XP
+        const score = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+        const xp = 20 + (correctCount * 10);
 
-    // 🌟 重新整理 resultData，確保欄位名稱正確
-    const resultData = {
-        subject: subject,           // 科目 (例如：理化)
-        unitName: title,            // 單元名稱 (例如：單元測驗)
-        score: score,
-        xpGained: xp,               // 🔥 必須叫 xpGained，GAS 才認得
-        totalCount: totalCount,
-        correctCount: correctCount,
-        wrongList: wrongList,       // 錯題清單
-        questions: allQuestions,    // 🌟 這裡要放入完整題目紀錄
-        syncTime: new Date().toISOString()
-    };
+        let username = "guest";
+        if (window.Auth && Auth.getCurrentUser()) {
+            username = Auth.getCurrentUser().username || "guest";
+        }
 
-    // 儲存到本地供分析頁使用
-    localStorage.setItem('examResult', JSON.stringify(resultData));
+        // 🌟 3. 現在 wrongList 已經定義好了，包裝 resultData
+        const resultData = {
+            owner: username,
+            subject: subject,
+            unitName: title,      // 確保單元名稱有進去
+            score: score,
+            xpGained: xp,         // 確保 XP 有進去
+            totalCount: totalCount,
+            correctCount: correctCount,
+            wrongList: wrongList,     // 修正錯誤：現在它被定義了
+            questions: allQuestionsRecord, // 傳送完整正確+錯誤題目
+            syncTime: new Date().toISOString()
+        };
 
-    // 呼叫上傳
-    if (username !== "guest" && typeof uploadToCloud === 'function') {
-        // 直接把整包 resultData 傳過去
-        await uploadToCloud(username, title, score, resultData);
-    }
+        localStorage.setItem('examResult', JSON.stringify(resultData));
 
-    window.location.href = "analysis.html?mode=new";
-
-        // 6. 呼叫上傳
         if (username !== "guest" && typeof uploadToCloud === 'function') {
-            // 💡 這裡將 resultData 直接傳入
             await uploadToCloud(username, title, score, resultData);
         }
 
@@ -996,6 +1012,7 @@ const score = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0
         if (btn) {
             btn.disabled = false;
             btn.textContent = "重新提交";
+            btn.style.backgroundColor = "";
         }
     }
 }
