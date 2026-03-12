@@ -216,7 +216,8 @@
             });
 
         } catch (error) {
-            loadingMsg.innerHTML = "<span style='color:red;'><i class="fas fa-exclamation-triangle"></i> 無法連接到排行榜中心，請稍後再試。</span>";
+            // ✅ 請換成這行（將 class 的引號改成單引號）
+loadingMsg.innerHTML = "<span style='color:red;'><i class='fas fa-exclamation-triangle'></i> 無法連接到排行榜中心，請稍後再試。</span>";
             console.error(error);
         }
     }
