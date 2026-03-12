@@ -1046,22 +1046,18 @@ async function uploadToCloud(username, activityName, score, fullData) {
         detail: JSON.stringify(detailToSave) 
     };
 
+    alert("⏳ 正在將資料送往 Google 試算表...\n如果接下來跳出錯誤，請照著指示做！");
+
     try {
-        // 發送資料給 GAS
         const response = await fetch(GAS_URL, {
             method: 'POST',
             body: JSON.stringify(payload)
         });
         
-        // 🌟 強制讀取 GAS 回傳的任何文字！
         const resultText = await response.text(); 
-        
-        // 🌟 直接跳出視窗，讓你親眼看到 GAS 說了什麼！
-        alert("【後台回傳訊息】\\n" + resultText);
-
+        alert("✅ 【成功連線到後台】\n後台說：" + resultText + "\n\n👉 如果裡面寫了「攔截重複」，代表你要去試算表把舊紀錄刪掉！");
     } catch (err) {
-        // 如果連線直接失敗，跳出這個警告
-        alert("【連線嚴重失敗】\\n請檢查 GAS 網址是否正確，以及權限是否設為「所有人」。\\n錯誤內容：" + err.message);
+        alert("❌ 【連線被 Google 擋住了】\n錯誤訊息：" + err.message + "\n\n💡 抓到兇手了！這代表你的 GAS 部署權限設定錯誤。\n請去 GAS 將「誰可以存取」改為「所有人 (Anyone)」！");
     }
 }
 </script>
