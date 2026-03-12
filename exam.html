@@ -910,89 +910,75 @@
     function closeSubmitModal() { document.getElementById('submitModal').classList.add('hidden'); }
 
 async function finalSubmit() {
-    console.log("進入 finalSubmit");
-    
-    // 1. 強力檢查按鈕物件
-    const submitBtn = document.getElementById('confirmSubmitBtn');
-    if (!submitBtn) {
-        alert("找不到 ID 為 confirmSubmitBtn 的按鈕，請檢查 HTML！");
-        return;
+    // 1. 優先：按鈕立刻變色（放在最前面，確保點擊有感）
+    const btn = document.getElementById('confirmSubmitBtn');
+    if (btn) {
+        btn.disabled = true;
+        btn.style.backgroundColor = "#94a3b8"; // 強制變灰
+        btn.textContent = "傳送中...";
     }
-    
-    if (submitBtn.disabled) return; 
-    
-    // 2. 開始變色 (如果這行沒跑，代表上面出錯)
-    submitBtn.disabled = true;      
-    submitBtn.textContent = "資料上傳中..."; 
+
+    console.log("開始執行交卷程序...");
 
     try {
-        if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval);
-        const submitModal = document.getElementById('submitModal');
-        if(submitModal) submitModal.classList.add('hidden');
+        // 2. 安全關閉計時與模態框
+        if (typeof timerInterval !== 'undefined') clearInterval(timerInterval);
+        const modal = document.getElementById('submitModal');
+        if (modal) modal.classList.add('hidden');
 
-        let correctCount = 0, totalCount = 0, wrongList = [];
-
-        // 確保變數存在
-        if (typeof mockQuestions === 'undefined') throw new Error("找不到題目資料 mockQuestions");
-
-        mockQuestions.forEach((item, idx) => {
+        // 3. 安全計算分數 (避免 undefined 崩潰)
+        let correctCount = 0;
+        let totalCount = 0;
+        const qData = (typeof mockQuestions !== 'undefined') ? mockQuestions : [];
+        
+        qData.forEach((item, idx) => {
             if (item.type === 'group') {
                 item.questions.forEach((subQ, sIdx) => {
                     totalCount++;
                     const userAns = (userAnswers[idx] && userAnswers[idx][sIdx] !== undefined) ? userAnswers[idx][sIdx] : null;
                     if (userAns === subQ.answer) correctCount++;
-                    else wrongList.push({ question: subQ.question, answer: subQ.answer, yourAns: userAns });
                 });
             } else {
                 totalCount++;
                 const userAns = (userAnswers[idx] !== undefined) ? userAnswers[idx] : null;
-                if (userAnswers[idx] === item.answer) correctCount++;
-                else wrongList.push({ question: item.question, answer: item.answer, yourAns: userAns });
+                if (userAns === item.answer) correctCount++;
             }
         });
 
-        const finalScore = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
-        const totalXP = 20 + (correctCount * 10);
+        const score = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+        const xp = 20 + (correctCount * 10);
 
-        // 取得使用者資訊 (增加極限防錯)
-        let username = 'guest';
-        if (window.Auth && typeof Auth.getCurrentUser === 'function') {
-            const u = Auth.getCurrentUser();
-            if (u) username = u.username;
-        }
-
-        const resultData = {
-            owner: username,
-            score: finalScore,
-            totalCount: totalCount,
-            correctCount: correctCount,
-            xpGained: totalXP,
-            wrongList: wrongList,
-            syncTime: new Date().toISOString()
-        };
-
-        // 儲存本地
-        localStorage.setItem('examResult', JSON.stringify(resultData));
-
-        // 3. 上傳雲端
-        if (username !== 'guest' && typeof GAS_URL !== 'undefined') {
-            // 這裡一定會彈窗
-            alert("✅ 準備上傳！\n帳號：" + username + "\n獲得 XP：" + totalXP);
-            await uploadToCloud(username, "綜合測驗", finalScore, resultData);
-            
-            if (window.Auth && typeof Auth.addXP === 'function') {
-                Auth.addXP(totalXP);
+        // 4. 安全取得帳號
+        let username = "guest";
+        try {
+            if (window.Auth && Auth.getCurrentUser()) {
+                username = Auth.getCurrentUser().username || "guest";
             }
+        } catch(e) { console.log("Auth 抓取失敗"); }
+
+        // 5. 存入本地
+        const result = { score: score, xpGained: xp, username: username, totalCount: totalCount, correctCount: correctCount };
+        localStorage.setItem('examResult', JSON.stringify(result));
+
+        // 🌟 絕對會彈窗（如果這行沒跑，代表上面分數計算有 Bug）
+        alert("🎉 準備傳送資料！\n帳號：" + username + "\n獲得 XP：" + xp);
+
+        // 6. 呼叫上傳
+        if (username !== "guest" && typeof uploadToCloud === 'function') {
+            await uploadToCloud(username, "綜合測驗", score, result);
         }
 
-        window.onbeforeunload = null; 
-        setTimeout(() => { window.location.href = "analysis.html?mode=new"; }, 800);
+        // 7. 跳轉
+        window.onbeforeunload = null;
+        window.location.href = "analysis.html?mode=new";
 
     } catch (err) {
-        // 如果中間任何地方崩潰，這裡會彈窗救你
         alert("❌ 程式發生錯誤：\n" + err.message);
-        submitBtn.disabled = false;
-        submitBtn.textContent = "重新提交";
+        if (btn) {
+            btn.disabled = false;
+            btn.style.backgroundColor = "";
+            btn.textContent = "重新提交";
+        }
     }
 }
     // 修正後的上傳函式
