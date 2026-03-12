@@ -125,12 +125,7 @@
 <body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden bg-[#f8fafc]">
 
     <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden backdrop-blur-sm transition-opacity"></div>
-<a href="arena.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-50 text-amber-700 transition-all duration-300 group shadow-sm">
-        <div class="w-8 h-8 rounded-lg bg-amber-200 text-amber-700 flex items-center justify-center scale-110">
-            <i class="fas fa-trophy text-sm"></i>
-        </div>
-        <span class="font-bold">榮譽榜</span>
-    </a>
+
     <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-white border-r border-slate-100 flex flex-col z-50 transform -translate-x-full lg:translate-x-0 lg:static lg:h-full sidebar-transition shadow-2xl lg:shadow-none">
         <div class="h-16 flex items-center px-6 border-b border-slate-50 justify-between">
             <div class="flex items-center">
@@ -156,7 +151,12 @@
 
       <nav class="flex-grow px-3 space-y-2 overflow-y-auto no-scrollbar">
     <p class="text-[10px] font-bold text-slate-400 mb-2 px-4 uppercase tracking-widest">學習導航</p>
-
+<a href="arena.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-50 text-amber-700 transition-all duration-300 group shadow-sm">
+        <div class="w-8 h-8 rounded-lg bg-amber-200 text-amber-700 flex items-center justify-center scale-110">
+            <i class="fas fa-trophy text-sm"></i>
+        </div>
+        <span class="font-bold">榮譽榜</span>
+    </a>
     <a href="mission.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-purple-50 hover:text-purple-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
         <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
             <i class="fas fa-rocket text-sm"></i>
