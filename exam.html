@@ -953,6 +953,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         
         // 🌟 這裡才是 exam.html 該有的正確打包方式！
+// 🌟 這裡才是 exam.html 該有的正確打包方式！
         const resultData = {
             owner: user.username,
             id: Date.now(),
@@ -961,11 +962,13 @@
             score: finalScore,
             correctCount: correctCount,
             totalCount: totalCount,
-            // ✨ 成功把所有題目都帶上！
-            questions: questions.map((q, index) => ({
+            
+            // 👇 這裡改掉！把 questions 改成 mockQuestions
+            questions: mockQuestions.map((q, index) => ({
                 ...q,
                 yourAns: userAnswers[index]
             })),
+            
             wrongList: wrongList,
             tabSwitches: (typeof tabLog !== 'undefined') ? tabLog.length : 0,
             xpGained: totalXP,
@@ -979,7 +982,6 @@
                 tabLogDetails: (typeof tabLog !== 'undefined') ? tabLog : [] 
             }
         };
-
         // 將考卷存入瀏覽器，交給 analysis.html 接手
         localStorage.setItem('examResult', JSON.stringify(resultData));
         const historyKey = `history_${user.username}`;
