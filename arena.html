@@ -282,51 +282,54 @@
 
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
 
-        // 🌟 3. 初始化個人資料與 XP
-        async function initProfile() {
-            let user = Auth.getCurrentUser();
-            if (!user || user.username === 'guest') {
-                document.getElementById('playerName').textContent = "訪客";
-                document.getElementById('sideUserName').textContent = "訪客";
-                return;
-            }
+       async function initProfile() {
+    let user = Auth.getCurrentUser();
+    if (!user || user.username === 'guest') {
+        document.getElementById('playerName').textContent = "訪客";
+        return;
+    }
 
-            // 先顯示本地基礎資料
-            document.getElementById('sideUserName').textContent = user.name || user.username;
-            document.getElementById('playerName').textContent = user.name || user.username;
-            document.getElementById('sideUserRole').textContent = user.grade || "學生";
-            document.getElementById('playerRole').textContent = user.grade || "學生";
+    // 初始顯示 (避免畫面空白)
+    document.getElementById('sideUserName').textContent = user.name || user.username;
+    document.getElementById('playerName').textContent = user.name || user.username;
 
-            try {
-                // 這裡改用 get_leaderboard 並從中篩選出自己的資料 (因為你的 GAS 目前沒有 get_profile)
-                const response = await fetch(`${GAS_URL}?action=get_leaderboard`);
-                const topPlayers = await response.json();
-                
-                const me = topPlayers.find(p => p.username === user.username);
+    try {
+        // 強制加上 timestamp 避免瀏覽器快取舊資料
+        const response = await fetch(`${GAS_URL}?action=get_leaderboard&t=${new Date().getTime()}`);
+        const topPlayers = await response.json();
+        
+        // 找到自己的資料
+        const me = topPlayers.find(p => p.username === user.username);
 
-                if (me) {
-                    const currentXP = me.xp || 0;
-                    const level = me.level || 1;
-                    
-                    // 更新 UI
-                    document.getElementById('playerLevel').textContent = `Lv. ${level}`;
-                    
-                    // 你的 GAS 邏輯是每 100 XP 一級，所以進度是 currentXP % 100
-                    const xpInThisLevel = currentXP % 100;
-                    const xpNeeded = 100 - xpInThisLevel;
-                    
-                    document.getElementById('xpText').textContent = `${xpInThisLevel} / 100`;
-                    document.getElementById('xpNeeded').textContent = xpNeeded;
-                    
-                    setTimeout(() => {
-                        const xpFill = document.getElementById('xpFill');
-                        if (xpFill) xpFill.style.width = `${xpInThisLevel}%`;
-                    }, 500);
+        if (me) {
+            const currentTotalXP = Number(me.xp) || 0;
+            const level = Number(me.level) || 1;
+            
+            // 更新 UI 等級
+            document.getElementById('playerLevel').textContent = `Lv. ${level}`;
+            
+            // 計算當前等級進度 (假設每 100 點一級)
+            // 例如 120 XP 是 Lv.2，進度應該是 20/100
+            const xpInThisLevel = currentTotalXP % 100; 
+            const xpNeeded = 100 - xpInThisLevel;
+            
+            document.getElementById('xpText').textContent = `${currentTotalXP} XP (總計)`;
+            document.getElementById('xpNeeded').textContent = xpNeeded;
+            
+            // 動畫顯示進度條
+            setTimeout(() => {
+                const xpFill = document.getElementById('xpFill');
+                if (xpFill) {
+                    // 如果剛好 0 分，給一點點寬度(2%)視覺上比較好看
+                    const progressWidth = Math.max((xpInThisLevel / 100) * 100, 2);
+                    xpFill.style.width = `${progressWidth}%`;
                 }
-            } catch (error) {
-                console.error("XP 資料載入失敗", error);
-            }
+            }, 500);
         }
+    } catch (error) {
+        console.error("XP 同步失敗:", error);
+    }
+}
 
         // 🌟 4. 載入排行榜
         async function loadLeaderboard() {
