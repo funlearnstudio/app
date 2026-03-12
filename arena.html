@@ -268,52 +268,61 @@ function toggleSidebar() {
          const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
 
 
-        // 1. 初始化個人狀態
-        async function initProfile() {
-            // 從你原本的 Auth 系統取得登入資料 (防呆機制)
-            const user = (window.Auth && Auth.getCurrentUser()) || { username: 'guest', name: '訪客', grade: '未登入' };
+async function initProfile() {
+    // 1. 從 Auth 獲取資料
+    const user = (window.Auth && Auth.getCurrentUser()) || null;
+    
+    // 獲取 UI 元素
+    const sideName = document.getElementById('sideUserName');
+    const sideRole = document.getElementById('sideUserRole');
+    const playerName = document.getElementById('playerName');
+    const playerRole = document.getElementById('playerRole');
+
+    // 2. 判斷是否為訪客
+    if (!user || user.username === 'guest') {
+        const guestName = "訪客";
+        const guestRole = "尚未登入";
+        
+        // 更新側邊欄與主面板
+        sideName.textContent = guestName;
+        sideRole.textContent = guestRole;
+        playerName.textContent = guestName;
+        playerRole.textContent = guestRole;
+        
+        // 訪客隱藏 XP 進度（可選）
+        document.getElementById('xpText').textContent = "0 / 0";
+        return; 
+    }
+
+    // 3. 若為正式用戶，開始請求雲端資料
+    try {
+        // 先顯示本地現有的名字，避免畫面空白
+        sideName.textContent = user.name;
+        sideRole.textContent = user.grade || '學生';
+        playerName.textContent = user.name;
+
+        const response = await fetch(`${GAS_URL}?action=get_profile&username=${user.username}`);
+        const cloudUser = await response.json();
+
+        if(!cloudUser.error) {
+            // 更新雲端同步後的等級與 XP
+            document.getElementById('playerLevel').textContent = `Lv. ${cloudUser.level}`;
+            const currentXP = cloudUser.xp;
+            const nextLevelXP = cloudUser.level * 100; 
+            const xpNeeded = Math.max(0, nextLevelXP - currentXP);
             
-            // 更新側邊欄
-            document.getElementById('sideUserName').textContent = user.name;
-            document.getElementById('sideUserRole').textContent = user.grade || '一般會員';
-
-            if (user.username === 'guest') {
-                document.getElementById('playerName').textContent = "訪客 (請先登入)";
-                return;
-            }
-
-            try {
-                // 向 Google 試算表請求最新 XP
-                const response = await fetch(`${GAS_URL}?action=get_profile&username=${user.username}`);
-                const cloudUser = await response.json();
-
-                if(cloudUser.error) {
-                    document.getElementById('playerName').textContent = user.name;
-                    return;
-                }
-
-                // 寫入畫面
-                document.getElementById('playerName').textContent = cloudUser.name;
-                document.getElementById('playerLevel').textContent = `Lv. ${cloudUser.level}`;
-                document.getElementById('playerRole').textContent = user.grade || '認真的學生';
-                
-                const currentXP = cloudUser.xp;
-                const nextLevelXP = cloudUser.level * 100; 
-                const xpNeeded = nextLevelXP - currentXP;
-                
-                document.getElementById('xpText').textContent = `${currentXP} / ${nextLevelXP}`;
-                document.getElementById('xpNeeded').textContent = xpNeeded > 0 ? xpNeeded : 0;
-                
-                // 動態拉長進度條
-                const percent = Math.min((currentXP / nextLevelXP) * 100, 100);
-                setTimeout(() => { document.getElementById('xpFill').style.width = `${percent}%`; }, 300);
-
-            } catch (error) {
-                console.error("讀取個人資料失敗:", error);
-                document.getElementById('playerName').textContent = user.name;
-            }
+            document.getElementById('xpText').textContent = `${currentXP} / ${nextLevelXP}`;
+            document.getElementById('xpNeeded').textContent = xpNeeded;
+            
+            const percent = Math.min((currentXP / nextLevelXP) * 100, 100);
+            setTimeout(() => { 
+                document.getElementById('xpFill').style.width = `${percent}%`; 
+            }, 300);
         }
-
+    } catch (error) {
+        console.error("讀取個人資料失敗:", error);
+    }
+}
         // 2. 載入雲端排行榜
         async function loadLeaderboard() {
             const listContainer = document.getElementById('leaderboardList');
