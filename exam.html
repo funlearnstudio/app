@@ -904,62 +904,96 @@
     function closeSubmitModal() { document.getElementById('submitModal').classList.add('hidden'); }
 
 async function finalSubmit() {
-    // 這裡是你原本計算分數的邏輯 (這幾行不用動，保留你原本的)
-    const finalScore = Math.round((correctCount / totalCount) * 100);
+    // 1. 鎖定按鈕與畫面
+    const submitBtn = document.getElementById('confirmSubmitBtn');
+    if (submitBtn) {
+        if (submitBtn.disabled) return; 
+        submitBtn.disabled = true;      
+        submitBtn.textContent = "評分中..."; 
+    }
+    if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval);
+    const submitModal = document.getElementById('submitModal');
+    if(submitModal) submitModal.classList.add('hidden');
+
+    // 2. 這裡就是你遺失的計分迴圈 (計算 correctCount)
+    let correctCount = 0, totalCount = 0, fastCount = 0, wrongList = [];
+    mockQuestions.forEach((item, idx) => {
+        const timeSpent = (typeof timeLog !== 'undefined' && timeLog[idx]) ? timeLog[idx] : 0;
+        if (item.type === 'group') {
+            item.questions.forEach((subQ, sIdx) => {
+                totalCount++;
+                const userAns = userAnswers[idx] ? userAnswers[idx][sIdx] : null;
+                if (userAns === subQ.answer) correctCount++;
+                else wrongList.push({ question: subQ.question, options: subQ.options, answer: subQ.answer, yourAns: userAns, concept: item.concept });
+            });
+            if (timeSpent < 10) fastCount++; 
+        } else {
+            totalCount++;
+            if (timeSpent < 3) fastCount++;
+            if (userAnswers[idx] === item.answer) correctCount++;
+            else wrongList.push({ question: item.question, options: item.options, answer: item.answer, yourAns: userAnswers[idx], concept: item.concept });
+        }
+    });
+
+    // 3. 計算分數與 SP
+    const finalScore = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
     const baseXP = 20; 
     const bonusXP = correctCount * 10;
     const totalXP = baseXP + bonusXP;
     
+    // 4. 打包資料
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentSubject = urlParams.get('subject') || "unknown";
+    const title = urlParams.get('title') || "綜合測驗";
+
     const resultData = {
-        title: currentUnit || "綜合測驗",
-        questions: questions,
+        title: title,
         totalCount: totalCount,
         correctCount: correctCount,
         wrongList: wrongList,
-        cheat: cheatFlags,
-        tabSwitches: tabSwitchCount,
+        cheat: { cheatLevel: 'NORMAL', fastCount: fastCount },
+        tabSwitches: (typeof tabLog !== 'undefined') ? tabLog.length : 0,
         syncTime: new Date().toISOString(),
         subject: currentSubject,
         grade: "國九",
-        xpGained: totalXP // 🌟 確保 SP 有算好
+        xpGained: totalXP 
     };
 
     // ==========================================
     // 🛑 終極強制除錯模式開始 🛑
     // ==========================================
     
-    // 1. 強制設定你的帳號！請把 "steve" 換成你在 Google 試算表裡的真實帳號
-    let forceUsername = "steve"; 
+    // 🌟 請把你真實的試算表帳號填在這裡！(取代 steve)
+    let forceUsername = "lin"; 
 
-    alert("🚀 強制上傳模式啟動！\n系統將不管登入狀態，直接以帳號【" + forceUsername + "】上傳 " + totalXP + " 點 SP！");
+    alert("🚀 強制上傳模式啟動！\n系統將直接以帳號【" + forceUsername + "】上傳 " + totalXP + " 點 SP！");
 
     try {
         if (!GAS_URL || GAS_URL === "") {
             alert("❌ 失敗：GAS_URL 網址沒有填寫！");
-            return; // 網址沒填就停下來
+            return; 
         }
 
-        // 發送資料！
+        const payload = {
+            action: "save_record",
+            username: forceUsername,
+            activity: resultData.title,
+            score: finalScore,
+            detail: JSON.stringify(resultData)
+        };
+
         const response = await fetch(GAS_URL, {
             method: 'POST',
-            body: JSON.stringify({
-                action: "save_record",
-                username: forceUsername,
-                activity: resultData.title,
-                score: finalScore,
-                detail: JSON.stringify(resultData)
-            })
+            body: JSON.stringify(payload)
         });
 
-        // 讀取後端回傳的文字
         const resultText = await response.text();
-        
-        // 把結果顯示出來
         alert("✅ 【後台真實回應】\n" + resultText + "\n\n💡 如果上面寫「成功」或有顯示 XP，請去試算表檢查！");
 
     } catch (e) {
         alert("❌ 【連線嚴重失敗】\n請檢查 GAS 權限是否為「所有人」。\n錯誤：" + e.message);
     }
+}
 
     // 🌟 注意：我把 setTimeout 跳轉到分析頁面的程式碼刪掉了！
     // 這樣網頁就會「停在原地」，方便你把跳出來的訊息截圖或看清楚！
