@@ -1003,35 +1003,42 @@
         setTimeout(() => { window.location.href = "analysis.html?mode=new"; }, 1000);
     }
 
-    async function uploadToCloud(username, activityName, score, fullData) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const currentSubject = urlParams.get('subject') || "unknown";
-        const detailToSave = {
-            subject: currentSubject,           
-            unitName: activityName,            
-            grade: fullData.grade || "國九",
-            totalCount: fullData.totalCount,
-            correctCount: fullData.correctCount,
-            xpGained: fullData.xpGained, // 🔥 關鍵：一定要傳這個，GAS 才收得到 XP
-            wrongList: fullData.wrongList,
-            cheat: fullData.cheat,
-            tabSwitches: fullData.tabSwitches
-        };
+async function uploadToCloud(username, activityName, score, fullData) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentSubject = urlParams.get('subject') || "unknown";
+    
+    // 確保 detailToSave 裡面確實包含了 xpGained
+    const detailToSave = {
+        subject: currentSubject,           
+        unitName: activityName,            
+        grade: fullData.grade || "國九",
+        totalCount: fullData.totalCount,
+        correctCount: fullData.correctCount,
+        xpGained: fullData.xpGained, // 🌟 這裡必須有值
+        wrongList: fullData.wrongList,
+        cheat: fullData.cheat,
+        tabSwitches: fullData.tabSwitches
+    };
 
-        const payload = {
-            action: "save_record",
-            username: username,
-            activity: activityName,
-            score: score,
-            detail: JSON.stringify(detailToSave) 
-        };
+    const payload = {
+        action: "save_record",
+        username: username,
+        activity: activityName,
+        score: score,
+        detail: JSON.stringify(detailToSave) 
+    };
 
-        return fetch(GAS_URL, {
+    // 🌟 移除 no-cors，改用標準方式
+    try {
+        const response = await fetch(GAS_URL, {
             method: 'POST',
-            mode: 'no-cors', 
             body: JSON.stringify(payload)
         });
+        console.log("雲端同步發送成功");
+    } catch (err) {
+        console.error("雲端同步失敗:", err);
     }
+}
 </script>
 </body>
 </html>
