@@ -686,7 +686,7 @@
     }
 
 // ==========================================
-    // 🎨 渲染考卷畫面 (🍎 蘋果極簡風 Apple Minimalist)
+    // 🎨 渲染考卷畫面 (🍎 蘋果極簡風 + ABCD 字母標示)
     // ==========================================
     function renderQuestion() {
         const q = mockQuestions[currentQIndex];
@@ -706,7 +706,6 @@
 
         // 📖 判斷如果是【題組】
         if (q.type === 'group' || q.questions) {
-            // 題組的文章：極簡淺灰底 + 左側科技藍線條
             questionTextEl.innerHTML = `<div class="bg-slate-50 p-5 md:p-6 rounded-2xl border-l-4 border-blue-400 text-slate-700 text-base md:text-lg leading-relaxed shadow-sm"><i class="fas fa-book-open mr-3 text-blue-400"></i>${q.article || q.question}</div>`;
             
             q.questions.forEach((subQ, sIdx) => {
@@ -719,16 +718,21 @@
                 
                 subQ.options.forEach((opt, oIdx) => {
                     const isSelected = (userAnswers[currentQIndex] && userAnswers[currentQIndex][sIdx] === oIdx);
-                    // 🍎 蘋果極簡風：選中與未選中的 Class
+                    const letter = String.fromCharCode(65 + oIdx); // 產生 A, B, C, D
+                    
                     const activeClass = isSelected 
                         ? 'bg-blue-50/80 border-blue-400 shadow-sm ring-4 ring-blue-50' 
                         : 'bg-white border-slate-200 hover:bg-slate-50 hover:shadow-md hover:-translate-y-1';
-                    const iconClass = isSelected ? 'fa-dot-circle text-blue-500' : 'fa-circle text-slate-300';
+                    
+                    // 🔠 字母圓徽章樣式
+                    const letterClass = isSelected 
+                        ? 'w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-blue-500 text-white font-bold text-sm md:text-base mr-4 transition-colors duration-300' 
+                        : 'w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-slate-300 text-slate-400 font-bold text-sm md:text-base mr-4 transition-colors duration-300 group-hover:border-slate-400 group-hover:text-slate-500';
                     
                     optionsHtml += `
-                        <label class="flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 ${activeClass}" 
+                        <label class="group flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 ${activeClass}" 
                                onclick="selectGroupOption(${currentQIndex}, ${sIdx}, ${oIdx})">
-                            <i class="far ${iconClass} text-xl md:text-2xl mr-4 transition-colors duration-300"></i>
+                            <span class="opt-letter ${letterClass}">${letter}</span>
                             <span class="text-slate-700 text-base md:text-lg flex-1 leading-relaxed">${opt}</span>
                         </label>`;
                 });
@@ -742,16 +746,21 @@
             optionsHtml += `<div class="space-y-4 mt-6" id="single-q-container">`; 
             q.options.forEach((opt, oIdx) => {
                 const isSelected = (userAnswers[currentQIndex] === oIdx);
-                // 🍎 蘋果極簡風：選中與未選中的 Class
+                const letter = String.fromCharCode(65 + oIdx); // 產生 A, B, C, D
+                
                 const activeClass = isSelected 
                     ? 'bg-blue-50/80 border-blue-400 shadow-sm ring-4 ring-blue-50' 
                     : 'bg-white border-slate-200 hover:bg-slate-50 hover:shadow-md hover:-translate-y-1';
-                const iconClass = isSelected ? 'fa-dot-circle text-blue-500' : 'fa-circle text-slate-300';
+                
+                // 🔠 字母圓徽章樣式
+                const letterClass = isSelected 
+                    ? 'w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-blue-500 text-white font-bold text-sm md:text-base mr-4 transition-colors duration-300' 
+                    : 'w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-slate-300 text-slate-400 font-bold text-sm md:text-base mr-4 transition-colors duration-300 group-hover:border-slate-400 group-hover:text-slate-500';
                 
                 optionsHtml += `
-                    <label class="flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 ${activeClass}" 
+                    <label class="group flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 ${activeClass}" 
                            onclick="selectOption(${currentQIndex}, ${oIdx})">
-                        <i class="far ${iconClass} text-xl md:text-2xl mr-4 transition-colors duration-300"></i>
+                        <span class="opt-letter ${letterClass}">${letter}</span>
                         <span class="text-slate-700 text-base md:text-lg flex-1 leading-relaxed">${opt}</span>
                     </label>`;
             });
@@ -769,7 +778,7 @@
     }
 
     // ==========================================
-    // 🌟 點擊選項機制 (🍎 無痕變色 + 極簡光暈動畫)
+    // 🌟 點擊選項機制 (無痕變色 + 字母徽章切換)
     // ==========================================
     window.selectOption = function(qIndex, optIndex) {
         userAnswers[qIndex] = optIndex; 
@@ -779,13 +788,13 @@
         
         const labels = container.querySelectorAll('label');
         labels.forEach((label, idx) => {
-            const icon = label.querySelector('i');
+            const letterSpan = label.querySelector('.opt-letter');
             if (idx === optIndex) {
-                label.className = "flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 bg-blue-50/80 border-blue-400 shadow-sm ring-4 ring-blue-50";
-                icon.className = "far fa-dot-circle text-xl md:text-2xl mr-4 text-blue-500 transition-colors duration-300";
+                label.className = "group flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 bg-blue-50/80 border-blue-400 shadow-sm ring-4 ring-blue-50";
+                letterSpan.className = "opt-letter w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-blue-500 text-white font-bold text-sm md:text-base mr-4 transition-colors duration-300";
             } else {
-                label.className = "flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 bg-white border-slate-200 hover:bg-slate-50 hover:shadow-md hover:-translate-y-1";
-                icon.className = "far fa-circle text-xl md:text-2xl mr-4 text-slate-300 transition-colors duration-300";
+                label.className = "group flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 bg-white border-slate-200 hover:bg-slate-50 hover:shadow-md hover:-translate-y-1";
+                letterSpan.className = "opt-letter w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-slate-300 text-slate-400 font-bold text-sm md:text-base mr-4 transition-colors duration-300 group-hover:border-slate-400 group-hover:text-slate-500";
             }
         });
         updatePalette(); 
@@ -800,13 +809,13 @@
         
         const labels = container.querySelectorAll('label');
         labels.forEach((label, idx) => {
-            const icon = label.querySelector('i');
+            const letterSpan = label.querySelector('.opt-letter');
             if (idx === optIndex) {
-                label.className = "flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 bg-blue-50/80 border-blue-400 shadow-sm ring-4 ring-blue-50";
-                icon.className = "far fa-dot-circle text-xl md:text-2xl mr-4 text-blue-500 transition-colors duration-300";
+                label.className = "group flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 bg-blue-50/80 border-blue-400 shadow-sm ring-4 ring-blue-50";
+                letterSpan.className = "opt-letter w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-blue-500 text-white font-bold text-sm md:text-base mr-4 transition-colors duration-300";
             } else {
-                label.className = "flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 bg-white border-slate-200 hover:bg-slate-50 hover:shadow-md hover:-translate-y-1";
-                icon.className = "far fa-circle text-xl md:text-2xl mr-4 text-slate-300 transition-colors duration-300";
+                label.className = "group flex items-center p-4 md:p-5 border rounded-2xl cursor-pointer transition-all duration-300 bg-white border-slate-200 hover:bg-slate-50 hover:shadow-md hover:-translate-y-1";
+                letterSpan.className = "opt-letter w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full border-2 border-slate-300 text-slate-400 font-bold text-sm md:text-base mr-4 transition-colors duration-300 group-hover:border-slate-400 group-hover:text-slate-500";
             }
         });
         updatePalette(); 
