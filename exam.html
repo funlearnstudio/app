@@ -431,16 +431,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     const subjectFromUrl = urlParams.get('subject');
     console.log("當前測驗科目：", subjectFromUrl); 
-function recordTime() {
-    try {
-        if (typeof questionStartTime !== 'undefined' && typeof timeLog !== 'undefined') {
-            const duration = (Date.now() - questionStartTime) / 1000;
-            timeLog[currentQIndex] = (timeLog[currentQIndex] || 0) + duration;
-            questionStartTime = Date.now();
-        }
-    } catch(e) { console.error("計時錯誤:", e); }
-}
-    // ==========================================
+  // ==========================================
     // 📱 UI 互動功能 (側邊欄 & Modal)
     // ==========================================
     function toggleSidebar() {
