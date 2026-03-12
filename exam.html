@@ -1038,16 +1038,5 @@ alert(" debug 訊息：\n傳送帳號：" + username + "\n獲得 XP：" + fullDa
     }).catch(err => console.error("GAS Fetch Error:", err));
 }
 </script>
-    <script>
-    // 偵錯用：確保按鈕點擊有被監聽
-    window.onload = function() {
-        const testBtn = document.getElementById('confirmSubmitBtn');
-        if (testBtn) {
-            console.log("✅ 確認按鈕已找到，正在監聽點擊");
-        } else {
-            console.error("❌ 找不到 confirmSubmitBtn 按鈕，請檢查 HTML ID！");
-        }
-    };
-</script>
 </body>
 </html>
