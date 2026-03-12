@@ -685,98 +685,103 @@
         startTimer();
     }
 
-    function renderQuestion() {
-        recordTime(); 
-        questionStartTime = Date.now();
-
-        const item = mockQuestions[currentQIndex];
-        if (!item) return;
-
-        document.getElementById('currentQNumDisplay').textContent = currentQIndex + 1;
-        document.getElementById('currentQIdx').textContent = currentQIndex + 1;
-        document.getElementById('totalQCount').textContent = mockQuestions.length;
+// ==========================================
+    // 🎨 渲染考卷畫面 (完美防破圖版)
+    // ==========================================
+    function renderQuestion(index) {
+        const qContainer = document.getElementById('questionContainer');
+        if (!qContainer) return;
         
-        document.getElementById('conceptBadge').textContent = item.concept || (item.type === 'group' ? "閱讀題組" : "一般題型");
-      
-        const container = document.getElementById('optionsContainer');
-        const questionTextBox = document.getElementById('questionText');
-        
-        container.innerHTML = '';
-        
-        if (item.type === 'group') {
-            questionTextBox.innerHTML = `
-                <div class="bg-blue-50 p-5 rounded-2xl border-l-8 border-blue-400 mb-6 text-slate-700 leading-relaxed shadow-sm fade-in">
-                    <div class="font-bold text-blue-600 mb-2 flex items-center">
-                        <i class="fas fa-book-reader mr-2"></i> 閱讀引文
-                    </div>
-                    <div class="group-context-content">
-                        ${item.context}
-                    </div>
-                </div>
-            `;
+        const q = mockQuestions[index];
+        let html = '';
 
-            item.questions.forEach((subQ, subIdx) => {
-                const subCard = document.createElement('div');
-                subCard.className = "mb-8 p-6 bg-white rounded-2xl border border-slate-200 shadow-md fade-in";
+        // 📖 判斷如果是【題組】
+        if (q.type === 'group' || q.questions) {
+            html += `<div class="bg-indigo-50 p-5 rounded-xl mb-6 shadow-sm border border-indigo-100">
+                        <p class="font-bold text-indigo-800 mb-3 text-lg"><i class="fas fa-book-open mr-2"></i>【閱讀題組】</p>
+                        <div class="text-gray-800 leading-relaxed prose max-w-none">${q.article || q.question}</div>
+                    </div>`;
+            
+            q.questions.forEach((subQ, sIdx) => {
+                html += `<div class="mb-6 p-5 bg-white rounded-xl shadow-sm border border-gray-200">
+                            <p class="text-lg font-medium text-gray-800 mb-4 leading-relaxed">
+                                <span class="text-indigo-600 font-bold mr-2">(${sIdx + 1})</span>${subQ.question}
+                            </p>
+                            <div class="space-y-3">`;
                 
-                let optionsHtml = subQ.options.map((opt, optIdx) => {
-                    const isSelected = (userAnswers[currentQIndex] && userAnswers[currentQIndex][subIdx] === optIdx);
+                subQ.options.forEach((opt, oIdx) => {
+                    // 檢查這題是不是已經被選了
+                    const isSelected = (userAnswers[index] && userAnswers[index][sIdx] === oIdx);
+                    const activeClass = isSelected ? 'bg-indigo-100 border-indigo-400' : 'bg-gray-50 border-gray-200 hover:bg-gray-100';
+                    const iconClass = isSelected ? 'fa-dot-circle text-indigo-600' : 'fa-circle text-gray-300';
                     
-                    return `
-                        <div onclick="selectAnswer(${currentQIndex}, ${optIdx}, ${subIdx})" 
-                             class="option-card w-full p-3 rounded-xl flex items-center gap-3 mt-2 cursor-pointer transition-all ${isSelected ? 'selected' : 'bg-slate-50 border border-slate-100 hover:border-blue-300'}">
-                            <div class="w-7 h-7 rounded-full border flex items-center justify-center font-bold text-sm ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-400 border-slate-300'}">
-                                ${String.fromCharCode(65 + optIdx)}
-                            </div>
-                            <div class="text-slate-700 font-medium">${opt}</div>
-                        </div>
-                    `;
-                }).join('');
-
-                subCard.innerHTML = `
-                    <div class="font-bold text-slate-800 mb-4 text-lg">
-                        <span class="bg-blue-100 text-blue-600 px-2 py-0.5 rounded-lg mr-2">${subIdx + 1}</span>
-                        ${highlightKeywords(subQ.question)}
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        ${optionsHtml}
-                    </div>
-                `;
-                container.appendChild(subCard);
+                    html += `
+                        <label class="flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${activeClass}" 
+                               onclick="selectGroupOption(${index}, ${sIdx}, ${oIdx})">
+                            <i class="far ${iconClass} text-xl mr-3"></i>
+                            <span class="text-gray-700 text-lg flex-1">${opt}</span>
+                        </label>`;
+                });
+                html += `</div></div>`;
             });
-
-        } else {
-            questionTextBox.innerHTML = `
-                <div class="text-2xl font-bold text-slate-800 mb-4 fade-in">
-                    ${highlightKeywords(item.question)}
-                </div>
-            `;
-
-            item.options.forEach((opt, idx) => {
-                const isSelected = userAnswers[currentQIndex] === idx;
-                const optDiv = document.createElement('div');
-                optDiv.className = `option-card w-full p-4 rounded-2xl flex items-center gap-4 cursor-pointer transition-all mb-4 fade-in ${isSelected ? 'selected' : 'bg-white border border-slate-100 text-slate-700 shadow-sm hover:border-blue-300'}`;
+        } 
+        // 🎯 判斷如果是【單選題】
+        else {
+            html += `<p class="text-xl font-medium text-gray-800 mb-6 leading-relaxed">${q.question}</p>
+                     <div class="space-y-4">`;
+            
+            q.options.forEach((opt, oIdx) => {
+                // 檢查這題是不是已經被選了
+                const isSelected = (userAnswers[index] === oIdx);
+                const activeClass = isSelected ? 'bg-blue-100 border-blue-400' : 'bg-gray-50 border-gray-200 hover:bg-gray-100';
+                const iconClass = isSelected ? 'fa-dot-circle text-blue-600' : 'fa-circle text-gray-300';
                 
-                optDiv.innerHTML = `
-                    <div class="w-9 h-9 rounded-full border-2 flex items-center justify-center font-bold ${isSelected ? 'border-blue-500 bg-blue-100 text-blue-600' : 'border-slate-300 text-slate-400'}">
-                        ${String.fromCharCode(65 + idx)}
-                    </div>
-                    <div class="flex-grow font-medium text-lg">${opt}</div>
-                `;
-                
-                optDiv.onclick = () => selectAnswer(currentQIndex, idx);
-                container.appendChild(optDiv);
+                html += `
+                    <label class="flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${activeClass}" 
+                           onclick="selectOption(${index}, ${oIdx})">
+                        <i class="far ${iconClass} text-xl mr-3"></i>
+                        <span class="text-gray-700 text-lg flex-1">${opt}</span>
+                    </label>`;
             });
+            html += `</div>`;
         }
 
-        const hasMath = questionTextBox.innerText.includes('\\(') || container.innerText.includes('\\(');
-        if (window.MathJax && hasMath) {
-            MathJax.typesetPromise();
+        qContainer.innerHTML = html;
+        
+        if (typeof updateProgress === 'function') updateProgress();
+        if (window.MathJax) {
+            MathJax.typesetPromise([qContainer]).catch(err => console.log('MathJax error: ', err));
         }
-        updateNavButtons();
-        updatePalette();
     }
 
+    // ==========================================
+    // 🌟 點擊選項機制 (加入防跳動記憶功能)
+    // ==========================================
+    
+    // 點擊【單選題】選項
+    window.selectOption = function(qIndex, optIndex) {
+        const scrollY = window.scrollY; // 1. 記住點擊瞬間的畫面捲動位置
+        
+        userAnswers[qIndex] = optIndex;
+        renderQuestion(qIndex); 
+        
+        setTimeout(() => window.scrollTo(0, scrollY), 0); // 2. 重新整理後，瞬間把畫面拉回剛剛的位置！
+    };
+
+    // 點擊【題組】選項
+    window.selectGroupOption = function(qIndex, subQIndex, optIndex) {
+        const scrollY = window.scrollY; // 1. 記住點擊瞬間的畫面捲動位置
+        
+        // 如果是第一次點這題組，先建立一個陣列來存小題答案
+        if (!userAnswers[qIndex]) {
+            userAnswers[qIndex] = [];
+        }
+        userAnswers[qIndex][subQIndex] = optIndex;
+        
+        renderQuestion(qIndex); 
+        
+        setTimeout(() => window.scrollTo(0, scrollY), 0); // 2. 重新整理後，瞬間把畫面拉回剛剛的位置！
+    };
     window.selectAnswer = (mainIdx, optIdx, subIdx = null) => {
         if (subIdx !== null) {
             userAnswers[mainIdx][subIdx] = optIdx;
