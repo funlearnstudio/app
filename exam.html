@@ -1012,40 +1012,35 @@ async function finalSubmit() {
         }
     }
 }
-    async function uploadToCloud(username, activityName, score, fullData) {
+async function uploadToCloud(username, activityName, score, fullData) {
     const urlParams = new URLSearchParams(window.location.search);
+    const currentSubject = urlParams.get('subject') || "未知科目";
     
-    // 🌟 這裡是最關鍵的「信封內容」
+    // 參考 exam (22).html 的結構，並加入 xpGained
     const detailToSave = {
-        subject: fullData.subject || urlParams.get('subject') || "未知科目",
-        unitName: activityName,
+        subject: currentSubject,           
+        unitName: activityName,            
         grade: fullData.grade || "國九",
-        totalCount: fullData.totalCount || 0,
-        correctCount: fullData.correctCount || 0,
-        
-        // 🔥🔥🔥 這一行絕對不能漏掉！！！ 🔥🔥🔥
-        xpGained: fullData.xpGained || 0, 
-        
-        wrongList: fullData.wrongList || [],
-        syncTime: fullData.syncTime || new Date().toISOString()
+        totalCount: fullData.totalCount,
+        correctCount: fullData.correctCount,
+        xpGained: fullData.xpGained || (20 + (fullData.correctCount * 10)), // 這裡確保有 XP
+        wrongList: fullData.wrongList,
+        syncTime: new Date().toISOString()
     };
-
-    // 💡 測試彈窗：如果這裡顯示 0，代表前面的 finalSubmit 沒傳 XP 進來
-    console.log("偵測到準備上傳的 XP:", detailToSave.xpGained);
 
     const payload = {
         action: "save_record",
         username: username,
         activity: activityName,
         score: score,
-        detail: JSON.stringify(detailToSave) // 將上面的詳細內容轉成字串
+        detail: JSON.stringify(detailToSave) // 這裡必須轉成字串，GAS 才能用 JSON.parse 解析
     };
 
     return fetch(GAS_URL, {
         method: 'POST',
-        mode: 'no-cors', // 避免跨網域問題
+        mode: 'no-cors', // 這是 exam (22).html 成功的關鍵之一，避免跨域報錯
         body: JSON.stringify(payload)
-    }).catch(err => console.error("雲端同步失敗:", err));
+    });
 }
 </script>
 </body>
