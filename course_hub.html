@@ -15,6 +15,25 @@
         display: none !important;
     }
 }
+        /* 當主題啟動時，讓特定的區塊變透明，透出底層背景色 */
+body[class*="theme-"] nav, 
+body[class*="theme-"] header,
+body[class*="theme-"] .bg-white,
+body[class*="theme-"] .bg-slate-50 {
+    background-color: transparent !important;
+    transition: background 0.5s ease;
+}
+
+/* 針對深色主題（傳奇、神話），強制調整文字為白色 */
+body.theme-legend *, body.theme-mythic * {
+    border-color: rgba(255,255,255,0.1) !important;
+}
+
+/* 讓內容區塊稍微有一點半透明感，增加質感 */
+body[class*="theme-"] .main-content-card {
+    background-color: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(10px); /* 磨砂玻璃效果 */
+}
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
         .fade-in { animation: fadeIn 0.5s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
