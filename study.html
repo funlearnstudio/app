@@ -17,23 +17,31 @@
     }
 }
         /* 當主題啟動時，讓特定的區塊變透明，透出底層背景色 */
-body[class*="theme-"] nav, 
-body[class*="theme-"] header,
-body[class*="theme-"] .bg-white,
-body[class*="theme-"] .bg-slate-50 {
+/* 讓側邊欄跟隨主題變色 */
+/* 當 body 有 theme- class 時，強制讓側邊欄背景透明或半透明 */
+body[class*="theme-"] aside, 
+body[class*="theme-"] #sidebar, 
+body[class*="theme-"] .sidebar-content {
+    background-color: rgba(255, 255, 255, 0.1) !important; /* 變半透明 */
+    backdrop-filter: blur(10px); /* 磨砂玻璃質感 */
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 針對側邊欄內的文字在深色主題時變白 */
+body.theme-legend aside *, body.theme-mythic aside * {
+    color: white !important;
+}
+
+/* 修正手機端可能出現的白色區塊 */
+body[class*="theme-"] main, 
+body[class*="theme-"] section,
+body[class*="theme-"] .bg-white {
     background-color: transparent !important;
-    transition: background 0.5s ease;
 }
 
-/* 針對深色主題（傳奇、神話），強制調整文字為白色 */
-body.theme-legend *, body.theme-mythic * {
-    border-color: rgba(255,255,255,0.1) !important;
-}
-
-/* 讓內容區塊稍微有一點半透明感，增加質感 */
-body[class*="theme-"] .main-content-card {
-    background-color: rgba(255, 255, 255, 0.7) !important;
-    backdrop-filter: blur(10px); /* 磨砂玻璃效果 */
+/* 讓手機端的底部導覽列（如果有）也透明 */
+body[class*="theme-"] footer {
+    background-color: rgba(255, 255, 255, 0.2) !important;
 }
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
         .unit-item { cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
