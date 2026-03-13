@@ -963,10 +963,19 @@ async function finalSubmit() {
     }
     // 👆👆 替換到這裡結束 👆👆
     // ==========================================
-    // --- 🌟 經驗值 (XP) 計算 ---
-    const baseXP = 20; 
-    const bonusXP = correctCount * 10;
-    const totalXP = baseXP + bonusXP;
+   // --- 🌟 經驗值 (XP) 計算 (提高獎勵版) ---
+    const baseXP = 30;               // 基本參與分從 20 提高到 30
+    const perQuestionXP = 15;        // 每對一題從 10 提高到 15
+    let bonusXP = 0;
+
+    // 如果拿滿分，額外獎勵 50 XP
+    if (finalScore === 100) {
+        bonusXP = 50; 
+    } else if (finalScore >= 80) {
+        bonusXP = 20; // 80分以上也有小獎勵
+    }
+
+    const totalXP = baseXP + (correctCount * perQuestionXP) + bonusXP;
     let isLevelUp = false;
 
     // --- 本機端更新經驗值 ---
