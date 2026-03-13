@@ -1041,7 +1041,8 @@ const resultData = {
         xp: fullData.xpGained, // 外層也留著當雙重保險
         detail: JSON.stringify(detailToSave) 
     };
-
+// 👇👇 新增這行：交卷時把包裹印出來看！ 👇👇
+    console.log("🚀 準備發射給伺服器的包裹：", payload);
 return fetch(GAS_URL, {
         method: 'POST',
         // 不指定 mode 或設為 'cors'，GAS 後端需正確處理 OPTIONS 請求
