@@ -21,6 +21,18 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         /* 請加入這行 CSS */
 .sidebar-transition { transition: transform 0.3s ease-in-out; }
+        /* 所有頁面通用的背景主題 */
+body { transition: background 0.8s ease, color 0.5s ease; min-height: 100vh; }
+
+body.theme-rookie { background-color: #dcfce7 !important; }   /* 100+ XP 淺綠 */
+body.theme-bronze { background-color: #ffedd5 !important; }   /* 300+ XP 淺橘 */
+body.theme-diamond { background: linear-gradient(135deg, #e0f2fe, #bae6fd) !important; } /* 5K+ XP 藍 */
+body.theme-master { background: linear-gradient(135deg, #fee2e2, #fecaca) !important; }  /* 10K+ XP 紅 */
+body.theme-legend { background: #451a03 !important; color: #fef3c7 !important; }          /* 20K+ XP 暗金 */
+body.theme-mythic { background: radial-gradient(circle, #1e1b4b, #020617) !important; color: white !important; }
+
+/* 流星容器 */
+#star-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
     </style>
     <script src="mockdata/users.js"></script>
     <script src="assets/js/auth.js"></script>
@@ -46,7 +58,7 @@
     });
 </script>
 <body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden">
-
+<div id="star-container"></div>
     <header class="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-30">
         <div class="flex items-center gap-2">
             <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm shadow-sm">學</div>
@@ -236,7 +248,44 @@
 // ==========================================
 // 手機側邊欄開關
  const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
+       const ThemeEngine = {
+    // 1. 執行變色
+    apply: function(xp) {
+        console.log("當前頁面主題判定中... XP:", xp);
+        const body = document.body;
+        body.classList.remove('theme-rookie', 'theme-bronze', 'theme-diamond', 'theme-master', 'theme-legend', 'theme-mythic');
+
+        if (xp >= 50000) { body.classList.add('theme-mythic'); this.createStars(); }
+        else if (xp >= 20000) body.classList.add('theme-legend');
+        else if (xp >= 10000) body.classList.add('theme-master');
+        else if (xp >= 5000) body.classList.add('theme-diamond');
+        else if (xp >= 300) body.classList.add('theme-bronze');
+        else if (xp >= 100) body.classList.add('theme-rookie');
+    },
+
+    // 2. 產生流星 (只有神話等級會觸發)
+    createStars: function() {
+        const container = document.getElementById('star-container');
+        if (!container || container.hasChildNodes()) return;
+        for (let i = 0; i < 6; i++) {
+            let star = document.createElement('div');
+            star.className = 'shooting-star'; // CSS 動畫已在上面定義
+            star.style.top = Math.random() * 80 + 'vh';
+            star.style.left = (Math.random() * 50 + 50) + 'vw';
+            star.style.animationDelay = (Math.random() * 4) + 's';
+            container.appendChild(star);
+        }
+    }
+};
+
+// --- 自動執行 ---
+document.addEventListener('DOMContentLoaded', () => {
+    // 讀取 currentUser，如果沒有就預設 0
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
+    ThemeEngine.apply(user.xp);
+});
 function toggleSidebar() {
+
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
     
