@@ -149,6 +149,45 @@ body.theme-legend aside a:hover,
 body.theme-mythic aside a:hover {
     background-color: rgba(255, 255, 255, 0.2) !important;
 }
+        /* --- 移除所有頑固的白色區塊 --- */
+
+/* 1. 鎖定所有 bg-white, bg-slate-50 等背景，全部變透明 */
+body[class*="theme-"] .bg-white,
+body[class*="theme-"] .bg-slate-50,
+body[class*="theme-"] aside,
+body[class*="theme-"] nav,
+body[class*="theme-"] #leaderboardContainer,
+body[class*="theme-"] main {
+    background-color: rgba(255, 255, 255, 0.08) !important; /* 極度透明的白 */
+    backdrop-filter: blur(12px) !important; /* 磨砂玻璃效果 */
+    border: 1px solid rgba(255, 255, 255, 0.1) !important; /* 增加一點邊界感 */
+    box-shadow: none !important;
+}
+
+/* 2. 修正深色模式下的文字顏色 (神話與傳奇) */
+body.theme-legend *, 
+body.theme-mythic * {
+    /* 如果原本標籤上有 text-slate-800 或 text-gray-700，全部強制轉白 */
+    color: #f8fafc !important; 
+}
+
+/* 3. 排行榜列表每一項 (li) 也要去背 */
+body.theme-legend li, 
+body.theme-mythic li {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 4. 特別修正：AI 助教或卡片的陰影與背景 */
+body[class*="theme-"] .shadow-xl, 
+body[class*="theme-"] .shadow-lg {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 5. 手機版側邊欄遮罩修正 */
+body[class*="theme-"] .sidebar-transition {
+    background-color: rgba(15, 23, 42, 0.8) !important; /* 深色半透 */
+}
     </style>
     <script src="mockdata/users.js"></script>
     <script src="assets/js/auth.js"></script>
