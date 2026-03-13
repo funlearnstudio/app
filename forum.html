@@ -21,7 +21,50 @@ body[class*="theme-"] .sidebar-content {
     backdrop-filter: blur(10px); /* 磨砂玻璃質感 */
     border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
+/* --- 1. 當背景變深色時，強制將所有文字轉為白色/淺色 --- */
 
+/* 針對「傳奇領主」與「萬古神話」這兩個深色主題 */
+body.theme-legend, 
+body.theme-mythic {
+    color: #ffffff !important;
+}
+
+/* 強制修正側邊欄、導覽列與卡片內的文字 */
+body.theme-legend *, 
+body.theme-mythic * {
+    /* 排除掉已經有背景色的標籤(Badge)，只改普通文字 */
+    color: inherit; 
+}
+
+/* 確保側邊欄連結與圖示變亮 */
+body.theme-legend aside a, 
+body.theme-mythic aside a,
+body.theme-legend aside i,
+body.theme-mythic aside i {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* 側邊欄懸停效果：變亮一點 */
+body.theme-legend aside a:hover, 
+body.theme-mythic aside a:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* --- 2. 讓卡片內容稍微透出背景，但不至於看不清楚 --- */
+body.theme-legend .bg-white, 
+body.theme-mythic .bg-white {
+    background-color: rgba(255, 255, 255, 0.1) !important; /* 半透明白色 */
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 修正原本寫死為 text-slate-800 的文字 */
+body.theme-legend .text-slate-800,
+body.theme-mythic .text-slate-800,
+body.theme-legend .text-gray-600,
+body.theme-mythic .text-gray-600 {
+    color: #e2e8f0 !important;
+}
 /* 針對側邊欄內的文字在深色主題時變白 */
 body.theme-legend aside *, body.theme-mythic aside * {
     color: white !important;
