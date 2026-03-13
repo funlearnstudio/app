@@ -9,6 +9,51 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
     <style>
+        /* --- 讓所有白色容器在主題下自動轉型 --- */
+
+/* 1. 鎖定所有可能帶有 bg-white 的容器 */
+body[class*="theme-"] .bg-white,
+body[class*="theme-"] .bg-slate-50,
+body[class*="theme-"] #leaderboardContainer,
+body[class*="theme-"] .ai-assistant-card, /* 假設你的AI助教卡片有這個 class */
+body[class*="theme-"] aside {
+    background-color: rgba(255, 255, 255, 0.1) !important; /* 變成微透明 */
+    backdrop-filter: blur(10px); /* 磨砂玻璃效果 */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.5s ease;
+}
+
+/* 2. 當進入「傳奇」或「神話」深色模式時，修正文字顏色 */
+body.theme-legend, body.theme-mythic {
+    color: #ffffff !important;
+}
+
+/* 強制將這些白色區塊內的文字也變白 */
+body.theme-legend .bg-white *, 
+body.theme-mythic .bg-white *,
+body.theme-legend #leaderboardContainer *,
+body.theme-mythic #leaderboardContainer *,
+body.theme-legend .text-slate-800,
+body.theme-mythic .text-slate-800,
+body.theme-legend .text-gray-600,
+body.theme-mythic .text-gray-600 {
+    color: #ffffff !important;
+}
+
+/* 3. 修正 AI 助教的解答區 (通常是特別的灰色背景) */
+body.theme-legend .bg-gray-100, 
+body.theme-mythic .bg-gray-100,
+body.theme-legend .bg-slate-100,
+body.theme-mythic .bg-slate-100 {
+    background-color: rgba(0, 0, 0, 0.3) !important; /* 解答區變深色 */
+    color: #cbd5e1 !important;
+}
+
+/* 4. 讓側邊欄的按鈕在深色模式下不會消失 */
+body.theme-legend aside a:hover, 
+body.theme-mythic aside a:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+}
         /* 當主題啟動時，讓特定的區塊變透明，透出底層背景色 */
 /* 讓側邊欄跟隨主題變色 */
 /* 當 body 有 theme- class 時，強制讓側邊欄背景透明或半透明 */
