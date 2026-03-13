@@ -200,9 +200,12 @@
                     </h1>
                     <p class="text-slate-500 mt-1">使用您的專屬題庫，邊玩邊學！</p>
                 </div>
-                <div class="flex gap-2">
-                    <span class="px-4 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-bold flex items-center gap-2">
+              <div class="flex gap-2">
+                    <span class="px-4 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-bold flex items-center gap-2 shadow-sm">
                         <i class="fas fa-coins"></i> 金幣: <span id="coinCount">0</span>
+                    </span>
+                    <span class="px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-bold flex items-center gap-2 shadow-sm">
+                        <i class="fas fa-star text-yellow-400"></i> XP: <span id="xpCount">0</span>
                     </span>
                 </div>
             </div>
@@ -474,7 +477,9 @@
         // 初始化顯示金幣
         let currentCoins = window.loadCoins();
         if(coinDisplay) coinDisplay.innerText = currentCoins;
-
+// 顯示初始 XP
+        const xpDisplay = document.getElementById('xpCount');
+        if(xpDisplay) xpDisplay.innerText = user.xp || 0;
         // 4. 讀取網址參數 (設定科目與年級)
         const urlParams = new URLSearchParams(window.location.search);
         currentSubject = urlParams.get('subject') || 'math';
@@ -490,7 +495,55 @@
         const subjTitle = document.getElementById('fcSubject');
         if(subjTitle) subjTitle.textContent = getSubjectName(currentSubject);
     };
+ // ==========================================
+    // 🌟 XP 經驗值與雲端同步系統 (遊戲場專用)
+    // ==========================================
+    async function awardXPAndSync(xpAmount, gameName, scoreAmount) {
+        if (!xpAmount || xpAmount <= 0) return;
+        
+        const user = Auth.getCurrentUser();
+        if (!user || user.username === 'guest') return;
 
+        // 1. 本機端更新 XP
+        if (window.Auth && typeof Auth.addXP === 'function') {
+            Auth.addXP(xpAmount);
+        } else {
+            user.xp = (user.xp || 0) + xpAmount;
+            localStorage.setItem('currentUser', JSON.stringify(user));
+        }
+
+        // 2. 更新畫面上的 XP 數字
+        const updatedUser = Auth.getCurrentUser() || user;
+        const xpDisplay = document.getElementById('xpCount');
+        if(xpDisplay) xpDisplay.innerText = updatedUser.xp || 0;
+
+        // 3. 完美打包包裹送給後端 (跟 exam.html 一樣的邏輯！)
+        const detailToSave = {
+            subject: currentSubject,           
+            unitName: "遊戲場 - " + gameName,            
+            grade: updatedUser.grade || "國九",
+            xpGained: xpAmount // 🌟 最關鍵的屬性
+        };
+
+        const payload = {
+            action: "save_record",
+            username: updatedUser.username,
+            activity: "遊戲場 - " + gameName,
+            score: scoreAmount || 100,
+            xp: xpAmount, 
+            detail: JSON.stringify(detailToSave) 
+        };
+
+        // 背景靜默上傳，不打斷玩家遊戲
+        try {
+            fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            }).then(() => console.log(`🚀 [${gameName}] 成功獲得 ${xpAmount} XP！`));
+        } catch (e) {
+            console.error("XP 上傳失敗:", e);
+        }
+    }
     // ==========================================
     // ✏️ 個人資料編輯功能 (必須放在外層)
     // ==========================================
@@ -719,10 +772,13 @@ function toggleSidebar() {
         document.getElementById('mrFinalScore').textContent = mrScore;
 
         const coinsEarned = Math.floor(mrScore / 100);
-        if (coinsEarned > 0) {
+       const coinsEarned = Math.floor(mrScore / 100);
+        const xpEarned = Math.floor(mrScore / 10); // 分數的 10% 變成 XP
+        if (coinsEarned > 0 || xpEarned > 0) {
             let current = window.loadCoins(); 
             window.saveCoins(current + coinsEarned);
-            alert(`時間到！恭喜獲得 ${coinsEarned} 枚金幣！`);
+            awardXPAndSync(xpEarned, '極速挑戰賽', mrScore); // 🚀 派發 XP
+            alert(`時間到！恭喜獲得 ${coinsEarned} 枚金幣 與 ${xpEarned} 點 XP！`);
         }
     }
 
@@ -799,9 +855,21 @@ function toggleSidebar() {
                     mmMatches++;
                     document.getElementById('mmMatches').textContent = mmMatches;
                     if(mmMatches === 6) {
+                        // 1. 顯示遊戲結束畫面
                         document.getElementById('mmGameOver').classList.remove('hidden');
+                        
+                        // 2. 增加金幣 (原本的邏輯)
                         let current = window.loadCoins();
                         window.saveCoins(current + 20);
+                        
+                        // 3. 🌟 加入 XP 獎勵與雲端同步
+                        // 參數：(XP 點數, 遊戲名稱, 分數)
+                        if (typeof awardXPAndSync === 'function') {
+                            awardXPAndSync(50, '腦力配對', 100);
+                        } else {
+                            // 預防萬一 awardXPAndSync 還沒定義，至少在本機顯示
+                            alert("恭喜完成配對！獲得 20 金幣與 50 點 XP！");
+                        }
                     }
                 }, 600);
             } else {
@@ -829,10 +897,11 @@ function toggleSidebar() {
     function updateMonsterHp(val) {
         monsterHp = Math.max(0, val);
         document.getElementById('monsterHpBar').style.width = monsterHp + '%';
-        if(monsterHp === 0) { 
-            alert("🎉 恭喜！你擊敗了惡龍！獲得 50 金幣！"); 
+       if(monsterHp === 0) { 
             let current = window.loadCoins();
             window.saveCoins(current + 50);
+            awardXPAndSync(100, '勇者鬥惡龍', 100); // 🚀 擊敗惡龍拿 100 XP
+            alert("🎉 恭喜！你擊敗了惡龍！獲得 50 金幣與 100 點 XP！"); 
             backToMenu(); 
         }
     }
@@ -908,11 +977,12 @@ function toggleSidebar() {
                 let isCorrect = (typeof q.answer === 'number' ? idx === q.answer : opt === q.answer);
                 if(isCorrect) {
                     bombStreak++; updateBombWires();
-                    if(bombStreak >= bombTarget) { 
+                   if(bombStreak >= bombTarget) { 
                         clearInterval(timerInterval); 
                         document.getElementById('bombSuccess').classList.remove('hidden'); 
                         let current = window.loadCoins();
                         window.saveCoins(current + 30);
+                        awardXPAndSync(80, '拆彈專家', 100); // 🚀 拆彈成功給 80 XP
                     }
                     else { currentQIdx++; startBombTimer(); renderBombQuestion(); }
                 } else { 
@@ -961,17 +1031,22 @@ function toggleSidebar() {
             btn.innerHTML = opt;
             btn.onclick = () => {
                 let isCorrect = (typeof q.answer === 'number' ? idx === q.answer : opt === q.answer);
-                if(isCorrect) {
+              if(isCorrect) {
                     const points = 100 * currentMultiplier;
                     wheelScore += points;
                     document.getElementById('wheelScore').textContent = wheelScore;
-                    alert(`🎉 答對！獲得 ${points} 分`);
+                    
+                    const xpEarned = Math.floor(points / 20); // 依轉盤分數給 XP
+                    awardXPAndSync(xpEarned, '幸運轉盤', points); // 🚀 派發 XP
+                    
+                    alert(`🎉 答對！獲得 ${points} 分 與 ${xpEarned} 點 XP！`);
                     
                     if(wheelScore % 1000 === 0) {
                             let current = window.loadCoins();
                             window.saveCoins(current + 1);
                     }
                 } else { alert("💥 答錯了..."); }
+                   
                 currentQIdx++;
                 resetWheelState();
             };
