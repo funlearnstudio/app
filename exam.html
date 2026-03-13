@@ -12,6 +12,25 @@
     <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
 
     <style>
+        /* 當主題啟動時，讓特定的區塊變透明，透出底層背景色 */
+body[class*="theme-"] nav, 
+body[class*="theme-"] header,
+body[class*="theme-"] .bg-white,
+body[class*="theme-"] .bg-slate-50 {
+    background-color: transparent !important;
+    transition: background 0.5s ease;
+}
+
+/* 針對深色主題（傳奇、神話），強制調整文字為白色 */
+body.theme-legend *, body.theme-mythic * {
+    border-color: rgba(255,255,255,0.1) !important;
+}
+
+/* 讓內容區塊稍微有一點半透明感，增加質感 */
+body[class*="theme-"] .main-content-card {
+    background-color: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(10px); /* 磨砂玻璃效果 */
+}
         /* 防止手機下拉重整與回彈，讓體驗像 App */
         body { 
             font-family: 'Noto Sans TC', sans-serif; 
