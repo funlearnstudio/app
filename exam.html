@@ -1039,10 +1039,11 @@ async function finalSubmit() {
         detail: JSON.stringify(detailToSave) 
     };
 
-    return fetch(GAS_URL, {
+return fetch(GAS_URL, {
         method: 'POST',
+        // 不指定 mode 或設為 'cors'，GAS 後端需正確處理 OPTIONS 請求
         body: JSON.stringify(payload)
-    });
+    }).catch(err => console.error("上傳失敗:", err));
 }
 </script>
 </body>
