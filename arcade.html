@@ -497,53 +497,57 @@
     };
  // ==========================================
     // 🌟 XP 經驗值與雲端同步系統 (遊戲場專用)
-    // ==========================================
-    async function awardXPAndSync(xpAmount, gameName, scoreAmount) {
-        if (!xpAmount || xpAmount <= 0) return;
-        
-        const user = Auth.getCurrentUser();
-        if (!user || user.username === 'guest') return;
+   // 🏆 強化版：自動計算稱號並上傳
+async function awardXPAndSync(xpAmount, gameName, scoreAmount) {
+    if (!xpAmount || xpAmount <= 0) return;
+    
+    // 取得使用者 (支援 guest 排除)
+    let user = (window.Auth && Auth.getCurrentUser()) || JSON.parse(localStorage.getItem('currentUser') || '{"username":"guest"}');
+    if (user.username === 'guest') return;
 
-        // 1. 本機端更新 XP
-        if (window.Auth && typeof Auth.addXP === 'function') {
-            Auth.addXP(xpAmount);
-        } else {
-            user.xp = (user.xp || 0) + xpAmount;
-            localStorage.setItem('currentUser', JSON.stringify(user));
-        }
-
-        // 2. 更新畫面上的 XP 數字
-        const updatedUser = Auth.getCurrentUser() || user;
-        const xpDisplay = document.getElementById('xpCount');
-        if(xpDisplay) xpDisplay.innerText = updatedUser.xp || 0;
-
-        // 3. 完美打包包裹送給後端 (跟 exam.html 一樣的邏輯！)
-        const detailToSave = {
-            subject: currentSubject,           
-            unitName: "遊戲場 - " + gameName,            
-            grade: updatedUser.grade || "國九",
-            xpGained: xpAmount // 🌟 最關鍵的屬性
-        };
-
-        const payload = {
-            action: "save_record",
-            username: updatedUser.username,
-            activity: "遊戲場 - " + gameName,
-            score: scoreAmount || 100,
-            xp: xpAmount, 
-            detail: JSON.stringify(detailToSave) 
-        };
-
-        // 背景靜默上傳，不打斷玩家遊戲
-        try {
-            fetch(GAS_URL, {
-                method: 'POST',
-                body: JSON.stringify(payload)
-            }).then(() => console.log(`🚀 [${gameName}] 成功獲得 ${xpAmount} XP！`));
-        } catch (e) {
-            console.error("XP 上傳失敗:", e);
-        }
+    // 計算新總分
+    const oldXP = user.xp || 0;
+    const newXP = oldXP + xpAmount;
+    
+    // 更新本地
+    if (window.Auth && typeof Auth.addXP === 'function') {
+        Auth.addXP(xpAmount);
+    } else {
+        user.xp = newXP;
+        localStorage.setItem('currentUser', JSON.stringify(user));
     }
+
+    // 更新介面
+    const xpDisplay = document.getElementById('xpCount');
+    if(xpDisplay) xpDisplay.innerText = newXP;
+
+    // 計算稱號 (用於榮譽榜排序與展示)
+    let title = "初級學徒";
+    if (newXP >= 500)  title = "📖 努力書生";
+    if (newXP >= 1000) title = "🌟 進階學子";
+    if (newXP >= 2000) title = "🏆 資深學者";
+    if (newXP >= 5000) title = "💎 頂尖研究員";
+    if (newXP >= 10000) title = "🔥 傳說級學霸";
+
+    // 打包包裹
+    const payload = {
+        action: "save_record",
+        username: user.username,
+        activity: "遊戲場-" + gameName,
+        score: scoreAmount || 100,
+        xp: xpAmount,
+        detail: JSON.stringify({
+            unitName: gameName,
+            xpGained: xpAmount,
+            currentTitle: title // 🌟 順便送稱號給試算表
+        })
+    };
+
+    return fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+    }).catch(e => console.error("同步失敗", e));
+}
     // ==========================================
     // ✏️ 個人資料編輯功能 (必須放在外層)
     // ==========================================
@@ -672,23 +676,35 @@ function toggleSidebar() {
         return q.answer;
     }
 
-    function startGame(id) {
-        document.getElementById('gameMenu').classList.add('hidden');
-        document.querySelectorAll('.game-section').forEach(el => el.classList.add('hidden'));
-        
-        const gameSection = document.getElementById(`game-${id}`);
-        if(gameSection) {
-            gameSection.classList.remove('hidden');
-            gameSection.classList.add('active');
-        }
-        
-        if(id === 'flashcard') initFlashcard();
-        if(id === 'math_rush') initMathRush();
-        if(id === 'memory_match') initMemoryMatch();
-        if(id === 'rpg_battle') initRPG();
-        if(id === 'defuse_bomb') initDefuseBomb();
-        if(id === 'lucky_wheel') initLuckyWheel();
+  function startGame(id) {
+    console.log("正在啟動遊戲 ID:", id); // 偵測點
+    
+    // 1. 隱藏主選單
+    const menu = document.getElementById('gameMenu');
+    if(menu) menu.classList.add('hidden');
+
+    // 2. 隱藏所有遊戲區域 (注意：你的 HTML class 名稱要對)
+    document.querySelectorAll('.game-section').forEach(el => {
+        el.classList.add('hidden');
+        el.classList.remove('active');
+    });
+    
+    // 3. 顯示選中的遊戲區域
+    const gameSection = document.getElementById(`game-${id}`);
+    if(gameSection) {
+        gameSection.classList.remove('hidden');
+        gameSection.classList.add('active');
+    } else {
+        console.error(`找不到 ID 為 game-${id} 的元素！`);
     }
+    
+    // 4. 根據 ID 啟動對應的初始化函數 (請確認名稱與你下方的 init 函數一致)
+    if(id === 'math_rush' || id === 'mathRush') initMathRush();
+    if(id === 'memory_match' || id === 'memoryMatch') initMemoryMatch();
+    if(id === 'rpg_battle' || id === 'dragon') initRPG(); // 如果你的函數叫 initRPG
+    if(id === 'defuse_bomb' || id === 'bomb') initDefuseBomb();
+    if(id === 'lucky_wheel' || id === 'wheel') initLuckyWheel();
+}
 
     function backToMenu() {
         document.getElementById('gameMenu').classList.remove('hidden');
@@ -765,22 +781,25 @@ function toggleSidebar() {
         });
         if(window.MathJax) MathJax.typesetPromise();
     }
-    function endMathRush() {
-        clearInterval(timerInterval);
-        document.getElementById('mrGameArea').classList.add('hidden');
-        document.getElementById('mrGameOver').classList.remove('hidden');
-        document.getElementById('mrFinalScore').textContent = mrScore;
-
-        const coinsEarned = Math.floor(mrScore / 100);
-       const coinsEarned = Math.floor(mrScore / 100);
-        const xpEarned = Math.floor(mrScore / 10); // 分數的 10% 變成 XP
-        if (coinsEarned > 0 || xpEarned > 0) {
-            let current = window.loadCoins(); 
-            window.saveCoins(current + coinsEarned);
-            awardXPAndSync(xpEarned, '極速挑戰賽', mrScore); // 🚀 派發 XP
-            alert(`時間到！恭喜獲得 ${coinsEarned} 枚金幣 與 ${xpEarned} 點 XP！`);
+   function endMathRush() {
+    clearInterval(timerInterval);
+    document.getElementById('mrGameOver').classList.remove('hidden');
+    
+    // 修正點：移除 const，直接計算 (因為前面可能已經宣告過了)
+    let earnedC = Math.floor(mrScore / 100); 
+    let earnedX = Math.floor(mrScore / 10); 
+    
+    if (earnedC > 0 || earnedX > 0) {
+        let current = window.loadCoins(); 
+        window.saveCoins(current + earnedC);
+        
+        // 呼叫我們寫好的 XP 函數
+        if (typeof awardXPAndSync === 'function') {
+            awardXPAndSync(earnedX, '極速挑戰賽', mrScore);
         }
+        alert(`時間到！恭喜獲得 ${earnedC} 枚金幣 與 ${earnedX} 點 XP！`);
     }
+}
 
     // ==========================================
     // 🧠 遊戲 3: 腦力配對
