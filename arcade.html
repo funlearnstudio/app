@@ -436,6 +436,24 @@ body.theme-mythic { background: radial-gradient(circle, #1e1b4b, #020617) !impor
 </div>
     </main>
 <script>
+
+// --- 自動執行 ---
+document.addEventListener('DOMContentLoaded', () => {
+    // 讀取 currentUser，如果沒有就預設 0
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
+    ThemeEngine.apply(user.xp);
+});
+    // ==========================================
+    // 🌐 全域變數
+    // ==========================================
+    let currentSubject = 'math';
+    let targetTags = [];
+    let gameQuestions = [];
+    let currentQIdx = 0;
+    let timerInterval;
+ const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
+
+    // ===================
     // --- 核心主題引擎 ---
 const ThemeEngine = {
     // 1. 執行變色
@@ -466,24 +484,6 @@ const ThemeEngine = {
         }
     }
 };
-
-// --- 自動執行 ---
-document.addEventListener('DOMContentLoaded', () => {
-    // 讀取 currentUser，如果沒有就預設 0
-    const user = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
-    ThemeEngine.apply(user.xp);
-});
-    // ==========================================
-    // 🌐 全域變數
-    // ==========================================
-    let currentSubject = 'math';
-    let targetTags = [];
-    let gameQuestions = [];
-    let currentQIdx = 0;
-    let timerInterval;
- const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
-
-    // ==========================================
     // 🚀 系統初始化 (window.onload)
     // ==========================================
     window.onload = function() {
