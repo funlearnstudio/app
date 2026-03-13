@@ -10,6 +10,26 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
      <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
     <style>
+        /* --- 全域背景主題 (強制覆蓋) --- */
+body { transition: background 1.0s ease, color 0.5s ease; min-height: 100vh; }
+
+/* 100 XP: 潛力新秀 (淡綠色) */
+body.theme-rookie { background-color: #f0fdf4 !important; } 
+/* 300 XP: 勤奮書生 (淡橘色) */
+body.theme-bronze { background-color: #fff7ed !important; }
+/* 5000 XP: 頂尖學者 (藍色) */
+body.theme-diamond { background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%) !important; }
+/* 20000+ XP: 傳奇與神話 (深色) */
+body.theme-legend { background: #451a03 !important; color: #fef3c7; }
+body.theme-mythic { background: radial-gradient(circle, #1e1b4b 0%, #020617 100%) !important; color: white; }
+
+/* 流星特效容器 */
+#star-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+.shooting-star { position: absolute; width: 4px; height: 4px; background: #fff; border-radius: 50%; animation: animateStar 3s linear infinite; }
+@keyframes animateStar {
+    0% { transform: rotate(315deg) translateX(0); opacity: 1; }
+    100% { transform: rotate(315deg) translateX(-1000px); opacity: 0; }
+}
         @media (max-width: 300px) { .watch-hidden { display: none !important; } }
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f4f8; }
         .sidebar-transition { transition: transform 0.3s ease-in-out; }
