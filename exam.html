@@ -923,7 +923,7 @@ async function finalSubmit() {
 
     let correctCount = 0, totalCount = 0, fastCount = 0, wrongList = [];
 
-    // 結算邏輯保持不變...
+    // --- 結算答題狀況 ---
     mockQuestions.forEach((item, idx) => {
         const timeSpent = (typeof timeLog !== 'undefined' && timeLog[idx]) ? timeLog[idx] : 0;
         if (item.type === 'group') {
@@ -949,40 +949,25 @@ async function finalSubmit() {
     const finalScore = Math.round((correctCount / totalCount) * 100);
     const user = (window.Auth && Auth.getCurrentUser()) || { username: 'guest', name: '訪客' };
 
-    // --- 🌟 經驗值 (XP) 核心邏輯 ---
+    // --- 🌟 經驗值 (XP) 計算 ---
     const baseXP = 20; 
     const bonusXP = correctCount * 10;
     const totalXP = baseXP + bonusXP;
     let isLevelUp = false;
 
-  // ... 前面的結算邏輯 ...
-    
-    // 確認 resultData 裡面有 xpGained
-    const resultData = {
-        // ...
-        score: finalScore,
-        xpGained: totalXP, // 👈 確認這裡有寫進去
-        // ...
-    };
-
-    // ... 儲存 localStorage ...
-
-    // 🌟 確認呼叫 uploadToCloud 時，有把 resultData 傳進去
+    // --- 本機端更新經驗值 ---
     if (user.username !== 'guest') {
-        try {
-            if(typeof uploadToCloud === 'function') {
-                await Promise.race([
-                    // 注意這裡，第四個參數必須是 resultData
-                    uploadToCloud(user.username, resultData.title, finalScore, resultData), 
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
-                ]);
-            }
-        } catch (e) { console.error("雲端備份跳過:", e); }
+        if (window.Auth && typeof Auth.addXP === 'function') {
+            isLevelUp = Auth.addXP(totalXP);
+        } else {
+            user.xp = (user.xp || 0) + totalXP;
+            localStorage.setItem('currentUser', JSON.stringify(user));
+        }
     }
 
-    // ... 跳轉到分析頁面 ...
-
     const urlParams = new URLSearchParams(window.location.search);
+
+    // --- 🌟 將所有資料「統一」整理進一個 resultData ---
     const resultData = {
         owner: user.username,
         id: Date.now(),
@@ -994,7 +979,7 @@ async function finalSubmit() {
         questions: mockQuestions.map((q, index) => ({ ...q, yourAns: userAnswers[index] })),
         wrongList: wrongList,
         tabSwitches: (typeof tabLog !== 'undefined') ? tabLog.length : 0,
-        xpGained: totalXP, // 將獲得的 XP 傳給 analysis.html 顯示
+        xpGained: totalXP, // 👈 確保經驗值已經打包在這裡
         isLevelUp: isLevelUp,
         cheat: {
             cheatLevel: (fastCount > 3 || (typeof tabLog !== 'undefined' && tabLog.length > 5)) ? 'HIGH' : 'NORMAL',
@@ -1002,28 +987,32 @@ async function finalSubmit() {
         }
     };
 
-    // 將資料存入瀏覽器，交給其他網頁 (如 analysis.html) 接手
+    // --- 儲存資料到瀏覽器 (交給分析頁面) ---
     localStorage.setItem('examResult', JSON.stringify(resultData));
     
-    // 儲存歷史紀錄
     const historyKey = `history_${user.username}`;
     let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
     history.push(resultData);
     localStorage.setItem(historyKey, JSON.stringify(history.slice(-50)));
 
-    // --- 🌟 上傳至雲端同步其他網站 ---
+    // --- 🌟 上傳至雲端 GAS ---
     if (user.username !== 'guest') {
         try {
-            await uploadToCloud(user.username, resultData.title, finalScore, resultData, totalXP);
+            if(typeof uploadToCloud === 'function') {
+                await Promise.race([
+                    // 將打包好的 resultData 傳給 uploadToCloud
+                    uploadToCloud(user.username, resultData.title, finalScore, resultData, totalXP), 
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+                ]);
+            }
         } catch (e) { 
-            console.error("雲端備份失敗:", e); 
+            console.error("雲端備份跳過或失敗:", e); 
         }
     }
 
-    // 攜帶分數與 XP 跳轉到分析頁面
+    // --- 跳轉到分析頁面 ---
     setTimeout(() => { window.location.href = `analysis.html?mode=new&xp=${totalXP}`; }, 1000);
 }
-
 // 替換這整個 uploadToCloud 函數
 async function uploadToCloud(username, activityName, score, fullData) {
     const urlParams = new URLSearchParams(window.location.search);
