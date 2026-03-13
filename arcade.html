@@ -1191,15 +1191,7 @@ function toggleSidebar() {
             localStorage.setItem(`read_ann_${currentUser}`, currentAnnVersion);
         }
     }
-/ 【啟動】初始化載入
-document.addEventListener('DOMContentLoaded', () => {
-    // 從 localStorage 抓取目前登入者的資料
-    const user = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
-    applyGlobalTheme(user.xp);
-    
-    // 如果你在 arena.html，也要記得呼叫 loadLeaderboard()
-    if (typeof loadLeaderboard === 'function') loadLeaderboard();
-});
+
     window.addEventListener('DOMContentLoaded', fetchAnnouncement);
 </script>
 </body>
