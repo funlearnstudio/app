@@ -955,16 +955,32 @@ async function finalSubmit() {
     const totalXP = baseXP + bonusXP;
     let isLevelUp = false;
 
+  // ... 前面的結算邏輯 ...
+    
+    // 確認 resultData 裡面有 xpGained
+    const resultData = {
+        // ...
+        score: finalScore,
+        xpGained: totalXP, // 👈 確認這裡有寫進去
+        // ...
+    };
+
+    // ... 儲存 localStorage ...
+
+    // 🌟 確認呼叫 uploadToCloud 時，有把 resultData 傳進去
     if (user.username !== 'guest') {
-        // 呼叫原本的 Auth 功能
-        if (window.Auth && typeof Auth.addXP === 'function') {
-            isLevelUp = Auth.addXP(totalXP);
-        } else {
-            // 備用機制：如果 Auth.js 失效，直接寫入 localStorage 讓其他網站讀取
-            user.xp = (user.xp || 0) + totalXP;
-            localStorage.setItem('currentUser', JSON.stringify(user));
-        }
+        try {
+            if(typeof uploadToCloud === 'function') {
+                await Promise.race([
+                    // 注意這裡，第四個參數必須是 resultData
+                    uploadToCloud(user.username, resultData.title, finalScore, resultData), 
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+                ]);
+            }
+        } catch (e) { console.error("雲端備份跳過:", e); }
     }
+
+    // ... 跳轉到分析頁面 ...
 
     const urlParams = new URLSearchParams(window.location.search);
     const resultData = {
@@ -1008,11 +1024,14 @@ async function finalSubmit() {
     setTimeout(() => { window.location.href = `analysis.html?mode=new&xp=${totalXP}`; }, 1000);
 }
 
-// 注意：函數參數多加了一個 gainedXP
-async function uploadToCloud(username, activityName, score, fullData, gainedXP) {
+// 替換這整個 uploadToCloud 函數
+async function uploadToCloud(username, activityName, score, fullData) {
     const urlParams = new URLSearchParams(window.location.search);
     const currentSubject = fullData.subject || urlParams.get('subject') || "unknown";
     
+    // 💡 抓取剛剛算出來的 XP，如果 fullData 裡面沒有，就預設給 0
+    const gainedXP = fullData.xpGained || 0; 
+
     const detailToSave = {
         subject: currentSubject,           
         unitName: activityName,            
@@ -1021,24 +1040,21 @@ async function uploadToCloud(username, activityName, score, fullData, gainedXP) 
         correctCount: fullData.correctCount,
         wrongList: fullData.wrongList,
         cheat: fullData.cheat,
-        tabSwitches: fullData.tabSwitches
+        tabSwitches: fullData.tabSwitches,
+        xpGained: gainedXP // 🌟 關鍵補上！把剛考完獲得的 XP 打包進 detail 裡
     };
 
     const payload = {
-        action: "save_record_and_xp", // 告訴後端同時存分數與加經驗值
+        action: "save_record", // 你的 GAS 後端目前是用 save_record 來存分數跟算 XP
         username: username,
         activity: activityName,
         score: score,
-        xp: gainedXP, // 新增：傳遞獲得的經驗值
         detail: JSON.stringify(detailToSave) 
     };
 
-    // 移除 no-cors，改用標準 POST 傳遞 JSON
     return fetch(GAS_URL, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'text/plain;charset=utf-8', // GAS 接收 JSON 常用的方式
-        },
+        // 🚨 記得拿掉 mode: 'no-cors'，否則你前端永遠不知道後端有沒有存成功
         body: JSON.stringify(payload)
     });
 }
