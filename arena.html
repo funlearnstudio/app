@@ -55,16 +55,54 @@ body.theme-diamond { background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100
 /* 🔥 聖域大師：暖色調背景 */
 body.theme-master { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); }
 
-/* 👑 傳奇領主：暗金主題 */
-body.theme-legend { background: linear-gradient(135deg, #451a03 0%, #78350f 100%); color: #fef3c7; }
-body.theme-legend .text-slate-800 { color: #fef3c7 !important; } /* 修正文字顏色 */
+/* --- 全域背景過渡 --- */
+body { 
+    transition: background 1.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.5s ease; 
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+}
 
-/* 🌌 萬古神話：極致深空主題 */
+/* --- 🌌 萬古神話主題 (深空 + 流星) --- */
 body.theme-mythic { 
-    background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%); 
+    background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%) !important; 
     color: #e0e7ff; 
 }
-body.theme-mythic .text-slate-800 { color: #e0e7ff !important; }
+
+/* 流星容器 */
+#star-container {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; /* 不影響點擊 */
+    z-index: -1; /* 在最底層 */
+    display: none;
+}
+body.theme-mythic #star-container { display: block; }
+
+/* 流星本體 */
+.shooting-star {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 4px; height: 4px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px rgba(255,255,255,0.1), 0 0 0 8px rgba(255,255,255,0.1), 0 0 20px rgba(255,255,255,1);
+    animation: animateStar 3s linear infinite;
+}
+.shooting-star::before {
+    content: ''; position: absolute; top: 50%; transform: translateY(-50%);
+    width: 300px; height: 1px;
+    background: linear-gradient(90deg, #fff, transparent);
+}
+
+@keyframes animateStar {
+    0% { transform: rotate(315deg) translateX(0); opacity: 1; }
+    70% { opacity: 1; }
+    100% { transform: rotate(315deg) translateX(-1000px); opacity: 0; }
+}
+
+/* --- 👑 傳奇領主主題 (暗金) --- */
+body.theme-legend { background: linear-gradient(135deg, #451a03 0%, #78350f 100%) !important; }
     </style>
     
 <script src="assets/js/auth.js"></script>
