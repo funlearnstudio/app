@@ -947,8 +947,22 @@ async function finalSubmit() {
     });
 
     const finalScore = Math.round((correctCount / totalCount) * 100);
-    const user = (window.Auth && Auth.getCurrentUser()) || { username: 'guest', name: '訪客' };
+  // ==========================================
+    // 👇👇 把原本的 const user 刪掉，換成這整段 👇👇
+    let user = { username: 'guest', name: '訪客' }; 
 
+    if (window.Auth && typeof Auth.getCurrentUser === 'function') {
+        const authUser = Auth.getCurrentUser();
+        if (authUser) user = authUser;
+    } 
+    // 如果上面抓不到，直接去瀏覽器記憶體裡面挖！(這是關鍵)
+    if (user.username === 'guest' && localStorage.getItem('currentUser')) {
+        try {
+            user = JSON.parse(localStorage.getItem('currentUser'));
+        } catch(e) { console.error("解析本機帳號失敗", e); }
+    }
+    // 👆👆 替換到這裡結束 👆👆
+    // ==========================================
     // --- 🌟 經驗值 (XP) 計算 ---
     const baseXP = 20; 
     const bonusXP = correctCount * 10;
