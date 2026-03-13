@@ -15,7 +15,39 @@
         .sidebar-transition { transition: transform 0.3s ease-in-out; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* 等級標籤基礎樣式 */
+.rank-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-left: 8px;
+}
+
+/* 高階等級特殊效果 */
+.rank-mythic { 
+    background: linear-gradient(45deg, #6366f1, #a855f7, #ec4899); 
+    color: white; 
+    animation: pulse-gold 2s infinite;
+    box-shadow: 0 0 10px rgba(236, 72, 153, 0.5);
+}
+
+.rank-legend { 
+    background: linear-gradient(45deg, #f59e0b, #ef4444); 
+    color: white; 
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+.rank-master { background: #fee2e2; color: #b91c1c; border: 1px solid #f87171; }
+.rank-diamond { background: #e0f2fe; color: #0369a1; }
+
+@keyframes pulse-gold {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
     </style>
+    
 <script src="assets/js/auth.js"></script>
     </head>
 <body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden">
@@ -222,6 +254,7 @@
         </div>
     </main>
 <script>
+  
         // 手機側邊欄開關
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
@@ -330,7 +363,19 @@
         console.error("XP 同步失敗:", error);
     }
 }
-
+// 🎖️ 榮譽榜等級與樣式判斷 (越來越難升級)
+function getRankInfo(xp) {
+    if (xp >= 50000) return { title: "🌌 萬古神話", class: "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white animate-pulse" };
+    if (xp >= 20000) return { title: "👑 傳奇領主", class: "bg-gradient-to-r from-amber-400 to-orange-600 text-white shadow-sm" };
+    if (xp >= 10000) return { title: "🔥 聖域大師", class: "bg-red-500 text-white" };
+    if (xp >= 5000)  return { title: "💎 頂尖學者", class: "bg-blue-500 text-white" };
+    if (xp >= 2500)  return { title: "🏆 資深教授", class: "bg-emerald-500 text-white" };
+    if (xp >= 1200)  return { title: "📜 知識博雅", class: "bg-amber-100 text-amber-700 border border-amber-300" };
+    if (xp >= 600)   return { title: "🌟 精銳學員", class: "bg-slate-200 text-slate-700" };
+    if (xp >= 300)   return { title: "📖 勤奮書生", class: "bg-orange-50 text-orange-600" };
+    if (xp >= 100)   return { title: "🌱 潛力新秀", class: "bg-green-50 text-green-600" };
+    return { title: "🥚 初始學徒", class: "bg-slate-100 text-slate-500" };
+}
         // 🌟 4. 載入排行榜
         async function loadLeaderboard() {
             const listContainer = document.getElementById('leaderboardList');
@@ -348,30 +393,41 @@
                     return;
                 }
 
-                topPlayers.forEach((player, index) => {
+            topPlayers.forEach((player, index) => {
                     const li = document.createElement('li');
-                    li.className = 'flex items-center justify-between p-4 bg-slate-50 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-200 rounded-2xl transition-all duration-300';
+                    li.className = 'flex items-center justify-between p-4 bg-slate-50 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-200 rounded-2xl transition-all duration-300 mb-3';
                     
-                    let rankDisplay = `<span class="text-slate-400 font-bold">${index + 1}</span>`;
-                    if (index === 0) rankDisplay = '<i class="fas fa-crown text-2xl text-yellow-400"></i>';
-                    else if (index === 1) rankDisplay = '<i class="fas fa-medal text-2xl text-slate-300"></i>';
-                    else if (index === 2) rankDisplay = '<i class="fas fa-award text-2xl text-amber-600"></i>';
+                    // 1. 取得該玩家的等級稱號資訊
+                    const rank = getRankInfo(player.xp);
+
+                    // 2. 判斷前三名獎牌
+                    let rankDisplay = `<span class="text-slate-400 font-bold text-xl">${index + 1}</span>`;
+                    if (index === 0) rankDisplay = '<i class="fas fa-crown text-3xl text-yellow-400 drop-shadow-sm"></i>';
+                    else if (index === 1) rankDisplay = '<i class="fas fa-medal text-3xl text-slate-300"></i>';
+                    else if (index === 2) rankDisplay = '<i class="fas fa-award text-3xl text-amber-600"></i>';
 
                     li.innerHTML = `
                         <div class="flex items-center gap-4">
-                            <div class="w-10 text-center">${rankDisplay}</div>
+                            <div class="w-12 text-center">${rankDisplay}</div>
                             <div>
-                                <div class="font-extrabold text-slate-800 text-lg">${player.name || player.username}</div>
-                                <div class="text-xs font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-md inline-block mt-1">Lv. ${player.level || 1}</div>
+                                <div class="font-extrabold text-slate-800 text-lg flex items-center gap-2">
+                                    ${player.name || player.username}
+                                    ${index === 0 ? '<span class="text-[10px] bg-yellow-400 text-white px-1.5 py-0.5 rounded-full uppercase tracking-tighter">MVP</span>' : ''}
+                                </div>
+                                <div class="text-[11px] font-black px-3 py-1 rounded-full inline-block mt-1 shadow-sm ${rank.class}">
+                                    ${rank.title}
+                                </div>
                             </div>
                         </div>
-                        <div class="font-black text-xl text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">
-                            ${player.xp} XP
+                        <div class="text-right">
+                            <div class="font-black text-2xl text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-blue-600">
+                                ${player.xp.toLocaleString()} <span class="text-[10px] text-slate-400 font-bold">XP</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Global Rank</div>
                         </div>
                     `;
                     listContainer.appendChild(li);
                 });
-
             } catch (error) {
                 loadingMsg.innerHTML = "<span class='text-red-500 font-bold'>伺服器連線失敗</span>";
             }
