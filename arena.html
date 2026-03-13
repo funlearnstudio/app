@@ -46,6 +46,25 @@
     50% { transform: scale(1.05); opacity: 0.8; }
     100% { transform: scale(1); opacity: 1; }
 }
+        /* 預設背景 */
+body { transition: background 0.8s ease, color 0.5s ease; }
+
+/* 💎 頂尖學者以上：稍微變藍 */
+body.theme-diamond { background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%); }
+
+/* 🔥 聖域大師：暖色調背景 */
+body.theme-master { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); }
+
+/* 👑 傳奇領主：暗金主題 */
+body.theme-legend { background: linear-gradient(135deg, #451a03 0%, #78350f 100%); color: #fef3c7; }
+body.theme-legend .text-slate-800 { color: #fef3c7 !important; } /* 修正文字顏色 */
+
+/* 🌌 萬古神話：極致深空主題 */
+body.theme-mythic { 
+    background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%); 
+    color: #e0e7ff; 
+}
+body.theme-mythic .text-slate-800 { color: #e0e7ff !important; }
     </style>
     
 <script src="assets/js/auth.js"></script>
@@ -479,6 +498,11 @@ function getRankInfo(xp) {
             initProfile();
             loadLeaderboard();
         });
+    // 在 loadLeaderboard 的 try 區塊最後面加入：
+        const currentUser = (window.Auth && Auth.getCurrentUser()) || JSON.parse(localStorage.getItem('currentUser') || '{}');
+        if (currentUser && currentUser.xp) {
+            applyGlobalTheme(currentUser.xp);
+        }
     </script>
 </body>
 </html>
