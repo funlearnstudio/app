@@ -1280,7 +1280,7 @@ async function finalSubmit() {
         user.totalExams = (user.totalExams || 0) + 1; // 總交卷次數 + 1
         
         // 設定每寫幾次考卷送一張票 (這裡設定 2 次，你可以自己改)
-        const EXAMS_PER_TICKET = 5; 
+        const EXAMS_PER_TICKET = 2; 
         if (user.totalExams % EXAMS_PER_TICKET === 0) {
             user.gachaTickets = (user.gachaTickets || 0) + 1;
             earnedTicket = 1; // 標記這次有拿到票
