@@ -836,21 +836,21 @@ function playGacha() {
         resultDiv.classList.remove('hidden');
 
         const rand = Math.random() * 100;
-        if (rand < 5) {
+        if (rand < 10) {
             SoundEngine.playSound('gachaWin');
             resultDiv.innerHTML = "✨ 神話級獎勵：獲得 1000 XP！✨";
             resultDiv.className = "mt-4 text-xl font-bold text-yellow-300 animate-bounce";
             Auth.updateUser('xp', (user.xp || 0) + 1000);
-        } else if (rand < 35) {
+        } else if (rand < 45) {
             SoundEngine.playSound('gachaWin');
             resultDiv.innerHTML = "🎉 稀有獎勵：獲得 200 XP！";
             resultDiv.className = "mt-4 text-lg font-bold text-white animate-pulse";
             Auth.updateUser('xp', (user.xp || 0) + 200);
         } else {
             SoundEngine.playSound('gachaFail');
-            resultDiv.innerHTML = "💨 銘謝惠顧！獲得 10 XP 安慰獎。";
+            resultDiv.innerHTML = "💨 銘謝惠顧！獲得 50 XP 安慰獎。";
             resultDiv.className = "mt-4 text-lg text-slate-300";
-            Auth.updateUser('xp', (user.xp || 0) + 10);
+            Auth.updateUser('xp', (user.xp || 0) + 50);
         }
         
         // 重新判定主題 (✅ 正確呼叫 ThemeEngine)
