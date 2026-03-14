@@ -577,7 +577,17 @@ body.theme-bronze span:not(.text-\\[11px\\]) /* 排除徽章內的 span */
                     <ul id="unlockedFeaturesList" class="space-y-3">
                         </ul>
                 </div>
-
+<div class="bg-gradient-to-r from-purple-500 to-indigo-600 p-6 rounded-2xl text-white text-center mt-6 mb-6 shadow-xl">
+    <h3 class="text-2xl font-bold mb-2"><i class="fas fa-gift animate-bounce"></i> 幸運大抽獎</h3>
+    <p class="mb-4">目前擁有抽獎券：<span id="ticketCount" class="font-bold text-yellow-300 text-3xl">0</span> 張</p>
+    
+    <button id="drawGachaBtn" onclick="playGacha()" class="bg-yellow-400 text-purple-900 font-bold py-3 px-8 rounded-full shadow-lg hover:bg-yellow-300 hover:scale-105 transition-transform">
+        消耗 1 張抽獎券
+    </button>
+    
+    <div id="gachaResult" class="mt-4 text-lg font-bold hidden transition-all">
+        </div>
+</div>
             </div> <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 lg:col-span-2 h-fit">
                 <h3 class="text-xl font-extrabold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
                     <i class="fas fa-crown text-yellow-500 text-2xl"></i> 全服英雄排行榜 (Top 20)
@@ -935,6 +945,123 @@ function renderUnlockedFeatures(userXp) {
         listContainer.appendChild(li);
     });
 }
+    // ==========================================
+// 🎵 1. 音效引擎 (使用 Google 無版權音效)
+// ==========================================
+const SoundEngine = {
+    bgm: new Audio('https://actions.google.com/sounds/v1/ambiences/arcade_game_hall.ogg'),
+    gachaPull: new Audio('https://actions.google.com/sounds/v1/cartoon/magic_chime_scifi.ogg'),
+    gachaWin: new Audio('https://actions.google.com/sounds/v1/cartoon/cartoon_success_fanfare.ogg'),
+    gachaFail: new Audio('https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg'),
+
+    init: function() {
+        this.bgm.loop = true; 
+        this.bgm.volume = 0.2; 
+        this.gachaPull.volume = 0.6;
+        this.gachaWin.volume = 0.8;
+        this.gachaFail.volume = 0.8;
+    },
+    playBGM: function() {
+        let playPromise = this.bgm.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => console.log("等待使用者點擊後播放 BGM"));
+        }
+    },
+    playSound: function(type) {
+        if (this[type]) {
+            this[type].currentTime = 0;
+            this[type].play().catch(e => console.log("音效播放失敗"));
+        }
+    }
+};
+
+// ==========================================
+// 🎁 2. 抽獎邏輯
+// ==========================================
+function updateTicketUI() {
+    // 取得當前使用者，確保有讀到抽獎券數量
+    let user = Auth.getCurrentUser();
+    if (user) {
+        document.getElementById('ticketCount').textContent = user.gachaTickets || 0;
+    }
+}
+
+function playGacha() {
+    let user = Auth.getCurrentUser();
+    let tickets = user.gachaTickets || 0;
+
+    // 檢查票券夠不夠
+    if (tickets <= 0) {
+        alert("😢 抽獎券不足！再去多寫幾份考卷吧！");
+        return;
+    }
+
+    // 1. 扣掉一張票並馬上更新畫面
+    Auth.updateUser('gachaTickets', tickets - 1);
+    updateTicketUI();
+
+    // 2. 播放抽獎音效 & 鎖定按鈕防止連點
+    SoundEngine.playSound('gachaPull');
+    const btn = document.getElementById('drawGachaBtn');
+    const resultDiv = document.getElementById('gachaResult');
+    
+    btn.disabled = true;
+    btn.innerText = "✨ 轉動中...";
+    btn.classList.add('opacity-70');
+    resultDiv.classList.add('hidden');
+
+    // 3. 延遲 2 秒鐘開獎
+    setTimeout(() => {
+        btn.disabled = false;
+        btn.innerText = "消耗 1 張抽獎券";
+        btn.classList.remove('opacity-70');
+        resultDiv.classList.remove('hidden');
+
+        // 4. 開獎機率與給予 XP
+        const rand = Math.random() * 100;
+        
+        if (rand < 5) {
+            // 5% 中神話大獎
+            SoundEngine.playSound('gachaWin');
+            resultDiv.innerHTML = "✨ 神話級獎勵：獲得 1000 XP！✨";
+            resultDiv.className = "mt-4 text-xl font-bold text-yellow-300 animate-bounce";
+            Auth.updateUser('xp', (user.xp || 0) + 1000);
+            
+        } else if (rand < 35) {
+            // 30% 中稀有獎
+            SoundEngine.playSound('gachaWin');
+            resultDiv.innerHTML = "🎉 稀有獎勵：獲得 200 XP！";
+            resultDiv.className = "mt-4 text-lg font-bold text-white animate-pulse";
+            Auth.updateUser('xp', (user.xp || 0) + 200);
+            
+        } else {
+            // 65% 安慰獎
+            SoundEngine.playSound('gachaFail');
+            resultDiv.innerHTML = "💨 銘謝惠顧！獲得 10 XP 安慰獎。";
+            resultDiv.className = "mt-4 text-lg text-slate-300";
+            Auth.updateUser('xp', (user.xp || 0) + 10);
+        }
+        
+        // 如果有主題變色引擎，重新整理主題
+        if (window.ThemeEngine) {
+            ThemeEngine.apply(Auth.getCurrentUser().xp);
+        }
+    }, 2000); // 轉動 2 秒
+}
+
+// ==========================================
+// 🚀 3. 啟動設定
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    SoundEngine.init();
+    updateTicketUI();
+    
+    // 點擊網頁任何地方啟動背景音樂
+    document.body.addEventListener('click', function startBGM() {
+        SoundEngine.playBGM();
+        document.body.removeEventListener('click', startBGM);
+    }, { once: true });
+});
     </script>
 </body>
 </html>
