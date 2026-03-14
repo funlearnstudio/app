@@ -311,6 +311,21 @@ body.theme-epic { background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%) 
 
 /* 12. 創世星神 (終極黑洞特效) */
 body.theme-celestial { background: radial-gradient(circle at center, #000000 0%, #170529 50%, #000000 100%) !important; color: #fde047; }
+        /* ==========================================
+   🎨 12 階級專屬背景顏色
+   ========================================== */
+body.theme-novice { background-color: #f8fafc !important; } /* 1. 初心 */
+body.theme-rookie { background-color: #dcfce7 !important; } /* 2. 新秀 */
+body.theme-bronze { background-color: #ffedd5 !important; } /* 3. 書生 */
+body.theme-silver { background: linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%) !important; } /* 4. 白銀 */
+body.theme-gold { background: linear-gradient(135deg, #fef08a 0%, #eab308 100%) !important; } /* 5. 黃金 */
+body.theme-diamond { background: linear-gradient(135deg, #e0f2fe, #bae6fd) !important; } /* 6. 頂尖 */
+body.theme-master { background: linear-gradient(135deg, #fee2e2, #fecaca) !important; } /* 7. 聖域 */
+body.theme-grandmaster { background: linear-gradient(135deg, #701a75 0%, #be185d 100%) !important; color: white !important; } /* 8. 宗師 */
+body.theme-legend { background: linear-gradient(135deg, #451a03 0%, #78350f 100%) !important; color: #fef3c7 !important; } /* 9. 傳奇 */
+body.theme-epic { background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%) !important; color: white !important; } /* 10. 史詩 */
+body.theme-mythic { background: radial-gradient(circle, #1e1b4b, #020617) !important; color: white !important; } /* 11. 神話 */
+body.theme-celestial { background: radial-gradient(circle at center, #000000 0%, #170529 50%, #000000 100%) !important; color: #fde047 !important; } /* 12. 創世 */
 /* (可選) 移除之前寫的那行太暴力的 `body.theme-bronze * { color: #7c2d12 !important; }` */
     </style>
     <script src="mockdata/users.js"></script>
@@ -529,44 +544,39 @@ body.theme-celestial { background: radial-gradient(circle at center, #000000 0%,
  const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
        const ThemeEngine = {
  // --- 核心主題引擎 (12 個階級升級版) ---
+// ==========================================
+// 🎨 核心主題引擎 (12 個階級升級版)
+// ==========================================
 const ThemeEngine = {
-    // 1. 執行變色
     apply: function(xp) {
-        console.log("當前頁面主題判定中... XP:", xp);
+        console.log("儀表板主題判定中... XP:", xp);
         const body = document.body;
         
-        // ⚠️ 必須在這裡把 12 個主題的 class 全部列出來，確保切換時能清除乾淨
+        // 清除舊主題
         body.classList.remove(
             'theme-novice', 'theme-rookie', 'theme-bronze', 'theme-silver', 
             'theme-gold', 'theme-diamond', 'theme-master', 'theme-grandmaster', 
             'theme-legend', 'theme-epic', 'theme-mythic', 'theme-celestial'
         );
 
-        // 根據 XP 判定主題 (必須從最高分往下寫)
-        if (xp >= 100000) { 
-            body.classList.add('theme-celestial'); 
-            this.createStars(15); // 12. 創世星神 (最高階，流星加倍！)
-        } 
-        else if (xp >= 50000) { 
-            body.classList.add('theme-mythic'); 
-            this.createStars(8);  // 11. 萬古神話 (一般流星)
-        } 
-        else if (xp >= 30000) body.classList.add('theme-epic');         // 10. 史詩英雄
-        else if (xp >= 20000) body.classList.add('theme-legend');       // 9. 傳奇領主
-        else if (xp >= 15000) body.classList.add('theme-grandmaster');  // 8. 榮耀宗師
-        else if (xp >= 10000) body.classList.add('theme-master');       // 7. 聖域大師
-        else if (xp >= 5000)  body.classList.add('theme-diamond');      // 6. 頂尖學者
-        else if (xp >= 2500)  body.classList.add('theme-gold');         // 5. 黃金菁英
-        else if (xp >= 1000)  body.classList.add('theme-silver');       // 4. 白銀騎士
-        else if (xp >= 300)   body.classList.add('theme-bronze');       // 3. 勤奮書生
-        else if (xp >= 100)   body.classList.add('theme-rookie');       // 2. 潛力新秀
-        else                  body.classList.add('theme-novice');       // 1. 初心學徒 (0~99 XP)
+        // 根據 XP 判定並加入新主題
+        if (xp >= 100000) { body.classList.add('theme-celestial'); this.createStars(15); } 
+        else if (xp >= 50000) { body.classList.add('theme-mythic'); this.createStars(8); } 
+        else if (xp >= 30000) body.classList.add('theme-epic');         
+        else if (xp >= 20000) body.classList.add('theme-legend');       
+        else if (xp >= 15000) body.classList.add('theme-grandmaster');  
+        else if (xp >= 10000) body.classList.add('theme-master');       
+        else if (xp >= 5000)  body.classList.add('theme-diamond');      
+        else if (xp >= 2500)  body.classList.add('theme-gold');         
+        else if (xp >= 1000)  body.classList.add('theme-silver');       
+        else if (xp >= 300)   body.classList.add('theme-bronze');       
+        else if (xp >= 100)   body.classList.add('theme-rookie');       
+        else                  body.classList.add('theme-novice');       
     },
 
-    // 2. 產生流星 (現在可以根據等級決定流星數量)
     createStars: function(starCount) {
         const container = document.getElementById('star-container');
-        if (!container || container.hasChildNodes()) return; // 避免重複產生
+        if (!container || container.hasChildNodes()) return; 
         
         for (let i = 0; i < starCount; i++) {
             let star = document.createElement('div');
@@ -579,11 +589,17 @@ const ThemeEngine = {
     }
 };
 
-// --- 自動執行 ---
+// 網頁載入時自動執行主題變色
 document.addEventListener('DOMContentLoaded', () => {
-    // 讀取 currentUser，如果沒有就預設 0
-    const user = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
-    ThemeEngine.apply(user.xp);
+    let userXP = 0;
+    if (typeof Auth !== 'undefined') {
+        const user = Auth.getCurrentUser();
+        if (user && user.xp) userXP = user.xp;
+    } else {
+        const localUser = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
+        userXP = localUser.xp;
+    }
+    ThemeEngine.apply(userXP);
 });
 function toggleSidebar() {
 
