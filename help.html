@@ -178,6 +178,37 @@ body[class*="theme-"] .shadow-lg {
 body[class*="theme-"] .sidebar-transition {
     background-color: rgba(15, 23, 42, 0.8) !important; /* 深色半透 */
 }
+        /* --- 解決「太白」的問題：全域透明化規則 --- */
+
+/* 只要 body 有 theme- 類別，就強制讓所有 bg-white 消失 */
+body[class*="theme-"] .bg-white,
+body[class*="theme-"] .bg-slate-50,
+body[class*="theme-"] aside, 
+body[class*="theme-"] nav, 
+body[class*="theme-"] main {
+    background-color: rgba(255, 255, 255, 0.2) !important; /* 變成 20% 透明的白 */
+    backdrop-filter: blur(12px) !important; /* 磨砂玻璃效果 */
+    border: 1px solid rgba(255, 255, 255, 0.3) !important; /* 增加細邊框質感 */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05) !important; /* 減輕陰影，讓它輕盈一點 */
+}
+
+/* 針對個人資料卡片上方的「藍色區塊」進行修正 */
+body.theme-bronze .profile-header-bg,
+body.theme-bronze .bg-gradient-to-r.from-blue-600 {
+    background: linear-gradient(to right, #f97316, #fb923c) !important; /* 藍色變橘色漸層 */
+}
+
+/* 修正文字：讓原本在白色背景下的黑字，在橘色背景下變成深褐色 */
+body.theme-bronze .text-slate-800, 
+body.theme-bronze #playerName, 
+body.theme-bronze h3 {
+    color: #7c2d12 !important;
+}
+
+/* 讓進度條底色不要那麼白 */
+body[class*="theme-"] .bg-slate-100 {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+}
     </style>
 </head>
 <body class="min-h-screen pb-12">
