@@ -293,6 +293,43 @@ body[class*="theme-"] #xpFill {
     background: linear-gradient(to right, #ea580c, #f97316) !important;
     color: transparent !important; /* 避免前面的字體強制覆蓋 */
 }
+        /* 🛡️ 防護機制：把彩色圖案和徽章的顏色救回來！ 🛡️ */
+
+/* 1. 救回側邊欄的彩色圖示 (例如藍色首頁、紫色AI等) */
+body[class*="theme-"] aside i.fas,
+body[class*="theme-"] aside i.fab,
+body[class*="theme-"] aside svg {
+    color: inherit !important; /* 讓圖示維持原本寫在 class 裡面的顏色 */
+}
+
+/* 2. 救回排行榜上的「等級徽章」(Badge) 顏色 */
+/* 讓帶有 text-[11px] 的徽章區塊維持原本的背景色和文字色 */
+body[class*="theme-"] .text-\\[11px\\] {
+    background-color: inherit !important; 
+    color: inherit !important;
+    backdrop-filter: none !important; /* 徽章不需要磨砂玻璃效果 */
+    border: none !important;
+}
+
+/* 3. 救回排行榜前三名的皇冠、獎牌圖示顏色 */
+body[class*="theme-"] .fa-crown,
+body[class*="theme-"] .fa-medal,
+body[class*="theme-"] .fa-award {
+    color: inherit !important;
+}
+
+/* 4. 確保「字體強制變色」不會誤殺徽章裡面的字 */
+/* 剛剛我們設定 body.theme-bronze * { color: #7c2d12 !important; } 太暴力了 */
+/* 我們把它改成只針對特定文字變色就好： */
+body.theme-bronze h2, 
+body.theme-bronze h3, 
+body.theme-bronze p, 
+body.theme-bronze span:not(.text-\\[11px\\]) /* 排除徽章內的 span */
+{
+    color: #7c2d12 !important;
+}
+
+/* (可選) 移除之前寫的那行太暴力的 `body.theme-bronze * { color: #7c2d12 !important; }` */
     </style>
 
     <script src="mockdata/users.js"></script>
