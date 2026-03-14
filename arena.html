@@ -584,17 +584,10 @@ body.theme-celestial { background: radial-gradient(circle at center, #000000 0%,
                         </div>
                     </div>
                 </div>
-
-                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden h-fit">
-                    <h3 class="text-lg font-extrabold text-slate-800 mb-4 flex items-center gap-2">
-                        <i class="fas fa-rocket text-indigo-500"></i> 等級特權與解鎖
-                    </h3>
-                    <ul id="unlockedFeaturesList" class="space-y-3">
-                        </ul>
-                </div>
 <div class="bg-gradient-to-r from-purple-500 to-indigo-600 p-6 rounded-2xl text-white text-center mt-6 mb-6 shadow-xl">
-    <h3 class="text-2xl font-bold mb-2"><i class="fas fa-gift animate-bounce"></i> 幸運大抽獎</h3>
+    <h3 class="text-2xl font-bold mb-2"><i class="fas fa-gift animate-bounce"></i>幸運大抽獎</h3>
     <p class="mb-4">目前擁有抽獎券：<span id="ticketCount" class="font-bold text-yellow-300 text-3xl">0</span> 張</p>
+    <p class="mb-4">作答兩張考卷即可兌換一張抽獎卷</p>
     
     <button id="drawGachaBtn" onclick="playGacha()" class="bg-yellow-400 text-purple-900 font-bold py-3 px-8 rounded-full shadow-lg hover:bg-yellow-300 hover:scale-105 transition-transform">
         消耗 1 張抽獎券
@@ -603,7 +596,17 @@ body.theme-celestial { background: radial-gradient(circle at center, #000000 0%,
     <div id="gachaResult" class="mt-4 text-lg font-bold hidden transition-all">
         </div>
 </div>
-            </div> <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 lg:col-span-2 h-fit">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden h-fit">
+                    <h3 class="text-lg font-extrabold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-rocket text-indigo-500"></i> 等級特權與解鎖
+                    </h3>
+                    <ul id="unlockedFeaturesList" class="space-y-3">
+                        </ul>
+                </div>
+
+            </div>
+            
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 lg:col-span-2 h-fit">
                 <h3 class="text-xl font-extrabold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
                     <i class="fas fa-crown text-yellow-500 text-2xl"></i> 全服英雄排行榜 (Top 20)
                 </h3>
