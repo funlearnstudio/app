@@ -766,12 +766,7 @@ body.theme-celestial { background: radial-gradient(circle at center, #000000 0%,
     </main>
 <script>
 
-// --- 自動執行 ---
-document.addEventListener('DOMContentLoaded', () => {
-    // 讀取 currentUser，如果沒有就預設 0
-    const user = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
-    ThemeEngine.apply(user.xp);
-});
+
     // ==========================================
     // 🌐 全域變數
     // ==========================================
