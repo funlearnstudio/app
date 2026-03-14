@@ -294,7 +294,23 @@ body.theme-bronze span:not(.text-\\[11px\\]) /* 排除徽章內的 span */
 {
     color: #7c2d12 !important;
 }
+/* 1. 初心學徒 (基礎白灰) */
+body.theme-novice { background-color: #f8fafc !important; }
 
+/* 4. 白銀騎士 (冷冽銀白) */
+body.theme-silver { background: linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%) !important; }
+
+/* 5. 黃金菁英 (尊貴閃耀金) */
+body.theme-gold { background: linear-gradient(135deg, #fef08a 0%, #eab308 100%) !important; }
+
+/* 8. 榮耀宗師 (深紫紅色) */
+body.theme-grandmaster { background: linear-gradient(135deg, #701a75 0%, #be185d 100%) !important; color: white; }
+
+/* 10. 史詩英雄 (極光夜空) */
+body.theme-epic { background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%) !important; color: white; }
+
+/* 12. 創世星神 (終極黑洞特效) */
+body.theme-celestial { background: radial-gradient(circle at center, #000000 0%, #170529 50%, #000000 100%) !important; color: #fde047; }
 /* (可選) 移除之前寫的那行太暴力的 `body.theme-bronze * { color: #7c2d12 !important; }` */
     </style>
     <script src="mockdata/users.js"></script>
@@ -512,27 +528,49 @@ body.theme-bronze span:not(.text-\\[11px\\]) /* 排除徽章內的 span */
 // 手機側邊欄開關
  const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
        const ThemeEngine = {
+ // --- 核心主題引擎 (12 個階級升級版) ---
+const ThemeEngine = {
     // 1. 執行變色
     apply: function(xp) {
         console.log("當前頁面主題判定中... XP:", xp);
         const body = document.body;
-        body.classList.remove('theme-rookie', 'theme-bronze', 'theme-diamond', 'theme-master', 'theme-legend', 'theme-mythic');
+        
+        // ⚠️ 必須在這裡把 12 個主題的 class 全部列出來，確保切換時能清除乾淨
+        body.classList.remove(
+            'theme-novice', 'theme-rookie', 'theme-bronze', 'theme-silver', 
+            'theme-gold', 'theme-diamond', 'theme-master', 'theme-grandmaster', 
+            'theme-legend', 'theme-epic', 'theme-mythic', 'theme-celestial'
+        );
 
-        if (xp >= 50000) { body.classList.add('theme-mythic'); this.createStars(); }
-        else if (xp >= 20000) body.classList.add('theme-legend');
-        else if (xp >= 10000) body.classList.add('theme-master');
-        else if (xp >= 5000) body.classList.add('theme-diamond');
-        else if (xp >= 300) body.classList.add('theme-bronze');
-        else if (xp >= 100) body.classList.add('theme-rookie');
+        // 根據 XP 判定主題 (必須從最高分往下寫)
+        if (xp >= 100000) { 
+            body.classList.add('theme-celestial'); 
+            this.createStars(15); // 12. 創世星神 (最高階，流星加倍！)
+        } 
+        else if (xp >= 50000) { 
+            body.classList.add('theme-mythic'); 
+            this.createStars(8);  // 11. 萬古神話 (一般流星)
+        } 
+        else if (xp >= 30000) body.classList.add('theme-epic');         // 10. 史詩英雄
+        else if (xp >= 20000) body.classList.add('theme-legend');       // 9. 傳奇領主
+        else if (xp >= 15000) body.classList.add('theme-grandmaster');  // 8. 榮耀宗師
+        else if (xp >= 10000) body.classList.add('theme-master');       // 7. 聖域大師
+        else if (xp >= 5000)  body.classList.add('theme-diamond');      // 6. 頂尖學者
+        else if (xp >= 2500)  body.classList.add('theme-gold');         // 5. 黃金菁英
+        else if (xp >= 1000)  body.classList.add('theme-silver');       // 4. 白銀騎士
+        else if (xp >= 300)   body.classList.add('theme-bronze');       // 3. 勤奮書生
+        else if (xp >= 100)   body.classList.add('theme-rookie');       // 2. 潛力新秀
+        else                  body.classList.add('theme-novice');       // 1. 初心學徒 (0~99 XP)
     },
 
-    // 2. 產生流星 (只有神話等級會觸發)
-    createStars: function() {
+    // 2. 產生流星 (現在可以根據等級決定流星數量)
+    createStars: function(starCount) {
         const container = document.getElementById('star-container');
-        if (!container || container.hasChildNodes()) return;
-        for (let i = 0; i < 6; i++) {
+        if (!container || container.hasChildNodes()) return; // 避免重複產生
+        
+        for (let i = 0; i < starCount; i++) {
             let star = document.createElement('div');
-            star.className = 'shooting-star'; // CSS 動畫已在上面定義
+            star.className = 'shooting-star'; 
             star.style.top = Math.random() * 80 + 'vh';
             star.style.left = (Math.random() * 50 + 50) + 'vw';
             star.style.animationDelay = (Math.random() * 4) + 's';
