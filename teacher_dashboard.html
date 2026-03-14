@@ -1413,6 +1413,38 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
+    // 頁面載入後自動抓取學生名單填入選單
+document.addEventListener("DOMContentLoaded", function() {
+    loadStudentToDispatchDropdown();
+});
+
+async function loadStudentToDispatchDropdown() {
+    const scriptUrl = "你的GAS部署網址"; // ⬅️ 這裡請填入你的 GAS 網址
+    const dispatchSelect = document.getElementById('dispatchTarget');
+
+    try {
+        // 向 GAS 發送請求獲取名單 (action=get_roster)
+        const response = await fetch(`${scriptUrl}?action=get_roster`);
+        const students = await response.json();
+
+        // 檢查是否有抓到資料
+        if (students && students.length > 0) {
+            // 先清空，保留「全班廣播」
+            dispatchSelect.innerHTML = '<option value="all">📢 全班廣播 (所有人)</option>';
+
+            // 逐一將學生加入下拉選單
+            students.forEach(student => {
+                const option = document.createElement('option');
+                option.value = student.username; // 使用帳號當作派送 ID
+                option.textContent = `👤 ${student.name} (${student.grade})`;
+                dispatchSelect.appendChild(option);
+            });
+            console.log("學生名單載入成功！");
+        }
+    } catch (error) {
+        console.error("載入學生名單失敗:", error);
+    }
+}
 </script>
 </body>
 </html>
