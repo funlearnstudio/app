@@ -290,6 +290,46 @@ body.theme-bronze h3 {
 body[class*="theme-"] .bg-slate-100 {
     background-color: rgba(0, 0, 0, 0.05) !important;
 }
+        /* ☢️ 終極無差別去背大絕招 ☢️ */
+
+/* 1. 無視任何設定，把所有區塊、白色、灰色背景全部強制變成「極淡的透明玻璃」！ */
+body[class*="theme-"] .bg-white,
+body[class*="theme-"] [class*="bg-slate-"],
+body[class*="theme-"] [class*="bg-gray-"],
+body[class*="theme-"] aside,
+body[class*="theme-"] nav,
+body[class*="theme-"] main,
+body[class*="theme-"] section,
+body[class*="theme-"] ul,
+body[class*="theme-"] li {
+    background: transparent !important;
+    background-color: rgba(255, 255, 255, 0.1) !important; /* 只有 10% 的極致透明度 */
+    backdrop-filter: blur(8px) !important; /* 保留一點點模糊讓字不會黏在一起 */
+    border: 1px solid rgba(255, 255, 255, 0.15) !important; /* 極細的透明邊框 */
+    box-shadow: none !important;
+}
+
+/* 2. 連那個礙眼的漸層藍色塊也直接拔掉，強制透明！ */
+body[class*="theme-"] [class*="bg-gradient-"] {
+    background: transparent !important;
+}
+
+/* 3. 解決人頭白底：直接讓太空人圖示的背景也全透明 */
+body[class*="theme-"] .relative.w-24.h-24 {
+    background-color: transparent !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* 4. 強制字體變色：不管原本是什麼灰字黑字，只要是橘色主題，全部強制轉深褐色！ */
+body.theme-bronze * {
+    color: #7c2d12 !important;
+}
+
+/* ⚠️ 5. 唯一例外防護：把你的「XP經驗進度條」救回來，不然它也會變透明消失 */
+body[class*="theme-"] #xpFill {
+    background: linear-gradient(to right, #ea580c, #f97316) !important;
+    color: transparent !important; /* 避免前面的字體強制覆蓋 */
+}
     </style>
 
     <script src="mockdata/users.js"></script>
