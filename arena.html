@@ -346,6 +346,38 @@ body.theme-bronze .relative.w-24.h-24 {
     background-color: #fff7ed !important;
     color: #f97316 !important;
 }
+        /* --- 解決「太白」的問題：全域透明化規則 --- */
+
+/* 只要 body 有 theme- 類別，就強制讓所有 bg-white 消失 */
+body[class*="theme-"] .bg-white,
+body[class*="theme-"] .bg-slate-50,
+body[class*="theme-"] aside, 
+body[class*="theme-"] nav, 
+body[class*="theme-"] main {
+    background-color: rgba(255, 255, 255, 0.2) !important; /* 變成 20% 透明的白 */
+    backdrop-filter: blur(12px) !important; /* 磨砂玻璃效果 */
+    border: 1px solid rgba(255, 255, 255, 0.3) !important; /* 增加細邊框質感 */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05) !important; /* 減輕陰影，讓它輕盈一點 */
+}
+
+/* 針對個人資料卡片上方的「藍色區塊」進行修正 */
+body.theme-bronze .profile-header-bg,
+body.theme-bronze .bg-gradient-to-r.from-blue-600 {
+    background: linear-gradient(to right, #f97316, #fb923c) !important; /* 藍色變橘色漸層 */
+}
+
+/* 修正文字：讓原本在白色背景下的黑字，在橘色背景下變成深褐色 */
+body.theme-bronze .text-slate-800, 
+body.theme-bronze #playerName, 
+body.theme-bronze h3 {
+    color: #7c2d12 !important;
+}
+
+/* 讓進度條底色不要那麼白 */
+body[class*="theme-"] .bg-slate-100 {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+}
+        
     </style>
     
 <script src="assets/js/auth.js"></script>
@@ -387,12 +419,12 @@ body.theme-bronze .relative.w-24.h-24 {
 
       <nav class="flex-grow px-3 space-y-2 overflow-y-auto no-scrollbar">
     <p class="text-[10px] font-bold text-slate-400 mb-2 px-4 uppercase tracking-widest">學習導航</p>
-  <a href="arena.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-50 text-amber-700 transition-all duration-300 group shadow-sm">
-        <div class="w-8 h-8 rounded-lg bg-amber-200 text-amber-700 flex items-center justify-center scale-110">
-            <i class="fas fa-trophy text-sm"></i>
-        </div>
-        <span class="font-bold">榮譽榜</span>
-    </a>
+ <a href="arena.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-100 text-amber-900 transition-all duration-300 group shadow-[inset_0_1px_2px_rgba(0,0,0,0,0.05)] border border-amber-200/50">
+    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 text-white flex items-center justify-center scale-110 shadow-sm ring-2 ring-white">
+        <i class="fas fa-trophy text-xs"></i>
+    </div>
+    <span class="font-black tracking-wide">榮譽榜</span>
+</a>
     <a href="mission.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-purple-50 hover:text-purple-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
         <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
             <i class="fas fa-rocket text-sm"></i>
