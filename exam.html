@@ -1238,6 +1238,36 @@ async function finalSubmit() {
             user = JSON.parse(localStorage.getItem('currentUser'));
         } catch(e) { console.error("解析本機帳號失敗", e); }
     }
+    // --- 本機端更新經驗值 ---
+    let earnedTicket = 0; // 🎟️ 新增：用來記錄這次交卷有沒有拿到抽獎券
+
+    if (user.username !== 'guest') {
+        if (window.Auth && typeof Auth.addXP === 'function') {
+            isLevelUp = Auth.addXP(totalXP);
+        } else {
+            user.xp = (user.xp || 0) + totalXP;
+            localStorage.setItem('currentUser', JSON.stringify(user));
+        }
+
+        // 👇👇👇 🎟️ 新增：發放抽獎券邏輯 👇👇👇
+        user.totalExams = (user.totalExams || 0) + 1; // 總交卷次數 + 1
+        
+        // 設定每寫幾次考卷送一張票 (這裡設定 2 次，你可以自己改)
+        const EXAMS_PER_TICKET = 5; 
+        if (user.totalExams % EXAMS_PER_TICKET === 0) {
+            user.gachaTickets = (user.gachaTickets || 0) + 1;
+            earnedTicket = 1; // 標記這次有拿到票
+        }
+
+        // 將更新後的次數與票數存回本機
+        if (window.Auth && typeof Auth.updateUser === 'function') {
+            Auth.updateUser('totalExams', user.totalExams);
+            if (earnedTicket > 0) Auth.updateUser('gachaTickets', user.gachaTickets);
+        } else {
+            localStorage.setItem('currentUser', JSON.stringify(user));
+        }
+        // 👆👆👆 新增結束 👆👆👆
+    }
     // 👆👆 替換到這裡結束 👆👆
     // ==========================================
    // --- 🌟 經驗值 (XP) 計算 (提高獎勵版) ---
@@ -1320,8 +1350,7 @@ const resultData = {
   //  alert("✅ 結算與上傳動作結束，準備看成績！"); // 💡 抓蟲雷達 2 號
     
     // 🌟 拿掉定時炸彈，等上面的 await 確定處理完後，才執行這行跳轉！
-    window.location.href = `analysis.html?mode=new&xp=${totalXP}`;
-} // <--- 這裡是 finalSubmit() 的結尾大括號
+   window.location.href = `analysis.html?mode=new&xp=${totalXP}&ticket=${earnedTicket}`;} // <--- 這裡是 finalSubmit() 的結尾大括號
 async function uploadToCloud(username, activityName, score, fullData) {
     const urlParams = new URLSearchParams(window.location.search);
     const currentSubject = urlParams.get('subject') || "unknown";
