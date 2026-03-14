@@ -60,11 +60,11 @@
             <span>幫助中心管理</span>
         </button>
     </nav>
-    <div class="p-6 border-t border-slate-800">
-        <button onclick="logout()" class="flex items-center space-x-3 text-red-400 hover:text-red-300 transition w-full">
-            <i class="fas fa-sign-out-alt"></i><span>登出系統</span>
-        </button>
-    </div>
+    <div class="p-4 border-t border-slate-50">
+    <button id="logout-btn" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs">
+        <i class="fas fa-sign-out-alt"></i> 登出系統
+    </button>
+</div>
 </aside>
 
 <main class="flex-1 overflow-y-auto bg-slate-50 flex justify-center p-6 md:p-10">
@@ -1400,6 +1400,18 @@
     function closeModal() {
         document.getElementById('detailModal').classList.add('hidden');
     }
+    // Assuming Auth is imported or defined here
+// import { Auth } from './your-auth-file.js';
+
+document.addEventListener("DOMContentLoaded", () => {
+    const logoutBtn = document.getElementById("logout-btn");
+    
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", () => {
+            Auth.logout();
+        });
+    }
+});
 </script>
 </body>
 </html>
