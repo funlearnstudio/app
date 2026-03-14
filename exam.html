@@ -1060,34 +1060,44 @@ window.onload = function() {
         updatePalette();
     }
 
-    window.selectAnswer = (mainIdx, optIdx, subIdx = null) => {
-        if (subIdx !== null) {
-            userAnswers[mainIdx][subIdx] = optIdx;
+   window.selectAnswer = (mainIdx, optIdx, subIdx = null) => {
+    // 1. 記錄使用者的答案
+    if (subIdx !== null) {
+        userAnswers[mainIdx][subIdx] = optIdx;
+    } else {
+        userAnswers[mainIdx] = optIdx;
+    }
+
+    // 2. 精準抓取要更新樣式的容器 🎯 (修正的地方在這裡)
+    let targetContainer;
+    if (subIdx !== null) {
+        // 如果是題組，抓取 optionsContainer 底下對應的第 N 個子卡片
+        targetContainer = document.getElementById('optionsContainer').children[subIdx];
+    } else {
+        // 一般題目直接抓外層容器
+        targetContainer = document.getElementById('optionsContainer');
+    }
+
+    if (!targetContainer) return; // 避免發生找不到元素的錯誤
+
+    // 3. 更新選項樣式
+    const cards = targetContainer.querySelectorAll('.option-card');
+    cards.forEach((card, idx) => {
+        const circle = card.querySelector('.rounded-full');
+        if (idx === optIdx) {
+            card.classList.add('selected');
+            card.classList.remove('bg-white', 'bg-slate-50', 'border-slate-100');
+            if (circle) circle.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
         } else {
-            userAnswers[mainIdx] = optIdx;
+            card.classList.remove('selected');
+            card.classList.add('bg-white', 'border-slate-100');
+            if (circle) circle.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
         }
+    });
 
-        const container = subIdx !== null 
-            ? document.querySelectorAll('.group-context-content + div, .fade-in')[subIdx + 1] 
-            : document.getElementById('optionsContainer');
-
-        const cards = container.querySelectorAll('.option-card');
-        
-        cards.forEach((card, idx) => {
-            const circle = card.querySelector('.rounded-full');
-            if (idx === optIdx) {
-                card.classList.add('selected');
-                card.classList.remove('bg-white', 'bg-slate-50', 'border-slate-100');
-                if (circle) circle.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
-            } else {
-                card.classList.remove('selected');
-                card.classList.add('bg-white', 'border-slate-100');
-                if (circle) circle.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
-            }
-        });
-
-        updatePalette();
-    };
+    // 4. 更新導覽盤
+    updatePalette();
+};
     function updateNavButtons() {
         const nextBtn = document.getElementById('nextBtn');
         const prevBtn = document.getElementById('prevBtn');
