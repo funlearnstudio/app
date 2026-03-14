@@ -751,93 +751,150 @@ body.theme-bronze span:not(.text-\\[11px\\]) /* 排除徽章內的 span */
     }
 }
 // 🎖️ 榮譽榜等級與樣式判斷 (越來越難升級)
+// 🎖️ 榮譽榜等級與樣式判斷 (對應全新 12 階級系統)
 function getRankInfo(xp) {
-    // bg: 列表背景顏色, badge: 標籤顏色, text: 姓名與分數顏色
+    // 12. 創世星神 (100,000 XP)
+    if (xp >= 100000) return { 
+        title: "🌌 創世星神", 
+        bg: "bg-slate-950", // 極致黑背景
+        badge: "bg-gradient-to-r from-yellow-300 via-yellow-500 to-amber-600 text-black shadow-[0_0_15px_rgba(253,224,71,0.6)] animate-pulse font-black",
+        text: "text-yellow-400 drop-shadow-md" 
+    };
+    // 11. 萬古神話 (50,000 XP)
     if (xp >= 50000) return { 
-        title: "🌌 萬古神話", 
-        bg: "bg-slate-900", // 深邃黑背景
-        badge: "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white animate-pulse",
+        title: "✨ 萬古神話", 
+        bg: "bg-slate-900", // 深邃宇宙黑
+        badge: "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white animate-pulse shadow-lg",
         text: "text-white" 
     };
+    // 10. 史詩英雄 (30,000 XP)
+    if (xp >= 30000) return { 
+        title: "🌠 史詩英雄", 
+        bg: "bg-emerald-950", // 極光深綠色
+        badge: "bg-emerald-500 text-emerald-950 font-bold shadow-md",
+        text: "text-emerald-100" 
+    };
+    // 9. 傳奇領主 (20,000 XP)
     if (xp >= 20000) return { 
         title: "👑 傳奇領主", 
         bg: "bg-amber-900", // 華麗深棕紅
-        badge: "bg-yellow-400 text-amber-900 shadow-lg",
+        badge: "bg-yellow-400 text-amber-900 shadow-lg font-bold",
         text: "text-amber-50" 
     };
+    // 8. 榮耀宗師 (15,000 XP)
+    if (xp >= 15000) return { 
+        title: "🔱 榮耀宗師", 
+        bg: "bg-fuchsia-900", // 尊貴紫紅色
+        badge: "bg-fuchsia-200 text-fuchsia-900 font-bold",
+        text: "text-fuchsia-50" 
+    };
+    // 7. 聖域大師 (10,000 XP)
     if (xp >= 10000) return { 
         title: "🔥 聖域大師", 
         bg: "bg-red-700", // 熱血紅
-        badge: "bg-white text-red-700",
+        badge: "bg-white text-red-700 font-bold shadow",
         text: "text-red-50" 
     };
+    // 6. 頂尖學者 (5,000 XP)
     if (xp >= 5000) return { 
         title: "💎 頂尖學者", 
         bg: "bg-blue-600", // 鑽石藍
-        badge: "bg-blue-100 text-blue-700",
+        badge: "bg-blue-100 text-blue-800 font-bold",
         text: "text-white" 
     };
+    // 5. 黃金菁英 (2,500 XP)
     if (xp >= 2500) return { 
-        title: "🏆 資深教授", 
-        bg: "bg-emerald-600", // 翡翠綠
-        badge: "bg-emerald-100 text-emerald-800",
+        title: "🏆 黃金菁英", 
+        bg: "bg-yellow-500", // 閃耀金
+        badge: "bg-yellow-100 text-yellow-800 font-bold",
         text: "text-white" 
     };
-    if (xp >= 1200) return { 
-        title: "📜 知識博雅", 
-        bg: "bg-amber-100", // 羊皮紙色
-        badge: "bg-amber-600 text-white",
-        text: "text-amber-900" 
+    // 4. 白銀騎士 (1,000 XP)
+    if (xp >= 1000) return { 
+        title: "⚔️ 白銀騎士", 
+        bg: "bg-slate-300", // 金屬銀色
+        badge: "bg-slate-600 text-white font-bold",
+        text: "text-slate-800 font-bold" 
     };
-    if (xp >= 600) return { 
-        title: "🌟 精銳學員", 
-        bg: "bg-indigo-50", // 淺紫色
-        badge: "bg-indigo-500 text-white",
-        text: "text-indigo-900" 
-    };
+    // 3. 勤奮書生 (300 XP)
     if (xp >= 300) return { 
         title: "📖 勤奮書生", 
-        bg: "bg-orange-50", // 淺橘色
-        badge: "bg-orange-200 text-orange-700",
+        bg: "bg-orange-100", // 淺橘/羊皮紙色
+        badge: "bg-orange-500 text-white",
         text: "text-orange-900" 
     };
+    // 2. 潛力新秀 (100 XP)
+    if (xp >= 100) return { 
+        title: "🌱 潛力新秀", 
+        bg: "bg-green-50", // 清新淺綠
+        badge: "bg-green-500 text-white",
+        text: "text-green-900" 
+    };
+    // 1. 初心學徒 (0 ~ 99 XP)
     return { 
-        title: "🥚 初始學徒", 
-        bg: "bg-slate-50", // 預設淺灰色
+        title: "🥚 初心學徒", 
+        bg: "bg-slate-50", // 預設淺灰
         badge: "bg-slate-200 text-slate-500",
-        text: "text-slate-800" 
+        text: "text-slate-700" 
     };
 }
+// --- 核心主題引擎 (12 個階級升級版) ---
+const ThemeEngine = {
+    // 1. 執行變色
+    apply: function(xp) {
+        console.log("當前頁面主題判定中... XP:", xp);
+        const body = document.body;
+        
+        // ⚠️ 必須在這裡把 12 個主題的 class 全部列出來，確保切換時能清除乾淨
+        body.classList.remove(
+            'theme-novice', 'theme-rookie', 'theme-bronze', 'theme-silver', 
+            'theme-gold', 'theme-diamond', 'theme-master', 'theme-grandmaster', 
+            'theme-legend', 'theme-epic', 'theme-mythic', 'theme-celestial'
+        );
 
+        // 根據 XP 判定主題 (必須從最高分往下寫)
+        if (xp >= 100000) { 
+            body.classList.add('theme-celestial'); 
+            this.createStars(15); // 12. 創世星神 (最高階，流星加倍！)
+        } 
+        else if (xp >= 50000) { 
+            body.classList.add('theme-mythic'); 
+            this.createStars(8);  // 11. 萬古神話 (一般流星)
+        } 
+        else if (xp >= 30000) body.classList.add('theme-epic');         // 10. 史詩英雄
+        else if (xp >= 20000) body.classList.add('theme-legend');       // 9. 傳奇領主
+        else if (xp >= 15000) body.classList.add('theme-grandmaster');  // 8. 榮耀宗師
+        else if (xp >= 10000) body.classList.add('theme-master');       // 7. 聖域大師
+        else if (xp >= 5000)  body.classList.add('theme-diamond');      // 6. 頂尖學者
+        else if (xp >= 2500)  body.classList.add('theme-gold');         // 5. 黃金菁英
+        else if (xp >= 1000)  body.classList.add('theme-silver');       // 4. 白銀騎士
+        else if (xp >= 300)   body.classList.add('theme-bronze');       // 3. 勤奮書生
+        else if (xp >= 100)   body.classList.add('theme-rookie');       // 2. 潛力新秀
+        else                  body.classList.add('theme-novice');       // 1. 初心學徒 (0~99 XP)
+    },
 
-function applyGlobalTheme(xp) {
-    const body = document.body;
-    // 移除所有舊主題
-    body.classList.remove('theme-rookie', 'theme-bronze', 'theme-diamond', 'theme-master', 'theme-legend', 'theme-mythic');
-    
-    // 判定並套用新主題
-    if (xp >= 50000) { body.classList.add('theme-mythic'); createStars(); }
-    else if (xp >= 20000) body.classList.add('theme-legend');
-    else if (xp >= 10000) body.classList.add('theme-master');
-    else if (xp >= 5000) body.classList.add('theme-diamond');
-    else if (xp >= 300) body.classList.add('theme-bronze'); // ✨ 修正：加上橘色主題
-    else if (xp >= 100) body.classList.add('theme-rookie'); // 🌟 100分是綠色
-    
-    console.log("主題已更新，目前 XP:", xp);
-}
-// ✨ 3. 產生流星
-function createStars() {
-    const container = document.getElementById('star-container');
-    if (!container || container.hasChildNodes()) return;
-    for (let i = 0; i < 5; i++) {
-        let star = document.createElement('div');
-        star.className = 'shooting-star';
-        star.style.top = Math.random() * 50 + 'vh';
-        star.style.left = (Math.random() * 50 + 50) + 'vw';
-        star.style.animationDelay = Math.random() * 3 + 's';
-        container.appendChild(star);
+    // 2. 產生流星 (現在可以根據等級決定流星數量)
+    createStars: function(starCount) {
+        const container = document.getElementById('star-container');
+        if (!container || container.hasChildNodes()) return; // 避免重複產生
+        
+        for (let i = 0; i < starCount; i++) {
+            let star = document.createElement('div');
+            star.className = 'shooting-star'; 
+            star.style.top = Math.random() * 80 + 'vh';
+            star.style.left = (Math.random() * 50 + 50) + 'vw';
+            star.style.animationDelay = (Math.random() * 4) + 's';
+            container.appendChild(star);
+        }
     }
-}
+};
+
+// --- 自動執行 ---
+document.addEventListener('DOMContentLoaded', () => {
+    // 讀取 currentUser，如果沒有就預設 0
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
+    ThemeEngine.apply(user.xp);
+});
         // 🌟 4. 載入排行榜
         async function loadLeaderboard() {
             const listContainer = document.getElementById('leaderboardList');
