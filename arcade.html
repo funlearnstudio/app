@@ -239,6 +239,57 @@ body.theme-bronze h3 {
 body[class*="theme-"] .bg-slate-100 {
     background-color: rgba(0, 0, 0, 0.05) !important;
 }
+        /* =========================================
+   🌟 終極主題與玻璃化 CSS 
+   ========================================= */
+
+/* 1. 基礎主題背景色 */
+body { transition: background 0.8s ease, color 0.5s ease; min-height: 100vh; position: relative; }
+body.theme-rookie { background-color: #dcfce7 !important; } /* 100+: 淺綠 */
+body.theme-bronze { background-color: #ffedd5 !important; } /* 300+: 淺橘 */
+body.theme-diamond { background: linear-gradient(135deg, #e0f2fe, #bae6fd) !important; } /* 5K+: 藍 */
+body.theme-master { background: linear-gradient(135deg, #fee2e2, #fecaca) !important; }  /* 10K+: 紅 */
+body.theme-legend { background: #451a03 !important; color: #fef3c7 !important; }          /* 20K+: 暗金 */
+body.theme-mythic { background: radial-gradient(circle, #1e1b4b, #020617) !important; color: white !important; } /* 50K+: 神話 */
+
+/* 2. 全域去白框 (磨砂玻璃化) */
+/* 只要有主題，就把所有死白的卡片、側邊欄變半透明 */
+body[class*="theme-"] .bg-white,
+body[class*="theme-"] .bg-slate-50,
+body[class*="theme-"] aside,
+body[class*="theme-"] nav,
+body[class*="theme-"] main {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 3. 橘色 (Bronze) 主題專屬細節修正 */
+/* 修正人頭後面的藍色區塊 -> 變橘色漸層 */
+body.theme-bronze .bg-gradient-to-r.from-blue-600.to-indigo-500,
+body.theme-bronze .profile-header-bg {
+    background: linear-gradient(to right, #f97316, #fb923c) !important;
+}
+
+/* 修正人頭圖示底色 */
+body.theme-bronze .relative.w-24.h-24.bg-white {
+    background-color: #fff7ed !important;
+    color: #ea580c !important;
+    border-color: #ffedd5 !important;
+}
+
+/* 修正原本灰黑色的字 -> 變深褐色才清楚 */
+body.theme-bronze .text-slate-800,
+body.theme-bronze #playerName,
+body.theme-bronze h3 {
+    color: #7c2d12 !important;
+}
+
+/* 修正進度條的白色軌道 */
+body[class*="theme-"] .bg-slate-100 {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+}
     </style>
 
     <script src="mockdata/users.js"></script>
@@ -640,78 +691,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ===================
     // --- 核心主題引擎 ---
-// =========================================
-// 🎨 主題切換引擎 (修正為由大到小判定)
-// =========================================
-function applyGlobalTheme(xp) {
-    const body = document.body;
-    // 1. 先清除所有舊標籤
-    body.classList.remove('theme-rookie', 'theme-bronze', 'theme-diamond', 'theme-master', 'theme-legend', 'theme-mythic');
+const ThemeEngine = {
+    // 1. 執行變色
+    apply: function(xp) {
+        console.log("當前頁面主題判定中... XP:", xp);
+        const body = document.body;
+        body.classList.remove('theme-rookie', 'theme-bronze', 'theme-diamond', 'theme-master', 'theme-legend', 'theme-mythic');
 
-    // 2. 嚴格從大到小判斷
-    if (xp >= 50000) { 
-        body.classList.add('theme-mythic'); 
-        if (typeof createStars === 'function') createStars(); 
-    }
-    else if (xp >= 20000) body.classList.add('theme-legend');
-    else if (xp >= 10000) body.classList.add('theme-master');
-    else if (xp >= 5000) body.classList.add('theme-diamond');
-    else if (xp >= 300) body.classList.add('theme-bronze');  // 橘色在這裡！
-    else if (xp >= 100) body.classList.add('theme-rookie');  // 綠色放最後
-    
-    console.log("主題渲染完成，目前 XP:", xp);
-}
+        if (xp >= 50000) { body.classList.add('theme-mythic'); this.createStars(); }
+        else if (xp >= 20000) body.classList.add('theme-legend');
+        else if (xp >= 10000) body.classList.add('theme-master');
+        else if (xp >= 5000) body.classList.add('theme-diamond');
+        else if (xp >= 300) body.classList.add('theme-bronze');
+        else if (xp >= 100) body.classList.add('theme-rookie');
+    },
 
-// =========================================
-// 👤 個人資料與 XP 同步
-// =========================================
-async function initProfile() {
-    let user = Auth.getCurrentUser();
-    if (!user || user.username === 'guest') {
-        document.getElementById('playerName').textContent = "訪客";
-        return;
-    }
-
-    // 初始顯示
-    document.getElementById('sideUserName').textContent = user.name || user.username;
-    document.getElementById('playerName').textContent = user.name || user.username;
-
-    let currentXP = user.xp || 0; // 預備 XP
-
-    try {
-        const response = await fetch(`${GAS_URL}?action=get_leaderboard&t=${new Date().getTime()}`);
-        const topPlayers = await response.json();
-        
-        const me = topPlayers.find(p => p.username === user.username);
-
-        if (me) {
-            currentXP = Number(me.xp) || 0;
-            const level = Number(me.level) || 1;
-            
-            document.getElementById('playerLevel').textContent = `Lv. ${level}`;
-            const xpInThisLevel = currentXP % 100; 
-            const xpNeeded = 100 - xpInThisLevel;
-            
-            document.getElementById('xpText').textContent = `${currentXP} XP (總計)`;
-            document.getElementById('xpNeeded').textContent = xpNeeded;
-            
-            setTimeout(() => {
-                const xpFill = document.getElementById('xpFill');
-                if (xpFill) {
-                    const progressWidth = Math.max((xpInThisLevel / 100) * 100, 2);
-                    xpFill.style.width = `${progressWidth}%`;
-                }
-            }, 500);
-        }
-    } catch (error) {
-        console.error("XP 同步失敗:", error);
-    } finally {
-        // 🌟 關鍵：無論 API 是否成功，最後一定會執行變色
-        if (typeof applyGlobalTheme === 'function') {
-            applyGlobalTheme(currentXP);
+    // 2. 產生流星 (只有神話等級會觸發)
+    createStars: function() {
+        const container = document.getElementById('star-container');
+        if (!container || container.hasChildNodes()) return;
+        for (let i = 0; i < 6; i++) {
+            let star = document.createElement('div');
+            star.className = 'shooting-star'; // CSS 動畫已在上面定義
+            star.style.top = Math.random() * 80 + 'vh';
+            star.style.left = (Math.random() * 50 + 50) + 'vw';
+            star.style.animationDelay = (Math.random() * 4) + 's';
+            container.appendChild(star);
         }
     }
-}
+};
     // 🚀 系統初始化 (window.onload)
     // ==========================================
     window.onload = function() {
