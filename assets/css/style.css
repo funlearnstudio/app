@@ -41,14 +41,13 @@ body.theme-legend { background: #451a03 !important; color: #fef3c7 !important; }
 body.theme-epic { background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%) !important; color: white !important; }
 body.theme-mythic { background: radial-gradient(circle, #1e1b4b, #020617) !important; color: white !important; }
 body.theme-celestial { background: radial-gradient(circle at center, #000000 0%, #170529 50%, #000000 100%) !important; color: #fde047 !important; }
-
 /* ==========================================================================
-   3. 🔮 終極玻璃擬真去背大絕招 (Glassmorphism)
+   3. 🔮 終極玻璃擬真去背大絕招 (精準版)
    ========================================================================== */
-/* 將所有白色/灰色容器、側邊欄、導覽列強制轉為極淡透明玻璃 */
+/* 只針對「外層大區塊 (bg-white, bg-slate-50)」做透明，移除暴力的 *= 選擇器避免誤殺 */
 body[class*="theme-"] .bg-white,
-body[class*="theme-"] [class*="bg-slate-"]:not(.bg-slate-100),
-body[class*="theme-"] [class*="bg-gray-"]:not(.bg-gray-100),
+body[class*="theme-"] .bg-slate-50,
+body[class*="theme-"] .bg-gray-50,
 body[class*="theme-"] aside,
 body[class*="theme-"] #sidebar,
 body[class*="theme-"] .sidebar-content,
@@ -66,7 +65,7 @@ body[class*="theme-"] .ai-assistant-card {
     box-shadow: none !important;
 }
 
-/* 拔掉礙眼的漸層藍色塊與大頭貼白底 */
+/* 拔掉礙眼的漸層藍色塊與大頭貼白底 (避開 XP 進度條) */
 body[class*="theme-"] [class*="bg-gradient-"]:not(#xpFill) { background: transparent !important; }
 body[class*="theme-"] .relative.w-24.h-24 { background-color: transparent !important; border-color: rgba(255, 255, 255, 0.3) !important; }
 
@@ -75,14 +74,28 @@ body[class*="theme-"] .sidebar-transition { background-color: rgba(15, 23, 42, 0
 body[class*="theme-"] footer { background-color: rgba(255, 255, 255, 0.2) !important; }
 
 /* ==========================================================================
-   4. 🎨 特殊區塊顏色微調 (AI解答、進度條)
+   4. 🎨 特殊內部區塊救回 (AI解答區、進度條底層)
    ========================================================================== */
-/* AI 助教解答區變深色透光 */
+/* ✨ 救回 AI 助教的解答框、程式碼區塊 (給它們一層半透明的黑底或白底) */
+body[class*="theme-"] .bg-gray-100, 
+body[class*="theme-"] .bg-slate-100,
+body[class*="theme-"] .bg-gray-200,
+body[class*="theme-"] pre {
+    background-color: rgba(0, 0, 0, 0.05) !important; /* 淡淡的陰影底色，讓文字能跳出來 */
+    backdrop-filter: none !important; /* 內部不需要磨砂，以免太卡 */
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    border-radius: 0.5rem !important; /* 確保圓角還在 */
+}
+
+/* 深色主題 (傳奇/神話) 下的 AI 解答區，底色要更深一點 */
 body.theme-legend .bg-gray-100, body.theme-mythic .bg-gray-100,
-body.theme-legend .bg-slate-100, body.theme-mythic .bg-slate-100 {
+body.theme-legend .bg-slate-100, body.theme-mythic .bg-slate-100,
+body.theme-legend pre, body.theme-mythic pre {
     background-color: rgba(0, 0, 0, 0.3) !important; 
     color: #cbd5e1 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
+
 /* 一般主題的進度條底色不要太白 */
 body[class*="theme-"]:not(.theme-legend):not(.theme-mythic) .bg-slate-100 {
     background-color: rgba(0, 0, 0, 0.05) !important;
@@ -91,7 +104,6 @@ body[class*="theme-"]:not(.theme-legend):not(.theme-mythic) .bg-slate-100 {
 body[class*="theme-"] .shadow-xl, body[class*="theme-"] .shadow-lg { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important; }
 /* 側邊欄懸停效果 */
 body.theme-legend aside a:hover, body.theme-mythic aside a:hover { background-color: rgba(255, 255, 255, 0.2) !important; }
-
 /* ==========================================================================
    5. ✏️ 字體顏色智慧適應 (Dark / Light Mode)
    ========================================================================== */
