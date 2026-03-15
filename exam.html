@@ -1291,16 +1291,6 @@ async function finalSubmit() {
 
     const totalXP = baseXP + (correctCount * perQuestionXP) + bonusXP;
     let isLevelUp = false;
-
-    // --- 本機端更新經驗值 ---
-    if (user.username !== 'guest') {
-        if (window.Auth && typeof Auth.addXP === 'function') {
-            isLevelUp = Auth.addXP(totalXP);
-        } else {
-            user.xp = (user.xp || 0) + totalXP;
-            localStorage.setItem('currentUser', JSON.stringify(user));
-        }
-    }
   // --- 本機端更新經驗值 ---
     let earnedTicket = 0; // 🎟️ 新增：用來記錄這次交卷有沒有拿到抽獎券
 
