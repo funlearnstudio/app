@@ -719,11 +719,11 @@ const ThemeEngine = {
 };
 
 const SoundEngine = {
-    // 🚨 已將音效全面換成 MP3 格式，確保 Mac/iPhone (Safari) 也能完美播放！
-    bgm: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-game-level-music-689.mp3'), // 遊戲機台背景音
-    gachaPull: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-magical-coin-win-1936.mp3'), // 抽獎音效
-    gachaWin: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3'), // 中獎音效
-    gachaFail: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-funny-fail-low-tone-2840.mp3'), // 銘謝惠顧音效
+    // 把網址換成你本地端資料夾的路徑 👇
+    bgm: new Audio('assets/sounds/bgm.mp3'), 
+    gachaPull: new Audio('assets/sounds/pull.mp3'), 
+    gachaWin: new Audio('assets/sounds/win.mp3'), 
+    gachaFail: new Audio('assets/sounds/fail.mp3'), 
 
     init: function() {
         this.bgm.loop = true; 
