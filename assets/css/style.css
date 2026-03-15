@@ -183,3 +183,37 @@ body[class*="theme-"] #leaderboardList li .text-\\[11px\\] {
     color: inherit !important;
     border: none !important;
 }
+
+/* ==========================================================================
+   🏆 排行榜專屬完美防護 (確保大頭貼、徽章與文字不被渲染掉)
+   ========================================================================== */
+
+/* 1. 救回大頭貼底色：強制給一個深藍灰底，讓透明的臉孔浮現出來 */
+#leaderboardList .relative.w-12.h-12,
+#leaderboardList .rounded-full.bg-slate-800 {
+    background-color: #1e293b !important;
+    border: 2px solid rgba(255, 255, 255, 0.5) !important;
+}
+
+/* 2. 救回徽章 (Badge) 的獨立底色：解除所有強制覆蓋，還原 Tailwind 預設顏色 */
+#leaderboardList .text-\\[11px\\] {
+    background-color: unset !important; 
+    backdrop-filter: none !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important; /* 加點微陰影增加立體感 */
+}
+
+/* 3. 防止名字跟名次在玻璃背景下看不見 (加上白色發光特效) */
+body[class*="theme-"] #leaderboardList li .text-slate-800,
+body[class*="theme-"] #leaderboardList li .text-slate-700 {
+    color: #1e293b !important; /* 確保是深色字 */
+    text-shadow: 0px 0px 5px rgba(255, 255, 255, 0.9) !important; /* 加上白底光暈，文字絕對清晰 */
+}
+
+/* 4. 如果進入深色主題 (傳奇、神話等)，文字自動轉白發光 */
+body.theme-legend #leaderboardList li .text-slate-800,
+body.theme-legend #leaderboardList li .text-slate-700,
+body.theme-mythic #leaderboardList li .text-slate-800,
+body.theme-mythic #leaderboardList li .text-slate-700 {
+    color: #ffffff !important;
+    text-shadow: 0px 0px 5px rgba(0, 0, 0, 0.8) !important; /* 加上黑底光暈 */
+}
