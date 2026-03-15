@@ -12,6 +12,38 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
     <link rel="stylesheet" href="assets/css/style.css">
+     <style>
+        /* 當螢幕寬度小於 300px (通常是手錶) 時隱藏 */
+        @media (max-width: 300px) {
+            .watch-hidden {
+                display: none !important;
+            }
+        }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f4f8; }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* === 翻牌特效 (修正版) === */
+        .perspective { perspective: 1000px; }
+        .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
+        .card-inner.is-flipped { transform: rotateY(180deg); }
+        
+        /* 確保卡片正反面隱藏邏輯正確 */
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; display: flex; align-items: center; justify-content: center; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        
+        /* 內容面 (Content)：初始旋轉 180 度 (背面狀態)，翻轉後變正面 */
+        .card-front { background: white; color: #0f172a; border: 2px solid #e2e8f0; transform: rotateY(180deg); z-index: 2; overflow: hidden; padding: 0.5rem; }
+        
+        /* 封面面 (Pattern)：初始 0 度 (正面狀態)，翻轉後隱藏 */
+        .card-back { background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; transform: rotateY(0deg); z-index: 1; }
+        
+        .matched .card-inner { opacity: 0; transition: opacity 0.5s; pointer-events: none; }
+        /* 請加入這行 CSS */
+.sidebar-transition { transition: transform 0.3s ease-in-out; }
+        /* 遊戲區塊切換動畫 */
+        .game-section { display: none; }
+        .game-section.active { display: block; animation: fadeIn 0.3s ease-out; }
+    </style>
     <script src="mockdata/users.js"></script>
     <script src="assets/js/auth.js"></script>
     <script src="assets/js/generator_engine.js"></script>
