@@ -697,42 +697,45 @@ window.onload = function() {
     startTimer();
     renderPagination(); // 🌟 補上這一行：初始化題號列渲染
 }
-       function renderPagination() {
-    const container = document.getElementById('pagination');
+      function renderPagination() {
+    // 🌟 修正：抓取你 HTML 裡實際存在的 ID
+    const container = document.getElementById('questionPalette');
     if (!container) return;
     
     container.innerHTML = ''; // 清空內容
 
-    // 🌟 修正：這裡必須使用 mockQuestions (你實際存題目的變數)
     mockQuestions.forEach((_, index) => {
         const btn = document.createElement('button');
         
-        // 🌟 修正：這裡必須使用 currentQIndex (你實際記錄目前題號的變數)
+        // 判斷狀態
         const isCurrent = currentQIndex === index;
-        
-        // 檢查該題有沒有答案 (處理一般題與題組)
         let isAnswered = false;
+        
         if (mockQuestions[index].type === 'group') {
             isAnswered = userAnswers[index] && userAnswers[index].every(a => a !== null);
         } else {
             isAnswered = userAnswers[index] !== null;
         }
 
-        // 設定樣式
-        let classList = "page-btn ";
+        // 🌟 設定樣式 (確保這跟你的 CSS 對得上)
+        let classList = "w-10 h-10 rounded-full border-2 font-bold transition-all flex-shrink-0 flex items-center justify-center ";
+        
         if (isCurrent) {
-            classList += "bg-blue-600 text-white shadow-lg scale-110 z-10 border-blue-400";
+            // 目前題：藍色
+            classList += "bg-blue-600 text-white border-blue-400 shadow-lg scale-110 z-10";
         } else if (isAnswered) {
-            classList += "bg-green-100 text-green-700 border-green-200";
+            // 已作答：綠色
+            classList += "bg-green-100 text-green-700 border-green-200 hover:bg-green-200";
         } else {
-            classList += "bg-white text-slate-400 border-slate-100 hover:bg-slate-50";
+            // 未作答：白色
+            classList += "bg-white text-slate-400 border-slate-100 hover:border-blue-300";
         }
 
         btn.className = classList;
         btn.innerText = index + 1;
         
         btn.onclick = () => {
-            currentQIndex = index; // 🌟 修正變數名
+            currentQIndex = index;
             renderQuestion();
         };
         
@@ -894,25 +897,10 @@ window.onload = function() {
         }
     }
 
-    function updatePalette() {
-        const p = document.getElementById('questionPalette');
-        p.innerHTML = '';
-        mockQuestions.forEach((item, i) => {
-            let isAnswered = false;
-            if (item.type === 'group') {
-                isAnswered = userAnswers[i].every(a => a !== null);
-            } else {
-                isAnswered = userAnswers[i] !== null;
-            }
-
-            const cls = isAnswered ? 'q-dot answered' : (i === currentQIndex ? 'q-dot active' : 'q-dot normal');
-            const dot = document.createElement('div');
-            dot.className = cls + " flex-shrink-0 cursor-pointer";
-            dot.textContent = i + 1;
-            dot.onclick = () => { currentQIndex = i; renderQuestion(); };
-            p.appendChild(dot);
-        });
-    }
+   function updatePalette() {
+    // 直接呼叫渲染函數，確保兩邊同步
+    renderPagination();
+}
 
     function recordTime() {
         if (questionStartTime === 0) return;
