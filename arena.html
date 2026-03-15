@@ -616,11 +616,11 @@ body.theme-celestial { background: radial-gradient(circle at center, #000000 0%,
 
         </div> 
            
-<div id="start-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; backdrop-filter:blur(10px); cursor:pointer;">
-    <div style="text-align:center; color:white;">
-        <div style="font-size: 60px; margin-bottom: 20px;">🎮</div>
-        <h2 style="font-family:'Noto Sans TC'; font-weight:900; font-size:24px; letter-spacing:2px;">雲端學院榮譽榜</h2>
-        <p style="opacity:0.7; margin-top:10px;">點擊任何地方進入舞台</p>
+<div id="start-overlay" onclick="handleStart()" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; backdrop-filter:blur(10px); cursor:pointer;">
+    <div style="text-align:center; color:white; pointer-events:none;">
+        <div style="font-size: 80px; margin-bottom: 20px;">🎮</div>
+        <h2 style="font-size:24px; font-weight:900;">雲端學院榮譽榜</h2>
+        <p style="margin-top:10px; opacity:0.8;">點擊螢幕任何地方進入</p>
     </div>
 </div>
          <div id="profileModal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm fade-in">
@@ -1069,6 +1069,27 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener(event, startMusic, { once: true });
     });
 });
+    // 🏆 這是處理點擊進入的專用函式
+function handleStart() {
+    console.log("偵測到點擊，啟動中...");
+    
+    // 1. 嘗試播放音樂
+    if (typeof SoundEngine !== 'undefined') {
+        SoundEngine.playBGM();
+    }
+
+    // 2. 移除遮罩
+    const overlay = document.getElementById('start-overlay');
+    if (overlay) {
+        overlay.style.transition = 'all 0.4s ease';
+        overlay.style.opacity = '0';
+        overlay.style.pointerEvents = 'none'; // 讓它點不到，防止卡住
+        
+        setTimeout(() => {
+            overlay.remove(); // 直接從 HTML 裡面刪掉，徹底消除
+        }, 500);
+    }
+}
     </script>
 </body>
 </html>
