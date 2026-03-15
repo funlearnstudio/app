@@ -65,8 +65,8 @@ body[class*="theme-"] .ai-assistant-card {
     box-shadow: none !important;
 }
 
-/* 拔掉礙眼的漸層藍色塊與大頭貼白底 (避開 XP 進度條) */
-body[class*="theme-"] [class*="bg-gradient-"]:not(#xpFill) { background: transparent !important; }
+/* 拔掉礙眼的漸層藍色塊與大頭貼白底 (避開 XP 進度條與幸運大抽獎) */
+body[class*="theme-"] [class*="bg-gradient-"]:not(#xpFill):not(.from-purple-500) { background: transparent !important; }
 body[class*="theme-"] .relative.w-24.h-24 { background-color: transparent !important; border-color: rgba(255, 255, 255, 0.3) !important; }
 
 /* 手機版側邊欄遮罩 */
