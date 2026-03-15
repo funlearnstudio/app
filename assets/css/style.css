@@ -1,93 +1,140 @@
-/* 翰林風格配色變數 */
-:root {
-    --primary: #007bff;      /* 翰林藍 */
-    --secondary: #6c757d;
-    --success: #28a745;
-    --bg-light: #f8f9fa;
-    --text-dark: #343a40;
-    --sidebar-width: 240px;
-}
+/* ==========================================================================
+   智慧評量系統 - 全站共用終極樣式表 (style.css)
+   ========================================================================== */
 
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background-color: var(--bg-light);
+/* --- 1. 全域基礎設定與動畫 --- */
+body { 
+    font-family: 'Noto Sans TC', sans-serif; 
+    background-color: #f1f5f9; 
+    transition: background 0.8s ease, color 0.5s ease; 
+    min-height: 100vh; 
     margin: 0;
-    color: var(--text-dark);
 }
 
-/* 通用卡片樣式 */
-.card {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    padding: 20px;
-    margin-bottom: 20px;
-    transition: transform 0.2s;
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.5); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(107, 114, 128, 0.8); }
+
+.task-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #ffedd5; }
+.task-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.15); border-color: #fdba74; }
+
+.sidebar-transition { transition: transform 0.3s ease-in-out; }
+.fade-in { animation: fadeIn 0.5s ease-out forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 流星容器 */
+#star-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+
+/* ==========================================================================
+   2. 12 階級動態背景主題 (Theme Palette)
+   ========================================================================== */
+body.theme-novice { background-color: #f8fafc !important; }
+body.theme-rookie { background-color: #dcfce7 !important; }
+body.theme-bronze { background-color: #ffedd5 !important; }
+body.theme-silver { background: linear-gradient(135deg, #f8fafc 0%, #cbd5e1 25%, #94a3b8 50%, #cbd5e1 75%, #f1f5f9 100%) !important; }
+body.theme-gold { background: linear-gradient(135deg, #fef08a 0%, #eab308 100%) !important; }
+body.theme-diamond { background: linear-gradient(135deg, #e0f2fe, #bae6fd) !important; }
+body.theme-master { background: linear-gradient(135deg, #fee2e2, #fecaca) !important; }
+body.theme-grandmaster { background: linear-gradient(135deg, #701a75 0%, #be185d 100%) !important; color: white !important; }
+body.theme-legend { background: #451a03 !important; color: #fef3c7 !important; }
+body.theme-epic { background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%) !important; color: white !important; }
+body.theme-mythic { background: radial-gradient(circle, #1e1b4b, #020617) !important; color: white !important; }
+body.theme-celestial { background: radial-gradient(circle at center, #000000 0%, #170529 50%, #000000 100%) !important; color: #fde047 !important; }
+
+/* ==========================================================================
+   3. 🔮 終極玻璃擬真去背大絕招 (Glassmorphism)
+   ========================================================================== */
+/* 將所有白色/灰色容器、側邊欄、導覽列強制轉為極淡透明玻璃 */
+body[class*="theme-"] .bg-white,
+body[class*="theme-"] [class*="bg-slate-"]:not(.bg-slate-100),
+body[class*="theme-"] [class*="bg-gray-"]:not(.bg-gray-100),
+body[class*="theme-"] aside,
+body[class*="theme-"] #sidebar,
+body[class*="theme-"] .sidebar-content,
+body[class*="theme-"] nav,
+body[class*="theme-"] main,
+body[class*="theme-"] section,
+body[class*="theme-"] ul,
+body[class*="theme-"] li,
+body[class*="theme-"] #leaderboardContainer,
+body[class*="theme-"] .ai-assistant-card {
+    background-color: rgba(255, 255, 255, 0.1) !important; 
+    backdrop-filter: blur(10px) !important; 
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important; 
+    box-shadow: none !important;
 }
 
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+/* 拔掉礙眼的漸層藍色塊與大頭貼白底 */
+body[class*="theme-"] [class*="bg-gradient-"]:not(#xpFill) { background: transparent !important; }
+body[class*="theme-"] .relative.w-24.h-24 { background-color: transparent !important; border-color: rgba(255, 255, 255, 0.3) !important; }
+
+/* 手機版側邊欄遮罩 */
+body[class*="theme-"] .sidebar-transition { background-color: rgba(15, 23, 42, 0.8) !important; }
+body[class*="theme-"] footer { background-color: rgba(255, 255, 255, 0.2) !important; }
+
+/* ==========================================================================
+   4. 🎨 特殊區塊顏色微調 (AI解答、進度條)
+   ========================================================================== */
+/* AI 助教解答區變深色透光 */
+body.theme-legend .bg-gray-100, body.theme-mythic .bg-gray-100,
+body.theme-legend .bg-slate-100, body.theme-mythic .bg-slate-100 {
+    background-color: rgba(0, 0, 0, 0.3) !important; 
+    color: #cbd5e1 !important;
+}
+/* 一般主題的進度條底色不要太白 */
+body[class*="theme-"]:not(.theme-legend):not(.theme-mythic) .bg-slate-100 {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+}
+/* 卡片陰影強化 */
+body[class*="theme-"] .shadow-xl, body[class*="theme-"] .shadow-lg { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important; }
+/* 側邊欄懸停效果 */
+body.theme-legend aside a:hover, body.theme-mythic aside a:hover { background-color: rgba(255, 255, 255, 0.2) !important; }
+
+/* ==========================================================================
+   5. ✏️ 字體顏色智慧適應 (Dark / Light Mode)
+   ========================================================================== */
+/* 傳奇與神話 (深色模式) 強制轉白 */
+body.theme-legend *, body.theme-mythic * { color: inherit; }
+body.theme-legend .bg-white *, body.theme-mythic .bg-white *,
+body.theme-legend #leaderboardContainer *, body.theme-mythic #leaderboardContainer *,
+body.theme-legend aside *, body.theme-mythic aside *,
+body.theme-legend .text-slate-800, body.theme-mythic .text-slate-800,
+body.theme-legend .text-gray-700, body.theme-mythic .text-gray-700,
+body.theme-legend .text-gray-600, body.theme-mythic .text-gray-600 {
+    color: #f8fafc !important; 
+}
+body.theme-legend aside a, body.theme-mythic aside a,
+body.theme-legend aside i, body.theme-mythic aside i { color: rgba(255, 255, 255, 0.9) !important; }
+
+/* 青銅主題 (橘色) 特殊字體保護：只改一般文字，避開徽章 */
+body.theme-bronze h2, body.theme-bronze h3, body.theme-bronze p, 
+body.theme-bronze #playerName, body.theme-bronze .text-slate-800,
+body.theme-bronze span:not(.text-\\[11px\\]) {
+    color: #7c2d12 !important;
 }
 
-/* 翰林風格按鈕 */
-.btn {
-    padding: 8px 16px;
-    border-radius: 4px;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
-    transition: 0.2s;
+/* ==========================================================================
+   6. 🛡️ 絕對防護機制 (保護徽章、圖示、XP條不被透明化破壞)
+   ========================================================================== */
+/* 救回側邊欄與排行榜的彩色圖示 */
+body[class*="theme-"] aside i.fas, body[class*="theme-"] aside i.fab, body[class*="theme-"] aside svg,
+body[class*="theme-"] .fa-crown, body[class*="theme-"] .fa-medal, body[class*="theme-"] .fa-award {
+    color: inherit !important; 
 }
-
-.btn-primary {
-    background-color: var(--primary);
-    color: white;
+/* 救回排行榜上的「等級徽章」(Badge) */
+body[class*="theme-"] .text-\\[11px\\] {
+    background-color: inherit !important; 
+    color: inherit !important;
+    backdrop-filter: none !important; 
+    border: none !important;
 }
-
-.btn-primary:hover {
-    background-color: #0056b3;
+/* 唯一例外防護：XP經驗進度條 */
+body[class*="theme-"] #xpFill {
+    background: linear-gradient(to right, #ea580c, #f97316) !important;
+    color: transparent !important; 
 }
-
-/* 佈局系統 */
-.layout {
-    display: flex;
-    min-height: 100vh;
-}
-
-.sidebar {
-    width: var(--sidebar-width);
-    background: white;
-    border-right: 1px solid #dee2e6;
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    height: 100%;
-}
-
-.main-content {
-    margin-left: var(--sidebar-width);
-    flex: 1;
-    padding: 30px;
-}
-
-/* 測驗頁面專用 */
-.exam-layout {
-    display: flex;
-    height: 100vh;
-    overflow: hidden;
-}
-
-.question-area {
-    flex: 3;
-    padding: 40px;
-    overflow-y: auto;
-    background: white;
-}
-
-.answer-card {
-    flex: 1;
-    background: #f1f3f5;
-    padding: 20px;
-    border-left: 1px solid #ddd;
+body.theme-bronze .profile-header-bg, body.theme-bronze .bg-gradient-to-r.from-blue-600 {
+    background: linear-gradient(to right, #f97316, #fb923c) !important; 
 }
