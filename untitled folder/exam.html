@@ -314,13 +314,18 @@
             }, 1000);
         }
 
-        function finishExam() {
-            clearInterval(timerInterval);
-            const unanswered = userAnswers.filter(a => a === null).length;
-            if (unanswered > 0 && !confirm(`還有 ${unanswered} 題未作答，確定交卷？`)) {
-                startTimer(); return;
-            }
-
+       function finishExam() {
+    // 加上這行，防止使用者連點交卷
+    els.submit.disabled = true;
+    
+    clearInterval(timerInterval);
+    const unanswered = userAnswers.filter(a => a === null).length;
+    if (unanswered > 0 && !confirm(`還有 ${unanswered} 題未作答，確定交卷？`)) {
+        startTimer(); 
+        els.submit.disabled = false; // 如果取消交卷，要把按鈕恢復
+        return;
+    }
+    // ... 下面的存檔邏輯照舊
             let correctCount = 0;
             let wrongList = [];
             mockQuestions.forEach((q, idx) => {
