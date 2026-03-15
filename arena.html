@@ -1036,47 +1036,34 @@ async function loadLeaderboard() {
     }
 }
 
-// =========================================
-// 5. 網頁載入時啟動所有功能
-// =========================================
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. 先初始化所有設定
     SoundEngine.init();
     updateTicketUI();
     initProfile();
     loadLeaderboard();
 
-    // 2. 處理主題
     const currentUser = (window.Auth && Auth.getCurrentUser()) || JSON.parse(localStorage.getItem('currentUser') || '{}');
     if (currentUser && currentUser.xp !== undefined) {
         ThemeEngine.apply(currentUser.xp);
     }
     
-    // 🎵 3. 【核心修改】直接嘗試播放音樂
-    const forcePlay = () => {
-        const playPromise = SoundEngine.playBGM();
-        
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                // 如果成功自動播放了，我們就大功告成！
-                console.log("音樂成功直接播放！");
-            }).catch(error => {
-                // 如果被瀏覽器擋下來，這時候我們才需要「備用計畫」
-                console.log("自動播放被瀏覽器阻擋，將在使用者第一次點擊畫面時啟動。");
-                const startOnFirstClick = () => {
-                    SoundEngine.playBGM();
-                    document.removeEventListener('mousedown', startOnFirstClick);
-                    document.removeEventListener('keydown', startOnFirstClick);
-                };
-                // 只要滑鼠按下去（不一定要放開）或按任何鍵就播
-                document.addEventListener('mousedown', startOnFirstClick);
-                document.addEventListener('keydown', startOnFirstClick);
-            });
-        }
+    // 🎵 極速啟動音樂邏輯
+    const startMusic = () => {
+        SoundEngine.playBGM();
+        // 只要播成功了，就拆掉所有監聽器，避免重複執行
+        ['mousedown', 'keydown', 'touchstart'].forEach(event => {
+            window.removeEventListener(event, startMusic);
+        });
     };
 
-    // 稍微延遲 0.2 秒，給瀏覽器一點準備時間
-    setTimeout(forcePlay, 200);
+    // 1. 嘗試直接播 (如果使用者是從站內連結點過來的，這行會成功)
+    SoundEngine.playBGM();
+
+    // 2. 萬一被擋，監聽最輕微的動作 (按下滑鼠、敲鍵盤、手機觸碰)
+    // 使用 mousedown 會比 click 更快響起音樂！
+    ['mousedown', 'keydown', 'touchstart'].forEach(event => {
+        window.addEventListener(event, startMusic, { once: true });
+    });
 });
     </script>
 </body>
