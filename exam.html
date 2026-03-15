@@ -29,6 +29,21 @@
     <script src="mockdata/templates_geography_core.js"></script>
     <script src="mockdata/templates_civics_core.js"></script>
 </head>
+    <style>
+        .page-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2;
+    border: 2px solid transparent;
+    flex-shrink: 0; /* 防止按鈕被擠壓 */
+}
+        </style>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         // 1. 檢查 Auth 是否載入
@@ -674,14 +689,56 @@ window.onload = function() {
     }
 
     function initGame() {
-        currentQIndex = 0;
-        userAnswers = mockQuestions.map(q => q.type === 'group' ? new Array(q.questions.length).fill(null) : null);
-        timeLog = new Array(mockQuestions.length).fill(0);
-        renderQuestion();
-        updatePalette();
-        startTimer();
-    }
+    currentQIndex = 0;
+    userAnswers = mockQuestions.map(q => q.type === 'group' ? new Array(q.questions.length).fill(null) : null);
+    timeLog = new Array(mockQuestions.length).fill(0);
+    renderQuestion();
+    updatePalette(); // 這是你原本有的
+    startTimer();
+    renderPagination(); // 🌟 補上這一行：初始化題號列渲染
+}
+       function renderPagination() {
+    const container = document.getElementById('pagination');
+    if (!container) return;
+    
+    container.innerHTML = ''; // 清空內容
 
+    // 🌟 修正：這裡必須使用 mockQuestions (你實際存題目的變數)
+    mockQuestions.forEach((_, index) => {
+        const btn = document.createElement('button');
+        
+        // 🌟 修正：這裡必須使用 currentQIndex (你實際記錄目前題號的變數)
+        const isCurrent = currentQIndex === index;
+        
+        // 檢查該題有沒有答案 (處理一般題與題組)
+        let isAnswered = false;
+        if (mockQuestions[index].type === 'group') {
+            isAnswered = userAnswers[index] && userAnswers[index].every(a => a !== null);
+        } else {
+            isAnswered = userAnswers[index] !== null;
+        }
+
+        // 設定樣式
+        let classList = "page-btn ";
+        if (isCurrent) {
+            classList += "bg-blue-600 text-white shadow-lg scale-110 z-10 border-blue-400";
+        } else if (isAnswered) {
+            classList += "bg-green-100 text-green-700 border-green-200";
+        } else {
+            classList += "bg-white text-slate-400 border-slate-100 hover:bg-slate-50";
+        }
+
+        btn.className = classList;
+        btn.innerText = index + 1;
+        
+        btn.onclick = () => {
+            currentQIndex = index; // 🌟 修正變數名
+            renderQuestion();
+        };
+        
+        container.appendChild(btn);
+    });
+}
     function renderQuestion() {
         recordTime(); 
         questionStartTime = Date.now();
@@ -772,6 +829,11 @@ window.onload = function() {
         }
         updateNavButtons();
         updatePalette();
+        // 🌟 補上這一行：確保每次換題，下方的題號列也會跟著更新樣式
+    if (typeof renderPagination === 'function') {
+        renderPagination();
+    }
+}
     }
 
    window.selectAnswer = (mainIdx, optIdx, subIdx = null) => {
@@ -811,6 +873,9 @@ window.onload = function() {
 
     // 4. 更新導覽盤
     updatePalette();
+       if (typeof renderPagination === 'function') {
+        renderPagination(); 
+    }
 };
     function updateNavButtons() {
         const nextBtn = document.getElementById('nextBtn');
