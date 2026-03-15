@@ -150,3 +150,36 @@ body[class*="theme-"] #xpFill {
 body.theme-bronze .profile-header-bg, body.theme-bronze .bg-gradient-to-r.from-blue-600 {
     background: linear-gradient(to right, #f97316, #fb923c) !important; 
 }
+/* ==========================================================================
+   🚑 緊急修復補丁：救回排行榜、頭像與姓名表情
+   ========================================================================== */
+
+/* 1. 救回大頭貼/表情底色：給頭像一個固定的深色底，讓透明的 SVG 圖案可以浮現出來 */
+body[class*="theme-"] .w-12.h-12.rounded-full, 
+body[class*="theme-"] .w-24.h-24.rounded-full,
+body[class*="theme-"] .overflow-hidden.rounded-full {
+    background-color: #1e293b !important; /* 深藍灰底色 */
+    border: 2px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 2. 救回排行榜清單 (li) 的卡片感：不要讓它完全透明到看不見 */
+body[class*="theme-"] #leaderboardList li {
+    background-color: rgba(255, 255, 255, 0.08) !important; /* 微微的白底 */
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 0.75rem !important;
+    margin-bottom: 0.5rem !important;
+    backdrop-filter: none !important; /* 關閉清單的毛玻璃效果，防止表情符號渲染異常 */
+}
+
+/* 3. 確保排行榜上的名字與分數是清楚的亮色 */
+body[class*="theme-"] #leaderboardList li div,
+body[class*="theme-"] #leaderboardList li span {
+    color: #ffffff !important; 
+}
+
+/* 4. 🛡️ 絕對防護：把「等級徽章」的背景色和原本的文字顏色救回來 */
+body[class*="theme-"] #leaderboardList li .text-\\[11px\\] {
+    background-color: inherit !important;
+    color: inherit !important;
+    border: none !important;
+}
