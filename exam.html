@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>智慧評量系統 - 雲端學院</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
+     <link rel="stylesheet" href="assets/css/style.css">
+    <script src="mockdata/users.js"></script>
+    <script src="assets/js/auth.js"></script> 
+    <script src="assets/js/generator_engine.js"></script>
+    <script src="mockdata/generator_engine_polyfill.js"></script>
+    <script src="mockdata/paper_generator.js"></script>
+    <script src="mockdata/curriculum_integrated.js"></script>
+
+    <script src="mockdata/templates_math_algebra_geometry.js"></script>
+    <script src="mockdata/templates_physics_multistep.js"></script>
+    <script src="mockdata/templates_chemistry_core.js"></script>
+    <script src="mockdata/templates_biology_core.js"></script>
+    <script src="mockdata/templates_earth_science_core.js"></script>
+    <script src="mockdata/templates_english_core.js"></script>
+    <script src="mockdata/templates_chinese_core.js"></script>
+    <script src="mockdata/templates_history_core.js"></script>
+    <script src="mockdata/templates_geography_core.js"></script>
+    <script src="mockdata/templates_civics_core.js"></script>
+</head>
+    <style>
+        .page-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2;
+    border: 2px solid transparent;
+    flex-shrink: 0; /* 防止按鈕被擠壓 */
+}
+        </style>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // 1. 檢查 Auth 是否載入
+        if (typeof Auth === 'undefined') {
+            console.error("Auth 模組未載入");
+            return;
+        }
+
+        // 2. 檢查是否有登入者
+        const currentUser = Auth.getCurrentUser();
+
+        // 3. 如果沒人登入，或者是 Guest (如果你不想讓 Guest 用)，就踢走
+        if (!currentUser) {
+            alert("⚠️ 您尚未登入，請先進行登入！");
+            window.location.href = 'index.html'; // 假設你的登入頁是 index.html
+        }
+    });
+</script>
+<body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden bg-[#f8fafc]">
+<div id="star-container"></div>
+    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden backdrop-blur-sm transition-opacity"></div>
+
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-white border-r border-slate-100 flex flex-col z-50 transform -translate-x-full lg:translate-x-0 lg:static lg:h-full sidebar-transition shadow-2xl lg:shadow-none">
+        <div class="h-16 flex items-center px-6 border-b border-slate-50 justify-between">
+            <div class="flex items-center">
+                <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
+                <span class="text-lg font-bold text-slate-800">雲端學院</span>
+            </div>
+            <button onclick="toggleSidebar()" class="lg:hidden text-slate-400 hover:text-slate-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div class="p-6 border-b border-slate-50">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 border border-blue-100">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <div>
+                    <div class="text-sm font-bold text-slate-700">考生模式</div>
+                    <div class="text-xs text-slate-400">測驗進行中</div>
+                </div>
+            </div>
+        </div>
+
+      <nav class="flex-grow px-3 space-y-2 overflow-y-auto no-scrollbar">
+    <p class="text-[10px] font-bold text-slate-400 mb-2 px-4 uppercase tracking-widest">學習導航</p>
+<a href="arena.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-100 text-amber-900 transition-all duration-300 group shadow-[inset_0_1px_2px_rgba(0,0,0,0,0.05)] border border-amber-200/50">
+    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 text-white flex items-center justify-center scale-110 shadow-sm ring-2 ring-white">
+        <i class="fas fa-trophy text-xs"></i>
+    </div>
+    <span class="font-black tracking-wide">榮譽榜</span>
+</a>
+    <a href="mission.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-purple-50 hover:text-purple-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-rocket text-sm"></i>
+        </div>
+        <span class="font-bold">任務中心</span>
+        <span class="ml-auto bg-purple-100 text-purple-600 text-[10px] px-2 py-0.5 rounded-full font-black">NEW</span>
+    </a>
+
+    <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-book-open text-sm"></i>
+        </div>
+        <span class="font-bold">課程總覽</span>
+    </a>
+
+    <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-red-50 hover:text-red-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-fire text-sm"></i>
+        </div>
+        <span class="font-bold">錯題補救</span>
+    </a>
+
+    <a href="study.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-amber-50 hover:text-amber-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-star text-sm"></i>
+        </div>
+        <span class="font-bold">重點複習</span>
+    </a>
+
+    <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:animate-bounce">
+            <i class="fas fa-gamepad text-sm"></i>
+        </div>
+        <span class="font-bold">遊戲場</span>
+    </a>
+
+    <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-cyan-100 text-cyan-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-comments text-sm"></i>
+        </div>
+        <span class="font-bold">解題論壇</span>
+    </a>
+    
+    <div class="pt-4 mt-4 border-t border-slate-100">
+        <p class="text-[10px] font-bold text-slate-400 mb-2 px-4 uppercase tracking-widest">系統支援</p>
+        
+        <a href="help.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-orange-50 hover:text-orange-600 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+            <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center group-hover:rotate-12 transition-transform">
+                <i class="fas fa-headset text-sm"></i>
+            </div>
+            <span class="font-bold">幫助中心 & 聯絡老師</span>
+        </a>
+
+        <a href="change_password.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-500 hover:bg-slate-100 transition-all group">
+            <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center group-hover:text-slate-600">
+                <i class="fas fa-key text-xs"></i>
+            </div>
+            <span class="text-sm font-medium">更改密碼</span>
+        </a>
+    </div>
+</nav>
+    </aside>
+
+    <div class="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
+
+<header class="bg-white shadow-sm border-b border-gray-200 h-14 md:h-16 shrink-0 z-20 px-4 md:px-6 flex justify-between items-center relative">
+    <div class="flex items-center gap-3 min-w-0 flex-1">
+        <button onclick="toggleSidebar()" class="hidden sm:flex lg:hidden w-10 h-10 items-center justify-center text-slate-500 hover:bg-slate-100 rounded-lg shrink-0 transition">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+
+        <div class="min-w-0 flex flex-col justify-center">
+            <h1 class="text-base md:text-lg font-black text-gray-800 truncate leading-tight" id="examTitle">載入中...</h1>
+            <div class="flex items-center gap-1 text-xs md:text-sm text-gray-400 mt-0.5">
+                <span id="examSubjectTag" class="font-bold shrink-0 tracking-wider">科目</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex items-center gap-3 md:gap-5 shrink-0">
+        <div class="flex items-center bg-slate-50 text-slate-700 px-3 py-1.5 md:px-4 md:py-2 rounded-lg font-mono font-black text-sm md:text-xl border border-slate-200 shadow-inner">
+            <i class="far fa-clock mr-1.5 md:mr-2 text-slate-400 hidden sm:inline-block"></i>
+            <span id="timer">00:00</span>
+        </div>
+        
+        <button onclick="trySubmit()" id="headerSubmitBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 md:px-6 md:py-2 rounded-lg font-black text-sm md:text-base shadow-md transition active:scale-95 whitespace-nowrap flex items-center gap-2">
+            <i class="fas fa-paper-plane hidden sm:inline-block"></i>
+            交卷
+        </button>
+    </div>
+</header>
+       <main class="flex-grow flex flex-col bg-[#f8fafc] relative overflow-hidden">
+    <div class="flex-grow flex justify-center overflow-y-auto scroll-smooth p-1 md:p-8" id="mainScroll">
+        <div class="w-full max-w-3xl pb-2"> 
+            <div class="bg-white rounded-lg md:rounded-3xl shadow-sm border border-slate-200 min-h-[200px] flex flex-col fade-in relative overflow-hidden">
+                
+                        
+                        <div class="p-5 md:p-10 flex-grow">
+                            <div class="flex justify-between items-start mb-4 md:mb-6">
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-blue-50 text-blue-600 text-[10px] md:text-xs font-bold px-2 py-1 rounded border border-blue-100">單選題</span>
+                                    <span id="conceptBadge" class="bg-slate-100 text-slate-600 text-[10px] md:text-xs font-bold px-2 py-1 rounded border border-slate-200">觀念</span>
+                                </div>
+                                <span class="text-slate-300 text-3xl md:text-4xl font-black font-mono select-none opacity-20">Q<span id="currentQNumDisplay">1</span></span>
+                            </div>
+                            
+                            <div class="mb-6 md:mb-8">
+                                <h2 id="questionText" class="text-lg md:text-2xl font-bold text-slate-800 leading-relaxed break-words">稍等一下...</h2>
+                            </div>
+                            
+                            <div id="optionsContainer" class="space-y-3">
+                                </div>
+                        </div>
+
+                        <div class="bg-slate-50 px-4 md:px-8 py-4 border-t border-slate-100 flex justify-between items-center sticky bottom-0 z-10">
+                            <button id="prevBtn" class="text-slate-500 font-bold hover:text-blue-600 flex items-center gap-1 md:gap-2 px-3 py-2 rounded-lg hover:bg-slate-200 transition text-sm md:text-base">
+                                <i class="fas fa-arrow-left"></i> <span class="hidden md:inline">上一題</span><span class="md:hidden">上題</span>
+                            </button>
+                            <div class="text-xs text-slate-400 font-bold">
+                                <span id="currentQIdx">1</span> / <span id="totalQCount">--</span>
+                            </div>
+                            <button id="nextBtn" class="bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 text-slate-700 px-4 md:px-6 py-2 rounded-lg md:rounded-xl font-bold shadow-sm flex items-center gap-2 transition text-sm md:text-base">
+                                <span class="hidden md:inline">下一題</span><span class="md:hidden">下題</span> <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="h-4 md:h-20"></div>
+                </div>
+            </div>
+
+           <aside class="w-full bg-white border-t border-slate-200 flex-shrink-0 z-10 order-last shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+    
+            <div class="h-16 md:h-20 flex items-center px-4 overflow-x-auto no-scrollbar w-full">
+                
+                <div class="flex items-center gap-3 px-2 mx-auto" id="questionPalette">
+                    </div>
+            </div>
+        </aside>
+        </main>
+    </div>
+
+    <div id="setupModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm transition-opacity p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 md:p-8 modal-enter border-4 border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div class="text-center mb-6 md:mb-8">
+                <div class="w-14 h-14 md:w-16 md:h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl md:text-2xl mx-auto mb-4">
+                    <i class="fas fa-sliders-h"></i>
+                </div>
+                <h3 class="text-xl md:text-2xl font-black text-slate-800">測驗設定</h3>
+                <p class="text-slate-500 mt-2 text-sm md:text-base">請選擇您想要挑戰的題目數量</p>
+            </div>
+            
+            <div class="space-y-4 mb-8">
+                <label class="block text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">題目數量</label>
+                <div class="grid grid-cols-3 gap-2 md:gap-3">
+                    <button onclick="selectCount(5)" class="count-btn py-2 md:py-3 border-2 border-slate-200 rounded-xl font-bold text-slate-600 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition text-sm md:text-base" data-val="5">5 題</button>
+                    <button onclick="selectCount(10)" class="count-btn py-2 md:py-3 border-2 border-slate-200 rounded-xl font-bold text-slate-600 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition bg-blue-50 border-blue-500 text-blue-600 text-sm md:text-base" data-val="10">10 題</button>
+                    <button onclick="selectCount(15)" class="count-btn py-2 md:py-3 border-2 border-slate-200 rounded-xl font-bold text-slate-600 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition text-sm md:text-base" data-val="15">15 題</button>
+                    <button onclick="selectCount(20)" class="count-btn py-2 md:py-3 border-2 border-slate-200 rounded-xl font-bold text-slate-600 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition text-sm md:text-base" data-val="20">20 題</button>
+                    <button onclick="selectCount(25)" class="count-btn py-2 md:py-3 border-2 border-slate-200 rounded-xl font-bold text-slate-600 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition text-sm md:text-base" data-val="25">25 題</button>
+                    <button onclick="selectCount(30)" class="count-btn py-2 md:py-3 border-2 border-slate-200 rounded-xl font-bold text-slate-600 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600 transition text-sm md:text-base" data-val="30">30 題</button>
+                </div>
+            </div>
+            <div class="space-y-4 mb-8">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="block text-sm font-bold text-slate-400 uppercase tracking-wider">作答時間 (分鐘)</label>
+                    <span id="timeDisplay" class="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-bold">20 分鐘</span>
+                </div>
+                <input type="range" id="timeSlider" min="1" max="20" value="20" 
+                       class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                       oninput="updateTimeLabel(this.value)">
+                <div class="flex justify-between text-[10px] text-slate-400 font-bold px-1">
+                    <span>1 分</span>
+                    <span id="maxTimeLabel">MAX</span>
+                </div>
+            </div>
+            <button onclick="confirmSetup()" class="w-full py-3 md:py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold text-base md:text-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition flex items-center justify-center gap-2">
+                開始測驗 <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <div id="submitModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm transition-opacity p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 modal-enter">
+            <div class="text-center mb-6">
+                <h3 class="text-xl font-bold text-slate-800">準備交卷了嗎？</h3>
+                <p class="text-slate-500 text-sm mt-2">交卷後將立即計算成績並上傳紀錄。</p>
+            </div>
+            <div class="flex justify-around mb-6">
+                <div class="text-center"><div class="text-xs text-slate-400 font-bold">已作答</div><div class="text-2xl font-black text-blue-600" id="modalAnswered">0</div></div>
+                <div class="text-center"><div class="text-xs text-slate-400 font-bold">未作答</div><div class="text-2xl font-black text-slate-400" id="modalUnanswered">0</div></div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeSubmitModal()" class="flex-1 px-4 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50">再檢查</button>
+                <button onclick="finalSubmit()" id="confirmSubmitBtn" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg flex justify-center items-center gap-2">
+                    確認交卷
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loadingOverlay" class="hidden fixed inset-0 z-[60] bg-white/90 flex flex-col items-center justify-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+        <p class="text-slate-600 font-bold animate-pulse">正在上傳學習紀錄...</p>
+        <p class="text-xs text-slate-400 mt-2">請勿關閉視窗</p>
+    </div>
+    <div id="profileModal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm fade-in px-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100">
+            <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-white font-bold text-lg"><i class="fas fa-user-edit mr-2"></i> 修改年級</h3>
+                <button onclick="closeProfileModal()" class="text-white/80 hover:text-white transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2">請選擇目前的年級：</label>
+                <div class="relative">
+                    <select id="editGradeSelect" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white appearance-none transition text-gray-700 font-bold">
+                         <option value="國七">國七</option>
+                    <option value="國八">國八</option>
+                    <option value="國九">國九</option>
+                    <hr>
+                    <option value="高一">高一</option>
+                    <option value="高二">高二</option>
+                    <option value="高三">高三</option>
+                </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400 mt-3">※ 修改後，系統將會優先推薦該年級的題目。</p>
+            </div>
+
+            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
+                <button onclick="closeProfileModal()" class="px-4 py-2 text-gray-500 hover:text-gray-700 font-bold text-sm">取消</button>
+                <button onclick="saveProfile()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-md hover:shadow-lg transition">
+                    確認修改
+                </button>
+            </div>
+        </div>
+    </div><script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
+
+    let mockQuestions = [], currentQIndex = 0, userAnswers = [], timeLeft = 0, timerInterval, examInfo = {};
+    let timeLog = [], tabLog = [], tabLeaveStart = null, questionStartTime = 0;
+    let selectedCount = 10;
+    let isSubmitting = false; 
+
+    // 在 exam 頁面的 script 開頭檢查
+    const urlParams = new URLSearchParams(window.location.search);
+    const subjectFromUrl = urlParams.get('subject');
+    console.log("當前測驗科目：", subjectFromUrl); 
+// --- 核心主題引擎 (12 個階級升級版) ---
+const ThemeEngine = {
+    // 1. 執行變色
+    apply: function(xp) {
+        console.log("當前頁面主題判定中... XP:", xp);
+        const body = document.body;
+        
+        // ⚠️ 必須在這裡把 12 個主題的 class 全部列出來，確保切換時能清除乾淨
+        body.classList.remove(
+            'theme-novice', 'theme-rookie', 'theme-bronze', 'theme-silver', 
+            'theme-gold', 'theme-diamond', 'theme-master', 'theme-grandmaster', 
+            'theme-legend', 'theme-epic', 'theme-mythic', 'theme-celestial'
+        );
+
+        // 根據 XP 判定主題 (必須從最高分往下寫)
+        if (xp >= 100000) { 
+            body.classList.add('theme-celestial'); 
+            this.createStars(15); // 12. 創世星神 (最高階，流星加倍！)
+        } 
+        else if (xp >= 50000) { 
+            body.classList.add('theme-mythic'); 
+            this.createStars(8);  // 11. 萬古神話 (一般流星)
+        } 
+        else if (xp >= 30000) body.classList.add('theme-epic');         // 10. 史詩英雄
+        else if (xp >= 20000) body.classList.add('theme-legend');       // 9. 傳奇領主
+        else if (xp >= 15000) body.classList.add('theme-grandmaster');  // 8. 榮耀宗師
+        else if (xp >= 10000) body.classList.add('theme-master');       // 7. 聖域大師
+        else if (xp >= 5000)  body.classList.add('theme-diamond');      // 6. 頂尖學者
+        else if (xp >= 2500)  body.classList.add('theme-gold');         // 5. 黃金菁英
+        else if (xp >= 1000)  body.classList.add('theme-silver');       // 4. 白銀騎士
+        else if (xp >= 300)   body.classList.add('theme-bronze');       // 3. 勤奮書生
+        else if (xp >= 100)   body.classList.add('theme-rookie');       // 2. 潛力新秀
+        else                  body.classList.add('theme-novice');       // 1. 初心學徒 (0~99 XP)
+    },
+
+    // 2. 產生流星 (現在可以根據等級決定流星數量)
+    createStars: function(starCount) {
+        const container = document.getElementById('star-container');
+        if (!container || container.hasChildNodes()) return; // 避免重複產生
+        
+        for (let i = 0; i < starCount; i++) {
+            let star = document.createElement('div');
+            star.className = 'shooting-star'; 
+            star.style.top = Math.random() * 80 + 'vh';
+            star.style.left = (Math.random() * 50 + 50) + 'vw';
+            star.style.animationDelay = (Math.random() * 4) + 's';
+            container.appendChild(star);
+        }
+    }
+};
+
+// --- 自動執行 ---
+document.addEventListener('DOMContentLoaded', () => {
+    // 讀取 currentUser，如果沒有就預設 0
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
+    ThemeEngine.apply(user.xp);
+});
+    // ==========================================
+    // 📱 UI 互動功能 (側邊欄 & Modal)
+    // ==========================================
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        if (sidebar.classList.contains('-translate-x-full')) {
+            sidebar.classList.remove('-translate-x-full');
+            overlay.classList.remove('hidden');
+            setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+        } else {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('opacity-0');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+    }
+
+    function openProfileModal() {
+        const user = Auth.getCurrentUser();
+        const select = document.getElementById('editGradeSelect');
+        if (user && user.grade) select.value = user.grade;
+        document.getElementById('profileModal').classList.remove('hidden');
+    }
+
+    function closeProfileModal() {
+        document.getElementById('profileModal').classList.add('hidden');
+    }
+
+    async function saveProfile() {
+        const newGrade = document.getElementById('editGradeSelect').value;
+        const user = Auth.getCurrentUser();
+        if (!user) return alert("請先登入！");
+
+        const saveBtn = document.querySelector('#profileModal button[onclick="saveProfile()"]');
+        const originalBtnText = saveBtn.innerText;
+
+        // 1. 進入載入狀態
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 儲存中...';
+
+        try {
+            // 2. 發送請求給 GAS 後端
+            const response = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: "update_grade", // 此 action 需與 GAS 後端對應
+                    account: user.account || user.username,
+                    newGrade: newGrade
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.status === "success") {
+                // 3. 伺服器成功更新後，才更新本地資料
+                if (Auth.updateUser) {
+                    Auth.updateUser('grade', newGrade);
+                }
+                
+                const roleEl = document.getElementById('sideUserRole');
+                if (roleEl) roleEl.innerText = newGrade;
+
+                alert(`✅ 修改成功！目前年級已更新為：${newGrade}`);
+                closeProfileModal();
+            } else {
+                alert("❌ 修改失敗：" + (result.message || "未知錯誤"));
+            }
+        } catch (error) {
+            console.error("更新年級發生錯誤:", error);
+            alert("網路連線異常，請稍後再試。");
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerText = originalBtnText;
+        }
+    }
+
+    // ==========================================
+    // ⚡ 雲端題庫融合器
+    // ==========================================
+  async function injectCustomQuestionsToRepo() {
+    const repoMap = {
+        'chinese': '__CHINESE_REPO__', 'math': '__MATH_REPO__',
+        'english': '__ENGLISH_REPO__', 'biology': '__BIOLOGY_REPO__',
+        'physics': '__PHYSICS_REPO__', 'chemistry': '__CHEMISTRY_REPO__',
+        'earth_science': '__EARTH_SCI_REPO__', 'history': '__HISTORY_REPO__',
+        'geography': '__GEOGRAPHY_REPO__', 'civics': '__CIVICS_REPO__'
+    };
+
+    try {
+        if (!customQsPrefetchPromise) return;
+
+        // 🚀 設定超時機制：如果等了 1.5 秒還沒抓完，就放棄直接進測驗，不再死等
+        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 1500));
+        const customQs = await Promise.race([customQsPrefetchPromise, timeoutPromise]);
+
+        if (customQs && customQs.length > 0) {
+            customQs.forEach((item, idx) => {
+                let repoName = repoMap[item.subject];
+                if (!repoName) return; 
+
+                window[repoName] = window[repoName] || {};
+                const id = `custom_${item.subject}_${idx}`;
+                
+                window[repoName][id] = {
+                    func: () => {
+                        const opts = [item.a, ...item.o].sort(() => Math.random() - 0.5);
+                        return {
+                            question: `【教師出題】${item.q}`, 
+                            options: opts,
+                            answer: opts.indexOf(item.a),
+                            explanation: [`✅ 正確答案：${item.a}`, `🏷️ 標籤：${item.t.join(" / ")}`],
+                            concept: item.t[item.t.length - 1] || "自訂題目"
+                        };
+                    },
+                    tags: item.t,
+                    type: "normal"
+                };
+            });
+            console.log(`✅ 成功載入 ${customQs.length} 題教師雲端題庫！`);
+        }
+    } catch (e) {
+        console.warn("雲端題庫注入跳過或連線失敗:", e);
+    }
+}
+   // 在 <script> 的最上方（宣告變數的地方）加一個全域變數紀錄預載進度
+let customQsPrefetchPromise = null;
+
+window.onload = function() {
+    if (window.Auth && !Auth.requireLogin()) return;
+    
+    const currentUser = window.Auth ? Auth.getCurrentUser() : { username: 'guest' };
+    const lastUser = localStorage.getItem('last_exam_user');
+    
+    if (lastUser && lastUser !== currentUser.username) {
+        console.log("偵測到使用者切換，清除舊資料...");
+        localStorage.removeItem('examResult'); 
+        localStorage.removeItem('temp_answers'); 
+    }
+    
+    localStorage.setItem('last_exam_user', currentUser.username);
+
+    // 🚀 新增：一進網頁就在背景偷抓題庫，節省等待時間
+    customQsPrefetchPromise = fetch(`${GAS_URL}?action=get_custom_questions`)
+        .then(res => res.json())
+        .catch(e => null);
+
+    initVisibilityListener();
+    setupRefreshProtection();
+    showSetupModal();
+};
+
+    // 關鍵字高亮功能
+    function highlightKeywords(text) {
+        if (!text) return "";
+        const keywords = ["！＠＃＄％＾＆＊＃＄％＾％＾"];
+        let processed = text;
+        keywords.forEach(word => {
+            const reg = new RegExp(word, 'g');
+            processed = processed.replace(reg, `<span class="text-red-600 font-bold underline">${word}</span>`);
+        });
+        return processed;
+    }
+
+    function setupRefreshProtection() {
+        window.addEventListener('beforeunload', function (e) {
+            if (!isSubmitting) {
+                e.preventDefault();
+                e.returnValue = ''; 
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if ((e.which || e.keyCode) === 116 || 
+                ((e.ctrlKey || e.metaKey) && (e.which || e.keyCode) === 82)) {
+                e.preventDefault();
+                alert("⚠️ 測驗進行中，禁止重新整理頁面！\n這會導致您的作答進度全部遺失。");
+            }
+        });
+    }
+
+    function showSetupModal() {
+        if(timerInterval) clearInterval(timerInterval);
+        document.getElementById('setupModal').classList.remove('hidden');
+    }
+
+    let selectedTime = 20; 
+
+    function selectCount(val) {
+        selectedCount = val;
+        // 更新按鈕樣式
+        document.querySelectorAll('.count-btn').forEach(btn => {
+            if(parseInt(btn.dataset.val) === val) {
+                btn.classList.add('bg-blue-50', 'border-blue-500', 'text-blue-600');
+            } else {
+                btn.classList.remove('bg-blue-50', 'border-blue-500', 'text-blue-600');
+            }
+        });
+
+        // 動態調整時間滑桿的最大值 (題數 * 2)
+        const slider = document.getElementById('timeSlider');
+        const maxTime = val * 2;
+        slider.max = maxTime;
+        
+        if (parseInt(slider.value) > maxTime || selectedTime === (val/val*0)) { 
+            slider.value = maxTime;
+        }
+        document.getElementById('maxTimeLabel').textContent = maxTime + " 分";
+        updateTimeLabel(slider.value);
+    }
+
+    function updateTimeLabel(val) {
+        selectedTime = parseInt(val);
+        document.getElementById('timeDisplay').textContent = val + " 分鐘";
+    }
+
+    function confirmSetup() {
+        document.getElementById('setupModal').classList.add('hidden');
+        prepareExam(selectedCount, selectedTime); 
+    }   
+
+    async function prepareExam(count, timeMin) {
+        const urlParams = new URLSearchParams(window.location.search);
+        let subject = urlParams.get('subject') || 'math';
+        const rawTitle = decodeURIComponent(urlParams.get('title') || '綜合測驗');
+        const title = rawTitle.trim();
+        const urlGrade = decodeURIComponent(urlParams.get('grade') || '');
+        const examId = urlParams.get('id') || 'default_exam';
+        
+        if (subject === 'earth_science') subject = 'earth';
+        if (subject === 'social') subject = 'history';
+
+        let targetTags = [];
+        if (urlGrade && urlGrade !== 'undefined' && urlGrade !== 'null' && urlGrade.trim() !== '') {
+            targetTags = urlGrade.split(',').filter(t => t.trim() !== '');
+        } else {
+            targetTags = [subject];
+        }
+        
+        document.getElementById('examTitle').textContent = title;
+        document.getElementById('examSubjectTag').textContent = subject.toUpperCase();
+
+        await injectCustomQuestionsToRepo();
+
+        if (window.generatePaper) {
+            mockQuestions = window.generatePaper({ subject: subject, total: count, tags: targetTags });
+        } else {
+            alert("系統錯誤：題庫引擎未載入");
+            return;
+        }
+
+        if (!mockQuestions || mockQuestions.length === 0) {
+            alert(`⚠️ 找不到符合「${targetTags.join(', ')}」的題目！`);
+            showSetupModal(); 
+            return;
+        }
+
+        userAnswers = mockQuestions.map(item => {
+            if (item.type === 'group' || item.questions) {
+                return new Array(item.questions.length).fill(null);
+            }
+            return null;
+        });
+        
+        examInfo = { 
+            id: examId,
+            title: title, 
+            subject: subject, 
+            questions: mockQuestions, 
+            timeLimit: timeMin * 60 
+        };
+
+        timeLeft = examInfo.timeLimit;
+      
+        currentQIndex = 0;
+        timeLog = [];
+        tabLog = [];
+        
+        initGame(); 
+    }
+
+    function initGame() {
+    currentQIndex = 0;
+    userAnswers = mockQuestions.map(q => q.type === 'group' ? new Array(q.questions.length).fill(null) : null);
+    timeLog = new Array(mockQuestions.length).fill(0);
+    renderQuestion();
+    updatePalette(); // 這是你原本有的
+    startTimer();
+    renderPagination(); // 🌟 補上這一行：初始化題號列渲染
+}
+      function renderPagination() {
+    // 🌟 修正：抓取你 HTML 裡實際存在的 ID
+    const container = document.getElementById('questionPalette');
+    if (!container) return;
+    
+    container.innerHTML = ''; // 清空內容
+
+    mockQuestions.forEach((_, index) => {
+        const btn = document.createElement('button');
+        
+        // 判斷狀態
+        const isCurrent = currentQIndex === index;
+        let isAnswered = false;
+        
+        if (mockQuestions[index].type === 'group') {
+            isAnswered = userAnswers[index] && userAnswers[index].every(a => a !== null);
+        } else {
+            isAnswered = userAnswers[index] !== null;
+        }
+
+        // 🌟 設定樣式 (確保這跟你的 CSS 對得上)
+        let classList = "w-10 h-10 rounded-full border-2 font-bold transition-all flex-shrink-0 flex items-center justify-center ";
+        
+        if (isCurrent) {
+            // 目前題：藍色
+            classList += "bg-blue-600 text-white border-blue-400 shadow-lg scale-110 z-10";
+        } else if (isAnswered) {
+            // 已作答：綠色
+            classList += "bg-green-100 text-green-700 border-green-200 hover:bg-green-200";
+        } else {
+            // 未作答：白色
+            classList += "bg-white text-slate-400 border-slate-100 hover:border-blue-300";
+        }
+
+        btn.className = classList;
+        btn.innerText = index + 1;
+        
+        btn.onclick = () => {
+            currentQIndex = index;
+            renderQuestion();
+        };
+        
+        container.appendChild(btn);
+    });
+}
+    function renderQuestion() {
+        recordTime(); 
+        questionStartTime = Date.now();
+
+        const item = mockQuestions[currentQIndex];
+        if (!item) return;
+
+        document.getElementById('currentQNumDisplay').textContent = currentQIndex + 1;
+        document.getElementById('currentQIdx').textContent = currentQIndex + 1;
+        document.getElementById('totalQCount').textContent = mockQuestions.length;
+        
+        document.getElementById('conceptBadge').textContent = item.concept || (item.type === 'group' ? "閱讀題組" : "一般題型");
+      
+        const container = document.getElementById('optionsContainer');
+        const questionTextBox = document.getElementById('questionText');
+        
+        container.innerHTML = '';
+        
+        if (item.type === 'group') {
+            questionTextBox.innerHTML = `
+                <div class="bg-blue-50 p-5 rounded-2xl border-l-8 border-blue-400 mb-6 text-slate-700 leading-relaxed shadow-sm fade-in">
+                    <div class="font-bold text-blue-600 mb-2 flex items-center">
+                        <i class="fas fa-book-reader mr-2"></i> 閱讀引文
+                    </div>
+                    <div class="group-context-content">
+                        ${item.context}
+                    </div>
+                </div>
+            `;
+
+            item.questions.forEach((subQ, subIdx) => {
+                const subCard = document.createElement('div');
+                subCard.className = "mb-8 p-6 bg-white rounded-2xl border border-slate-200 shadow-md fade-in";
+                
+                let optionsHtml = subQ.options.map((opt, optIdx) => {
+                    const isSelected = (userAnswers[currentQIndex] && userAnswers[currentQIndex][subIdx] === optIdx);
+                    
+                    return `
+                        <div onclick="selectAnswer(${currentQIndex}, ${optIdx}, ${subIdx})" 
+                             class="option-card w-full p-3 rounded-xl flex items-center gap-3 mt-2 cursor-pointer transition-all ${isSelected ? 'selected' : 'bg-slate-50 border border-slate-100 hover:border-blue-300'}">
+                            <div class="w-7 h-7 rounded-full border flex items-center justify-center font-bold text-sm ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-400 border-slate-300'}">
+                                ${String.fromCharCode(65 + optIdx)}
+                            </div>
+                            <div class="text-slate-700 font-medium">${opt}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                subCard.innerHTML = `
+                    <div class="font-bold text-slate-800 mb-4 text-lg">
+                        <span class="bg-blue-100 text-blue-600 px-2 py-0.5 rounded-lg mr-2">${subIdx + 1}</span>
+                        ${highlightKeywords(subQ.question)}
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        ${optionsHtml}
+                    </div>
+                `;
+                container.appendChild(subCard);
+            });
+
+        } else {
+            questionTextBox.innerHTML = `
+                <div class="text-2xl font-bold text-slate-800 mb-4 fade-in">
+                    ${highlightKeywords(item.question)}
+                </div>
+            `;
+
+            item.options.forEach((opt, idx) => {
+                const isSelected = userAnswers[currentQIndex] === idx;
+                const optDiv = document.createElement('div');
+                optDiv.className = `option-card w-full p-4 rounded-2xl flex items-center gap-4 cursor-pointer transition-all mb-4 fade-in ${isSelected ? 'selected' : 'bg-white border border-slate-100 text-slate-700 shadow-sm hover:border-blue-300'}`;
+                
+                optDiv.innerHTML = `
+                    <div class="w-9 h-9 rounded-full border-2 flex items-center justify-center font-bold ${isSelected ? 'border-blue-500 bg-blue-100 text-blue-600' : 'border-slate-300 text-slate-400'}">
+                        ${String.fromCharCode(65 + idx)}
+                    </div>
+                    <div class="flex-grow font-medium text-lg">${opt}</div>
+                `;
+                
+                optDiv.onclick = () => selectAnswer(currentQIndex, idx);
+                container.appendChild(optDiv);
+            });
+        }
+
+        const hasMath = questionTextBox.innerText.includes('\\(') || container.innerText.includes('\\(');
+        if (window.MathJax && hasMath) {
+            MathJax.typesetPromise();
+        }
+        updateNavButtons();
+        updatePalette();
+        // 🌟 補上這一行：確保每次換題，下方的題號列也會跟著更新樣式
+    if (typeof renderPagination === 'function') {
+        renderPagination();
+    }
+}
+    
+
+   window.selectAnswer = (mainIdx, optIdx, subIdx = null) => {
+    // 1. 記錄使用者的答案
+    if (subIdx !== null) {
+        userAnswers[mainIdx][subIdx] = optIdx;
+    } else {
+        userAnswers[mainIdx] = optIdx;
+    }
+
+    // 2. 精準抓取要更新樣式的容器 🎯 (修正的地方在這裡)
+    let targetContainer;
+    if (subIdx !== null) {
+        // 如果是題組，抓取 optionsContainer 底下對應的第 N 個子卡片
+        targetContainer = document.getElementById('optionsContainer').children[subIdx];
+    } else {
+        // 一般題目直接抓外層容器
+        targetContainer = document.getElementById('optionsContainer');
+    }
+
+    if (!targetContainer) return; // 避免發生找不到元素的錯誤
+
+    // 3. 更新選項樣式
+    const cards = targetContainer.querySelectorAll('.option-card');
+    cards.forEach((card, idx) => {
+        const circle = card.querySelector('.rounded-full');
+        if (idx === optIdx) {
+            card.classList.add('selected');
+            card.classList.remove('bg-white', 'bg-slate-50', 'border-slate-100');
+            if (circle) circle.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+        } else {
+            card.classList.remove('selected');
+            card.classList.add('bg-white', 'border-slate-100');
+            if (circle) circle.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+        }
+    });
+
+    // 4. 更新導覽盤
+    updatePalette();
+       if (typeof renderPagination === 'function') {
+        renderPagination(); 
+    }
+};
+    function updateNavButtons() {
+        const nextBtn = document.getElementById('nextBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        prevBtn.disabled = currentQIndex === 0;
+        prevBtn.className = currentQIndex === 0 ? "hidden" : "text-slate-500 font-bold hover:text-blue-600 flex items-center gap-2 px-3 py-2 cursor-pointer";
+
+        if (currentQIndex === mockQuestions.length - 1) {
+            nextBtn.innerHTML = `完成交卷 <i class="fas fa-check-circle ml-2"></i>`;
+            nextBtn.className = "bg-slate-800 text-white px-6 py-2 rounded-xl font-bold shadow-md hover:bg-slate-700 transition flex items-center gap-2";
+            nextBtn.onclick = trySubmit;
+        } else {
+            nextBtn.innerHTML = `下一題 <i class="fas fa-arrow-right ml-2"></i>`;
+            nextBtn.className = "bg-white border border-slate-300 hover:border-blue-500 text-slate-700 px-6 py-2 rounded-xl font-bold shadow-sm flex items-center gap-2 transition";
+            nextBtn.onclick = () => { currentQIndex++; renderQuestion(); };
+        }
+    }
+
+   function updatePalette() {
+    // 直接呼叫渲染函數，確保兩邊同步
+    renderPagination();
+}
+
+    function recordTime() {
+        if (questionStartTime === 0) return;
+        const duration = (Date.now() - questionStartTime) / 1000;
+        timeLog[currentQIndex] = (timeLog[currentQIndex] || 0) + duration;
+    }
+
+    function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const s = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timer').textContent = `${m}:${s}`;
+            if (timeLeft <= 0) { clearInterval(timerInterval); finalSubmit(); }
+        }, 1000);
+    }
+
+    function initVisibilityListener() {
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                tabLeaveStart = Date.now();
+            } else if (tabLeaveStart) {
+                const duration = (Date.now() - tabLeaveStart) / 1000;
+                tabLog.push({ time: new Date().toLocaleString(), qIndex: currentQIndex + 1, duration: duration.toFixed(1) });
+                tabLeaveStart = null;
+            }
+        });
+    }
+
+    function trySubmit() {
+        recordTime();
+        let totalSub = 0, answeredSub = 0;
+        mockQuestions.forEach((item, i) => {
+            if (item.type === 'group') {
+                totalSub += item.questions.length;
+                answeredSub += userAnswers[i].filter(a => a !== null).length;
+            } else {
+                totalSub += 1;
+                if (userAnswers[i] !== null) answeredSub += 1;
+            }
+        });
+
+        document.getElementById('modalAnswered').textContent = answeredSub;
+        document.getElementById('modalUnanswered').textContent = totalSub - answeredSub;
+        document.getElementById('submitModal').classList.remove('hidden');
+    }
+
+    function closeSubmitModal() { document.getElementById('submitModal').classList.add('hidden'); }
+async function finalSubmit() {
+    const submitBtn = document.getElementById('confirmSubmitBtn');
+    if (submitBtn.disabled) return; 
+    submitBtn.disabled = true;      
+    submitBtn.textContent = "評分中..."; 
+    
+    if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval);
+    if (typeof isSubmitting !== 'undefined') isSubmitting = true; 
+    
+    const submitModal = document.getElementById('submitModal');
+    if(submitModal) submitModal.classList.add('hidden');
+    
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if(loadingOverlay) loadingOverlay.classList.remove('hidden');
+
+    let correctCount = 0, totalCount = 0, fastCount = 0, wrongList = [];
+
+    // --- 結算答題狀況 ---
+    mockQuestions.forEach((item, idx) => {
+        const timeSpent = (typeof timeLog !== 'undefined' && timeLog[idx]) ? timeLog[idx] : 0;
+        if (item.type === 'group') {
+            item.questions.forEach((subQ, sIdx) => {
+                totalCount++;
+                const userAns = userAnswers[idx] ? userAnswers[idx][sIdx] : null;
+                const isCorrect = (userAns === subQ.answer); 
+                if (isCorrect) correctCount++;
+                else wrongList.push({ question: subQ.question, options: subQ.options, answer: subQ.answer, yourAns: userAns, concept: item.concept });
+            });
+            if (timeSpent < 10) fastCount++; 
+        } else {
+            totalCount++;
+            if (timeSpent < 3) fastCount++;
+            if (userAnswers[idx] === item.answer) {
+                correctCount++;
+            } else {
+                wrongList.push({ question: item.question, options: item.options, answer: item.answer, yourAns: userAnswers[idx], concept: item.concept });
+            }
+        }
+    });
+
+    const finalScore = Math.round((correctCount / totalCount) * 100);
+  // ==========================================
+    // 👇👇 把原本的 const user 刪掉，換成這整段 👇👇
+    let user = { username: 'guest', name: '訪客' }; 
+
+    if (window.Auth && typeof Auth.getCurrentUser === 'function') {
+        const authUser = Auth.getCurrentUser();
+        if (authUser) user = authUser;
+    } 
+    // 如果上面抓不到，直接去瀏覽器記憶體裡面挖！(這是關鍵)
+    if (user.username === 'guest' && localStorage.getItem('currentUser')) {
+        try {
+            user = JSON.parse(localStorage.getItem('currentUser'));
+        } catch(e) { console.error("解析本機帳號失敗", e); }
+    }
+  
+    // 👆👆 替換到這裡結束 👆👆
+    // ==========================================
+   // --- 🌟 經驗值 (XP) 計算 (提高獎勵版) ---
+    const baseXP = 30;               // 基本參與分從 20 提高到 30
+    const perQuestionXP = 15;        // 每對一題從 10 提高到 15
+    let bonusXP = 0;
+
+    // 如果拿滿分，額外獎勵 50 XP
+    if (finalScore === 100) {
+        bonusXP = 50; 
+    } else if (finalScore >= 80) {
+        bonusXP = 20; // 80分以上也有小獎勵
+    }
+
+    const totalXP = baseXP + (correctCount * perQuestionXP) + bonusXP;
+    let isLevelUp = false;
+  // --- 本機端更新經驗值 ---
+    let earnedTicket = 0; // 🎟️ 新增：用來記錄這次交卷有沒有拿到抽獎券
+
+    if (user.username !== 'guest') {
+        if (window.Auth && typeof Auth.addXP === 'function') {
+            isLevelUp = Auth.addXP(totalXP);
+        } else {
+            user.xp = (user.xp || 0) + totalXP;
+            localStorage.setItem('currentUser', JSON.stringify(user));
+        }
+
+        // 👇👇👇 🎟️ 新增：發放抽獎券邏輯 👇👇👇
+        user.totalExams = (user.totalExams || 0) + 1; // 總交卷次數 + 1
+        
+        // 設定每寫幾次考卷送一張票 (這裡設定 2 次，你可以自己改)
+        const EXAMS_PER_TICKET = 2; 
+        if (user.totalExams % EXAMS_PER_TICKET === 0) {
+            user.gachaTickets = (user.gachaTickets || 0) + 1;
+            earnedTicket = 1; // 標記這次有拿到票
+        }
+
+        // 將更新後的次數與票數存回本機
+        if (window.Auth && typeof Auth.updateUser === 'function') {
+            Auth.updateUser('totalExams', user.totalExams);
+            if (earnedTicket > 0) Auth.updateUser('gachaTickets', user.gachaTickets);
+        } else {
+            localStorage.setItem('currentUser', JSON.stringify(user));
+        }
+        // 👆👆👆 新增結束 👆👆👆
+    }
+    const urlParams = new URLSearchParams(window.location.search);
+    
+// 在 finalSubmit() 函數裡面尋找這段：
+const resultData = {
+    owner: user.username,
+    id: Date.now(),
+    subject: (typeof examInfo !== 'undefined' && examInfo.subject) ? examInfo.subject : (urlParams.get('subject') || "english"),
+    title: (typeof examInfo !== 'undefined' && examInfo.title) ? examInfo.title : (urlParams.get('title') || "綜合測驗"),
+    score: finalScore,
+    correctCount: correctCount,
+    totalCount: totalCount,
+    questions: mockQuestions.map((q, index) => ({ ...q, yourAns: userAnswers[index] })),
+    wrongList: wrongList,
+    tabSwitches: (typeof tabLog !== 'undefined') ? tabLog.length : 0,
+    
+    // 👇👇👇 就是這裡！你漏掉了下面這兩行，請務必補上去！ 👇👇👇
+    xpGained: totalXP, 
+    isLevelUp: isLevelUp,
+    // 👆👆👆 補上這兩行 👆👆👆
+    
+    cheat: {
+        cheatLevel: (fastCount > 3 || (typeof tabLog !== 'undefined' && tabLog.length > 5)) ? 'HIGH' : 'NORMAL',
+        fastCount: fastCount
+    }
+};
+
+    // --- 儲存資料到瀏覽器 (交給分析頁面) ---
+    localStorage.setItem('examResult', JSON.stringify(resultData));
+    
+    const historyKey = `history_${user.username}`;
+    let history = JSON.parse(localStorage.getItem(historyKey) || "[]");
+    history.push(resultData);
+    localStorage.setItem(historyKey, JSON.stringify(history.slice(-50)));
+// --- 🌟 上傳至雲端 GAS ---
+    //alert("🕵️‍♂️ 系統偵測目前的帳號是：" + user.username); // 💡 抓蟲雷達 1 號：確認你是不是 guest
+
+    if (user.username !== 'guest') {
+        try {
+            if(typeof uploadToCloud === 'function') {
+                // 🌟 讓程式「乖乖等待」上傳完成，不要急著跳轉
+                await Promise.race([
+                    uploadToCloud(user.username, resultData.title, finalScore, resultData), 
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+                ]);
+            }
+        } catch (e) { 
+            console.error("雲端備份跳過或失敗:", e); 
+        }
+    } else {
+        alert("⚠️ 系統判定你是 guest (訪客)，所以直接跳過上傳！請確認你有正確登入。");
+    }
+
+    // --- 跳轉到分析頁面 ---
+  //  alert("✅ 結算與上傳動作結束，準備看成績！"); // 💡 抓蟲雷達 2 號
+    
+    // 🌟 拿掉定時炸彈，等上面的 await 確定處理完後，才執行這行跳轉！
+   window.location.href = `analysis.html?mode=new&xp=${totalXP}&ticket=${earnedTicket}`;} // <--- 這裡是 finalSubmit() 的結尾大括號
+async function uploadToCloud(username, activityName, score, fullData) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentSubject = urlParams.get('subject') || "unknown";
+    
+    const detailToSave = {
+        subject: currentSubject,           
+        unitName: activityName,            
+        grade: fullData.grade || "國九",
+        totalCount: fullData.totalCount,
+        correctCount: fullData.correctCount,
+        wrongList: fullData.wrongList,
+        cheat: fullData.cheat,
+        tabSwitches: fullData.tabSwitches,
+        xpGained: fullData.xpGained // 🌟 終於把它送進去了
+    };
+
+    const payload = {
+        action: "save_record",
+        username: username,
+        activity: activityName,
+        score: score,
+        xp: fullData.xpGained, 
+        detail: JSON.stringify(detailToSave) 
+    };
+
+   // alert("🚀 準備發射給伺服器的包裹：\n\n" + JSON.stringify(payload, null, 2));
+
+    return fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+    }).catch(err => console.error("上傳失敗:", err));
+}
+</script>
+</body>
+</html>

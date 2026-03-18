@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>榮譽榜 - 雲端學院</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+     <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
+    <style>
+/* 當 body 有 theme- class 時，強制讓側邊欄背景透明或半透明 */
+body[class*="theme-"] aside, 
+body[class*="theme-"] #sidebar, 
+body[class*="theme-"] .sidebar-content {
+    background-color: rgba(255, 255, 255, 0.1) !important; /* 變半透明 */
+    backdrop-filter: blur(10px); /* 磨砂玻璃質感 */
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+/* --- 1. 當背景變深色時，強制將所有文字轉為白色/淺色 --- */
+/* 針對「傳奇領主」與「萬古神話」這兩個深色主題 */
+body.theme-legend, 
+body.theme-mythic {
+    color: #ffffff !important;
+}
+
+/* 強制修正側邊欄、導覽列與卡片內的文字 */
+body.theme-legend *, 
+body.theme-mythic * {
+    /* 排除掉已經有背景色的標籤(Badge)，只改普通文字 */
+    color: inherit; 
+}
+/* --- 讓所有白色容器在主題下自動轉型 --- */
+
+/* 1. 鎖定所有可能帶有 bg-white 的容器 */
+body[class*="theme-"] .bg-white,
+body[class*="theme-"] .bg-slate-50,
+body[class*="theme-"] #leaderboardContainer,
+body[class*="theme-"] .ai-assistant-card, /* 假設你的AI助教卡片有這個 class */
+body[class*="theme-"] aside {
+    background-color: rgba(255, 255, 255, 0.1) !important; /* 變成微透明 */
+    backdrop-filter: blur(10px); /* 磨砂玻璃效果 */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.5s ease;
+}
+
+/* 2. 當進入「傳奇」或「神話」深色模式時，修正文字顏色 */
+body.theme-legend, body.theme-mythic {
+    color: #ffffff !important;
+}
+
+/* 強制將這些白色區塊內的文字也變白 */
+body.theme-legend .bg-white *, 
+body.theme-mythic .bg-white *,
+body.theme-legend #leaderboardContainer *,
+body.theme-mythic #leaderboardContainer *,
+body.theme-legend .text-slate-800,
+body.theme-mythic .text-slate-800,
+body.theme-legend .text-gray-600,
+body.theme-mythic .text-gray-600 {
+    color: #ffffff !important;
+}
+
+/* 3. 修正 AI 助教的解答區 (通常是特別的灰色背景) */
+body.theme-legend .bg-gray-100, 
+body.theme-mythic .bg-gray-100,
+body.theme-legend .bg-slate-100,
+body.theme-mythic .bg-slate-100 {
+    background-color: rgba(0, 0, 0, 0.3) !important; /* 解答區變深色 */
+    color: #cbd5e1 !important;
+}
+
+/* 4. 讓側邊欄的按鈕在深色模式下不會消失 */
+body.theme-legend aside a:hover, 
+body.theme-mythic aside a:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+}
+/* 確保側邊欄連結與圖示變亮 */
+body.theme-legend aside a, 
+body.theme-mythic aside a,
+body.theme-legend aside i,
+body.theme-mythic aside i {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* 側邊欄懸停效果：變亮一點 */
+body.theme-legend aside a:hover, 
+body.theme-mythic aside a:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* --- 2. 讓卡片內容稍微透出背景，但不至於看不清楚 --- */
+body.theme-legend .bg-white, 
+body.theme-mythic .bg-white {
+    background-color: rgba(255, 255, 255, 0.1) !important; /* 半透明白色 */
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 修正原本寫死為 text-slate-800 的文字 */
+body.theme-legend .text-slate-800,
+body.theme-mythic .text-slate-800,
+body.theme-legend .text-gray-600,
+body.theme-mythic .text-gray-600 {
+    color: #e2e8f0 !important;
+}
+/* 針對側邊欄內的文字在深色主題時變白 */
+body.theme-legend aside *, body.theme-mythic aside * {
+    color: white !important;
+}
+
+/* 修正手機端可能出現的白色區塊 */
+body[class*="theme-"] main, 
+body[class*="theme-"] section,
+body[class*="theme-"] .bg-white {
+    background-color: transparent !important;
+}
+
+/* 讓手機端的底部導覽列（如果有）也透明 */
+body[class*="theme-"] footer {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+}
+        /* --- 全域背景主題 (強制覆蓋) --- */
+body { transition: background 1.0s ease, color 0.5s ease; min-height: 100vh; }
+
+/* 100 XP: 潛力新秀 (改成更明顯的青綠色) */
+body.theme-rookie { background-color: #dcfce7 !important; } 
+
+/* 300 XP: 勤奮書生 (改成明顯的粉橘色) */
+body.theme-bronze { background-color: #ffedd5 !important; }/* 5000 XP: 頂尖學者 (藍色) */
+body.theme-diamond { background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%) !important; }
+/* 20000+ XP: 傳奇與神話 (深色) */
+body.theme-legend { background: #451a03 !important; color: #fef3c7; }
+body.theme-mythic { background: radial-gradient(circle, #1e1b4b 0%, #020617 100%) !important; color: white; }
+
+/* 流星特效容器 */
+#star-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+.shooting-star { position: absolute; width: 4px; height: 4px; background: #fff; border-radius: 50%; animation: animateStar 3s linear infinite; }
+@keyframes animateStar {
+    0% { transform: rotate(315deg) translateX(0); opacity: 1; }
+    100% { transform: rotate(315deg) translateX(-1000px); opacity: 0; }
+}
+        @media (max-width: 300px) { .watch-hidden { display: none !important; } }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f4f8; }
+        .sidebar-transition { transition: transform 0.3s ease-in-out; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* 等級標籤基礎樣式 */
+.rank-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-left: 8px;
+}
+
+/* 高階等級特殊效果 */
+.rank-mythic { 
+    background: linear-gradient(45deg, #6366f1, #a855f7, #ec4899); 
+    color: white; 
+    animation: pulse-gold 2s infinite;
+    box-shadow: 0 0 10px rgba(236, 72, 153, 0.5);
+}
+
+.rank-legend { 
+    background: linear-gradient(45deg, #f59e0b, #ef4444); 
+    color: white; 
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+.rank-master { background: #fee2e2; color: #b91c1c; border: 1px solid #f87171; }
+.rank-diamond { background: #e0f2fe; color: #0369a1; }
+
+@keyframes pulse-gold {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
+        /* 預設背景 */
+body { transition: background 0.8s ease, color 0.5s ease; }
+
+/* 💎 頂尖學者以上：稍微變藍 */
+body.theme-diamond { background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%); }
+
+/* 🔥 聖域大師：暖色調背景 */
+body.theme-master { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); }
+
+body { transition: background 1.2s ease, color 0.5s ease; min-height: 100vh; position: relative; }
+
+/* 💎 頂尖學者：清爽藍 */
+body.theme-diamond { background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%) !important; }
+/* 🔥 聖域大師：競技紅 */
+body.theme-master { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%) !important; }
+/* 👑 傳奇領主：暗金主題 */
+body.theme-legend { background: linear-gradient(135deg, #451a03 0%, #78350f 100%) !important; color: #fef3c7; }
+body.theme-legend .bg-white, body.theme-legend .bg-slate-50 { background-color: rgba(255,255,255,0.1) !important; color: white; }
+
+/* 🌌 萬古神話：深空流星背景 */
+body.theme-mythic { background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%) !important; color: #e0e7ff; }
+body.theme-mythic .bg-white, body.theme-mythic .bg-slate-50 { background-color: rgba(255,255,255,0.05) !important; color: white; border: 1px solid rgba(255,255,255,0.1); }
+
+/* 流星動畫特效 */
+#star-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; display: none; }
+body.theme-mythic #star-container { display: block; }
+.shooting-star { position: absolute; width: 4px; height: 4px; background: #fff; border-radius: 50%; animation: animateStar 3s linear infinite; }
+.shooting-star::before { content: ''; position: absolute; top: 50%; width: 300px; height: 1px; background: linear-gradient(90deg, #fff, transparent); transform: translateY(-50%); }
+@keyframes animateStar {
+    0% { transform: rotate(315deg) translateX(0); opacity: 1; }
+    100% { transform: rotate(315deg) translateX(-1000px); opacity: 0; }
+}
+        /* --- 移除所有頑固的白色區塊 --- */
+
+/* 1. 鎖定所有 bg-white, bg-slate-50 等背景，全部變透明 */
+body[class*="theme-"] .bg-white,
+body[class*="theme-"] .bg-slate-50,
+body[class*="theme-"] aside,
+body[class*="theme-"] nav,
+body[class*="theme-"] #leaderboardContainer,
+body[class*="theme-"] main {
+    background-color: rgba(255, 255, 255, 0.08) !important; /* 極度透明的白 */
+    backdrop-filter: blur(12px) !important; /* 磨砂玻璃效果 */
+    border: 1px solid rgba(255, 255, 255, 0.1) !important; /* 增加一點邊界感 */
+    box-shadow: none !important;
+}
+
+/* 2. 修正深色模式下的文字顏色 (神話與傳奇) */
+body.theme-legend *, 
+body.theme-mythic * {
+    /* 如果原本標籤上有 text-slate-800 或 text-gray-700，全部強制轉白 */
+    color: #f8fafc !important; 
+}
+
+/* 3. 排行榜列表每一項 (li) 也要去背 */
+body.theme-legend li, 
+body.theme-mythic li {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 4. 特別修正：AI 助教或卡片的陰影與背景 */
+body[class*="theme-"] .shadow-xl, 
+body[class*="theme-"] .shadow-lg {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 5. 手機版側邊欄遮罩修正 */
+body[class*="theme-"] .sidebar-transition {
+    background-color: rgba(15, 23, 42, 0.8) !important; /* 深色半透 */
+}
+        /* 🌟 強制讓所有中間區塊、側邊欄、導覽列變透明 */
+body[class*="theme-"] nav, 
+body[class*="theme-"] aside, 
+body[class*="theme-"] main, 
+body[class*="theme-"] #leaderboardContainer,
+body[class*="theme-"] .bg-white,
+body[class*="theme-"] .bg-slate-50 {
+    background-color: rgba(255, 255, 255, 0.15) !important; /* 變成微透明磨砂感 */
+    backdrop-filter: blur(10px); /* 模糊背景，增加質感 */
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 針對「勤奮書生」(橘色) 主題的特別優化 */
+body.theme-bronze {
+    background-color: #ffedd5 !important; /* 明亮的橘色背景 */
+}
+body.theme-bronze * {
+    color: #9a3412 !important; /* 讓文字變成深橘褐色，才不會看不清楚 */
+}
+body.theme-bronze .bg-orange-500 {
+    background-color: #ea580c !important; /* 強化按鈕顏色 */
+}
+
+/* 解決「人頭很奇怪」：讓頭像背景變圓滑、不突兀 */
+.profile-avatar, .user-avatar {
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 2px solid white;
+    border-radius: 50%;
+    overflow: hidden;
+}
+        /* --- 終極去白框與背景穿透 --- */
+
+/* 1. 當 body 有 theme- 類別時，強制讓所有白色區塊變磨砂透明 */
+body[class*="theme-"] .bg-white,
+body[class*="theme-"] .bg-slate-50,
+body[class*="theme-"] aside,
+body[class*="theme-"] nav,
+body[class*="theme-"] main {
+    background-color: rgba(255, 255, 255, 0.1) !important; /* 變成微透明 */
+    backdrop-filter: blur(12px); /* 磨砂玻璃效果 */
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    transition: all 0.5s ease;
+}
+
+/* 2. 修正不同等級的背景顏色 */
+body.theme-rookie { background-color: #dcfce7 !important; } /* 100+ 淺綠 */
+body.theme-bronze { background-color: #ffedd5 !important; } /* 300+ 橘色 */
+body.theme-diamond { background: linear-gradient(135deg, #e0f2fe, #bae6fd) !important; } /* 5K+ 藍 */
+body.theme-master { background: linear-gradient(135deg, #fee2e2, #fecaca) !important; }  /* 10K+ 紅 */
+body.theme-legend { background: #451a03 !important; color: #fef3c7 !important; }          /* 20K+ 暗金 */
+body.theme-mythic { background: radial-gradient(circle, #1e1b4b, #020617) !important; color: white !important; }
+
+/* 3. 解決「人頭奇怪」：讓頭像有個乾淨的底座 */
+.user-avatar-container {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    padding: 2px;
+    display: inline-block;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* 4. 流星動畫 */
+#star-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+.shooting-star { position: absolute; width: 4px; height: 4px; background: #fff; border-radius: 50%; animation: animateStar 3s linear infinite; opacity: 0; }
+@keyframes animateStar {
+    0% { transform: rotate(315deg) translateX(0); opacity: 1; }
+    100% { transform: rotate(315deg) translateX(-1000px); opacity: 0; }
+}
+        /* --- 讓所有卡片容器自動變色 --- */
+body[class*="theme-"] .bg-white {
+    background-color: rgba(255, 255, 255, 0.2) !important; /* 變半透明 */
+    backdrop-filter: blur(10px); /* 磨砂玻璃 */
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 針對橘色主題 (theme-bronze) 的文字優化 */
+body.theme-bronze #playerName,
+body.theme-bronze h3,
+body.theme-bronze span,
+body.theme-bronze div {
+    color: #7c2d12 !important; /* 深橘色字體 */
+}
+
+/* 針對橘色主題：隱藏原本藍色的頭像背景裝飾 */
+body.theme-bronze .profile-header-bg {
+    background: linear-gradient(to r, #f97316, #fb923c) !important; /* 改成橘色漸層 */
+}
+
+/* 修正人頭圖示 */
+body.theme-bronze .relative.w-24.h-24 {
+    background-color: #fff7ed !important;
+    color: #f97316 !important;
+}
+        /* --- 解決「太白」的問題：全域透明化規則 --- */
+
+/* 只要 body 有 theme- 類別，就強制讓所有 bg-white 消失 */
+body[class*="theme-"] .bg-white,
+body[class*="theme-"] .bg-slate-50,
+body[class*="theme-"] aside, 
+body[class*="theme-"] nav, 
+body[class*="theme-"] main {
+    background-color: rgba(255, 255, 255, 0.2) !important; /* 變成 20% 透明的白 */
+    backdrop-filter: blur(12px) !important; /* 磨砂玻璃效果 */
+    border: 1px solid rgba(255, 255, 255, 0.3) !important; /* 增加細邊框質感 */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05) !important; /* 減輕陰影，讓它輕盈一點 */
+}
+
+/* 針對個人資料卡片上方的「藍色區塊」進行修正 */
+body.theme-bronze .profile-header-bg,
+body.theme-bronze .bg-gradient-to-r.from-blue-600 {
+    background: linear-gradient(to right, #f97316, #fb923c) !important; /* 藍色變橘色漸層 */
+}
+
+/* 修正文字：讓原本在白色背景下的黑字，在橘色背景下變成深褐色 */
+body.theme-bronze .text-slate-800, 
+body.theme-bronze #playerName, 
+body.theme-bronze h3 {
+    color: #7c2d12 !important;
+}
+
+/* 讓進度條底色不要那麼白 */
+body[class*="theme-"] .bg-slate-100 {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+}
+        /* 🛡️ 防護機制：把彩色圖案和徽章的顏色救回來！ 🛡️ */
+
+/* 1. 救回側邊欄的彩色圖示 (例如藍色首頁、紫色AI等) */
+body[class*="theme-"] aside i.fas,
+body[class*="theme-"] aside i.fab,
+body[class*="theme-"] aside svg {
+    color: inherit !important; /* 讓圖示維持原本寫在 class 裡面的顏色 */
+}
+
+/* 2. 救回排行榜上的「等級徽章」(Badge) 顏色 */
+/* 讓帶有 text-[11px] 的徽章區塊維持原本的背景色和文字色 */
+body[class*="theme-"] .text-\\[11px\\] {
+    background-color: inherit !important; 
+    color: inherit !important;
+    backdrop-filter: none !important; /* 徽章不需要磨砂玻璃效果 */
+    border: none !important;
+}
+
+/* 3. 救回排行榜前三名的皇冠、獎牌圖示顏色 */
+body[class*="theme-"] .fa-crown,
+body[class*="theme-"] .fa-medal,
+body[class*="theme-"] .fa-award {
+    color: inherit !important;
+}
+
+/* 4. 確保「字體強制變色」不會誤殺徽章裡面的字 */
+/* 剛剛我們設定 body.theme-bronze * { color: #7c2d12 !important; } 太暴力了 */
+/* 我們把它改成只針對特定文字變色就好： */
+body.theme-bronze h2, 
+body.theme-bronze h3, 
+body.theme-bronze p, 
+body.theme-bronze span:not(.text-\\[11px\\]) /* 排除徽章內的 span */
+{
+    color: #7c2d12 !important;
+}
+/* 1. 初心學徒 (基礎白灰) */
+body.theme-novice { background-color: #f8fafc !important; }
+body.theme-silver { 
+    background: linear-gradient(135deg, #f8fafc 0%, #cbd5e1 25%, #94a3b8 50%, #cbd5e1 75%, #f1f5f9 100%) !important; 
+}
+/* 5. 黃金菁英 (尊貴閃耀金) */
+body.theme-gold { background: linear-gradient(135deg, #fef08a 0%, #eab308 100%) !important; }
+
+/* 8. 榮耀宗師 (深紫紅色) */
+body.theme-grandmaster { background: linear-gradient(135deg, #701a75 0%, #be185d 100%) !important; color: white; }
+
+/* 10. 史詩英雄 (極光夜空) */
+body.theme-epic { background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%) !important; color: white; }
+
+/* 12. 創世星神 (終極黑洞特效) */
+body.theme-celestial { background: radial-gradient(circle at center, #000000 0%, #170529 50%, #000000 100%) !important; color: #fde047; }
+/* (可選) 移除之前寫的那行太暴力的 `body.theme-bronze * { color: #7c2d12 !important; }` */
+    </style>
+    
+<script src="assets/js/auth.js"></script>
+    </head>
+<body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden">
+<div id="star-container"></div>
+   <div class="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-blue-600 to-indigo-500 profile-header-bg"></div>
+    <header class="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-30">
+        <div class="flex items-center gap-2">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm shadow-sm">學</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+        </div>
+        <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-lg">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+    </header>
+
+    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden backdrop-blur-sm"></div>
+
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-100 flex flex-col z-50 transform -translate-x-full lg:translate-x-0 lg:static lg:h-full sidebar-transition shadow-2xl lg:shadow-none">
+      
+        <div class="h-16 hidden lg:flex items-center px-6 border-b border-slate-50">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+        </div>
+
+       <div class="p-6 lg:block watch-hidden">
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+        <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
+            <i class="fas fa-user-graduate"></i>
+        </div>
+        <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
+        <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
+        <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
+            <i class="fas fa-pen mr-1"></i> 編輯年級
+        </button>
+    </div>
+</div>
+
+      <nav class="flex-grow px-3 space-y-2 overflow-y-auto no-scrollbar">
+    <p class="text-[10px] font-bold text-slate-400 mb-2 px-4 uppercase tracking-widest">學習導航</p>
+ <a href="arena.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-100 text-amber-900 transition-all duration-300 group shadow-[inset_0_1px_2px_rgba(0,0,0,0,0.05)] border border-amber-200/50">
+    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 text-white flex items-center justify-center scale-110 shadow-sm ring-2 ring-white">
+        <i class="fas fa-trophy text-xs"></i>
+    </div>
+    <span class="font-black tracking-wide">榮譽榜</span>
+</a>
+    <a href="mission.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-purple-50 hover:text-purple-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-rocket text-sm"></i>
+        </div>
+        <span class="font-bold">任務中心</span>
+
+    </a>
+
+    <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-book-open text-sm"></i>
+        </div>
+        <span class="font-bold">課程總覽</span>
+    </a>
+
+    <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-red-50 hover:text-red-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-fire text-sm"></i>
+        </div>
+        <span class="font-bold">錯題補救</span>
+    </a>
+
+    <a href="study.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-amber-50 hover:text-amber-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-star text-sm"></i>
+        </div>
+        <span class="font-bold">重點複習</span>
+    </a>
+
+    <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:animate-bounce">
+            <i class="fas fa-gamepad text-sm"></i>
+        </div>
+        <span class="font-bold">遊戲場</span>
+    </a>
+
+    <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-cyan-100 text-cyan-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-comments text-sm"></i>
+        </div>
+        <span class="font-bold">解題論壇</span>
+    </a>
+    
+    <div class="pt-4 mt-4 border-t border-slate-100">
+        <p class="text-[10px] font-bold text-slate-400 mb-2 px-4 uppercase tracking-widest">系統支援</p>
+        
+        <a href="help.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-orange-50 hover:text-orange-600 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+            <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center group-hover:rotate-12 transition-transform">
+                <i class="fas fa-headset text-sm"></i>
+            </div>
+            <span class="font-bold">幫助中心 & 聯絡老師</span>
+        </a>
+
+        <a href="change_password.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-500 hover:bg-slate-100 transition-all group">
+            <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center group-hover:text-slate-600">
+                <i class="fas fa-key text-xs"></i>
+            </div>
+            <span class="text-sm font-medium">更改密碼</span>
+        </a>
+    </div>
+</nav>
+        <div class="p-4 border-t border-slate-50">
+            <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs"><i class="fas fa-sign-out-alt"></i> 登出系統</button>
+        </div>
+    </aside>
+
+    <main class="flex-grow flex flex-col h-full relative overflow-hidden bg-slate-50/50">
+       <div class="p-6 md:p-8 overflow-y-auto h-full scroll-smooth">
+        
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-extrabold text-slate-800 flex items-center gap-3">
+                    <i class="fas fa-medal text-amber-500"></i> 雲端榮譽榜
+                </h1>
+                <p class="text-slate-500 mt-1">累積經驗值，挑戰全服神人榜！</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <div class="lg:col-span-1 flex flex-col gap-6">
+
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center relative overflow-hidden h-fit">
+                    
+                    <div class="relative w-24 h-24 bg-white rounded-full border-4 border-slate-200 shadow-md flex items-center justify-center text-4xl text-indigo-500 mt-4 mb-4 z-10">
+                        <i class="fas fa-user-astronaut"></i>
+                    </div>
+                    
+                    <h2 class="text-2xl font-bold text-slate-800" id="playerName">載入中...</h2>
+                    <div class="text-sm text-slate-500 mb-4" id="playerRole">--</div>
+                    
+                    <div class="px-4 py-1.5 bg-indigo-100 text-indigo-700 font-black rounded-full text-sm mb-6 shadow-sm border border-indigo-200" id="playerLevel">
+                        Lv. 1
+                    </div>
+                    
+                    <div class="w-full text-left px-2">
+                        <div class="flex justify-between text-sm font-bold text-slate-600 mb-2">
+                            <span>經驗值進度</span>
+                            <span id="xpText">0 / 100</span>
+                        </div>
+                        <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden mb-2 shadow-inner">
+                            <div class="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 rounded-full transition-all duration-1000 w-0" id="xpFill"></div>
+                        </div>
+                        <div class="text-right text-xs font-medium text-slate-400">
+                            距離升級還差 <span id="xpNeeded" class="text-indigo-500 font-bold">100</span> XP
+                        </div>
+                    </div>
+                </div>
+<div class="bg-gradient-to-r from-purple-500 to-indigo-600 p-6 rounded-2xl text-white text-center mt-6 mb-6 shadow-xl">
+    <h3 class="text-2xl font-bold mb-2"><i class="fas fa-gift animate-bounce"></i> 幸運大抽獎</h3>
+    <p class="mb-4">目前擁有抽獎券：<span id="ticketCount" class="font-bold text-yellow-300 text-3xl">0</span> 張</p>
+    <p class="mb-4">作答兩張考卷即可兌換一張抽獎卷</p>
+    
+    <button id="drawGachaBtn" onclick="playGacha()" class="bg-yellow-400 text-purple-900 font-bold py-3 px-8 rounded-full shadow-lg hover:bg-yellow-300 hover:scale-105 transition-transform">
+        消耗 1 張抽獎券
+    </button>
+    
+    <div id="gachaResult" class="mt-4 text-lg font-bold hidden transition-all">
+        </div>
+</div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden h-fit">
+                    <h3 class="text-lg font-extrabold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-rocket text-indigo-500"></i> 等級特權與解鎖
+                    </h3>
+                    <ul id="unlockedFeaturesList" class="space-y-3">
+                        </ul>
+                </div>
+
+            </div>
+            
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 lg:col-span-2 h-fit">
+                <h3 class="text-xl font-extrabold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
+                    <i class="fas fa-crown text-yellow-500 text-2xl"></i> 全服英雄排行榜 (Top 20)
+                </h3>
+                
+                <div id="loadingMsg" class="text-center py-10 text-slate-400 font-medium">
+                    <i class="fas fa-circle-notch fa-spin text-3xl mb-3 text-indigo-300"></i><br>正在從雲端召喚神人名單...
+                </div>
+                
+                <ul id="leaderboardList" class="space-y-3">
+                    </ul>
+            </div>
+
+        </div> 
+           
+<div id="start-overlay" onclick="handleStart()" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; backdrop-filter:blur(10px); cursor:pointer;">
+    <div style="text-align:center; color:white; pointer-events:none;">
+        <div style="font-size: 80px; margin-bottom: 20px;">🎮</div>
+        <h2 style="font-size:24px; font-weight:900;">雲端學院榮譽榜</h2>
+        <p style="margin-top:10px; opacity:0.8;">點擊螢幕任何地方進入</p>
+    </div>
+</div>
+         <div id="profileModal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm fade-in">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100">
+                <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+                    <h3 class="text-white font-bold text-lg"><i class="fas fa-user-edit mr-2"></i> 修改年級</h3>
+                    <button onclick="closeProfileModal()" class="text-white/80 hover:text-white transition">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="p-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">請選擇目前的年級：</label>
+                    <div class="relative">
+                        <select id="editGradeSelect" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white appearance-none transition text-gray-700 font-bold">
+                            <option value="國七">國七</option>
+                            <option value="國八">國八</option>
+                            <option value="國九">國九</option>
+                            <hr>
+                            <option value="高一">高一</option>
+                            <option value="高二">高二</option>
+                            <option value="高三">高三</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-3">※ 修改後，系統將會優先推薦該年級的題目。</p>
+                </div>
+
+                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
+                    <button onclick="closeProfileModal()" class="px-4 py-2 text-gray-500 hover:text-gray-700 font-bold text-sm">取消</button>
+                    <button onclick="saveProfile()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-md hover:shadow-lg transition">
+                        確認修改
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+<script>
+
+// =========================================
+// 1. 全域設定與常數 (必須放在最上面)
+// =========================================
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
+
+// =========================================
+// 🚀 特權解鎖清單設定 (12 階級完整版)
+// =========================================
+const featuresList = [
+    { xp: 100, name: "潛力新秀面板", icon: "fa-seedling", desc: "解鎖清新淺綠色磨砂背景" },
+    { xp: 300, name: "勤奮書生面板", icon: "fa-book-open", desc: "解鎖溫暖橘色玻璃背景" },
+    { xp: 1000, name: "白銀騎士面板", icon: "fa-shield-alt", desc: "解鎖冷冽金屬銀色主題" },
+    { xp: 2500, name: "黃金菁英面板", icon: "fa-trophy", desc: "解鎖尊貴閃耀黃金主題" },
+    { xp: 5000, name: "頂尖學者面板", icon: "fa-gem", desc: "解鎖鑽石藍尊榮主題" },
+    { xp: 10000, name: "聖域大師面板", icon: "fa-fire", desc: "解鎖熱血紅色專屬主題" },
+    { xp: 15000, name: "榮耀宗師面板", icon: "fa-chess-king", desc: "解鎖尊貴紫紅大師主題" },
+    { xp: 20000, name: "傳奇領主面板", icon: "fa-crown", desc: "解鎖華麗深棕紅傳奇主題" },
+    { xp: 30000, name: "史詩英雄面板", icon: "fa-dragon", desc: "解鎖極光夜空史詩主題" },
+    { xp: 50000, name: "萬古神話流星", icon: "fa-meteor", desc: "解鎖深邃宇宙黑與專屬流星雨" },
+    { xp: 100000, name: "創世星神領域", icon: "fa-sun", desc: "解鎖終極黑洞特效與加倍流星雨" }
+];
+
+// =========================================
+// 2. 核心引擎 (主題變色 & 音效)
+// =========================================
+const ThemeEngine = {
+    apply: function(xp) {
+        console.log("當前頁面主題判定中... XP:", xp);
+        const body = document.body;
+        
+        body.classList.remove(
+            'theme-novice', 'theme-rookie', 'theme-bronze', 'theme-silver', 
+            'theme-gold', 'theme-diamond', 'theme-master', 'theme-grandmaster', 
+            'theme-legend', 'theme-epic', 'theme-mythic', 'theme-celestial'
+        );
+
+        if (xp >= 100000) { body.classList.add('theme-celestial'); this.createStars(15); } 
+        else if (xp >= 50000) { body.classList.add('theme-mythic'); this.createStars(8); } 
+        else if (xp >= 30000) body.classList.add('theme-epic');         
+        else if (xp >= 20000) body.classList.add('theme-legend');       
+        else if (xp >= 15000) body.classList.add('theme-grandmaster');  
+        else if (xp >= 10000) body.classList.add('theme-master');       
+        else if (xp >= 5000)  body.classList.add('theme-diamond');      
+        else if (xp >= 2500)  body.classList.add('theme-gold');         
+        else if (xp >= 1000)  body.classList.add('theme-silver');       
+        else if (xp >= 300)   body.classList.add('theme-bronze');       
+        else if (xp >= 100)   body.classList.add('theme-rookie');       
+        else                  body.classList.add('theme-novice');       
+    },
+    createStars: function(starCount) {
+        const container = document.getElementById('star-container');
+        if (!container || container.hasChildNodes()) return; 
+        for (let i = 0; i < starCount; i++) {
+            let star = document.createElement('div');
+            star.className = 'shooting-star'; 
+            star.style.top = Math.random() * 80 + 'vh';
+            star.style.left = (Math.random() * 50 + 50) + 'vw';
+            star.style.animationDelay = (Math.random() * 4) + 's';
+            container.appendChild(star);
+        }
+    }
+};
+
+const SoundEngine = {
+    // 把網址換成你本地端資料夾的路徑 👇
+    bgm: new Audio('assets/bgm .mp3'), 
+    gachaPull: new Audio('assets/pull.mp3'), 
+    gachaWin: new Audio('assets/win.mp3'), 
+    gachaFail: new Audio('assets/fail.mp3'), 
+
+    init: function() {
+        this.bgm.loop = true; 
+        this.bgm.volume = 0.2; 
+        this.gachaPull.volume = 0.6;
+        this.gachaWin.volume = 0.8;
+        this.gachaFail.volume = 0.8;
+    },
+    playBGM: function() {
+        try {
+            let playPromise = this.bgm.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => console.log("背景音樂等待使用者互動後播放"));
+            }
+        } catch(e) { console.log("音樂播放異常", e); }
+    },
+    playSound: function(type) {
+        if (this[type]) {
+            try {
+                this[type].currentTime = 0;
+                this[type].play().catch(e => console.log("音效被阻擋"));
+            } catch(e) {}
+        }
+    }
+};
+
+// =========================================
+// 3. UI 操作與抽獎功能
+// =========================================
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (sidebar.classList.contains('-translate-x-full')) {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+    } else {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+    }
+}
+
+function openProfileModal() {
+    const user = Auth.getCurrentUser();
+    if (!user || user.username === 'guest') {
+        alert("訪客無法修改年級，請先登入！");
+        return;
+    }
+    const select = document.getElementById('editGradeSelect');
+    if (user.grade) select.value = user.grade;
+    document.getElementById('profileModal').classList.remove('hidden');
+}
+
+function closeProfileModal() {
+    document.getElementById('profileModal').classList.add('hidden');
+}
+
+async function saveProfile() {
+    const user = Auth.getCurrentUser();
+    const newGrade = document.getElementById('editGradeSelect').value;
+    try {
+        const response = await fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "update_grade", account: user.username, newGrade: newGrade })
+        });
+        const result = await response.json();
+        if (result.status === "success") {
+            user.grade = newGrade;
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            alert("年級修改成功！");
+            location.reload(); 
+        } else {
+            alert("修改失敗：" + result.message);
+        }
+    } catch (e) {
+        alert("連線異常，請稍後再試");
+    }
+}
+
+function updateTicketUI() {
+    let user = Auth.getCurrentUser();
+    if (user) {
+        const ticketEl = document.getElementById('ticketCount');
+        if (ticketEl) ticketEl.textContent = user.gachaTickets || 0;
+    }
+}
+
+function playGacha() {
+    let user = Auth.getCurrentUser();
+    let tickets = user.gachaTickets || 0;
+
+    if (tickets <= 0) {
+        alert("😢 抽獎券不足！再去多寫幾份考卷吧！");
+        return;
+    }
+
+    Auth.updateUser('gachaTickets', tickets - 1);
+    updateTicketUI();
+
+    SoundEngine.playSound('gachaPull');
+    const btn = document.getElementById('drawGachaBtn');
+    const resultDiv = document.getElementById('gachaResult');
+    
+    btn.disabled = true;
+    btn.innerText = "✨ 轉動中...";
+    btn.classList.add('opacity-70');
+    resultDiv.classList.add('hidden');
+setTimeout(() => {
+        btn.disabled = false;
+        btn.innerText = "消耗 1 張抽獎券";
+        btn.classList.remove('opacity-70');
+        resultDiv.classList.remove('hidden');
+
+        const rand = Math.random() * 100;
+        let gainedXP = 0;
+        let message = "";
+        let msgClass = "";
+
+        if (rand < 8) {
+            SoundEngine.playSound('gachaWin');
+            message = "✨ 神話級獎勵：獲得 1000 XP！✨";
+            msgClass = "mt-4 text-xl font-bold text-yellow-300 animate-bounce";
+            gainedXP = 1000;
+        } else if (rand < 45) {
+            SoundEngine.playSound('gachaWin');
+            message = "🎉 稀有獎勵：獲得 200 XP！";
+            msgClass = "mt-4 text-lg font-bold text-white animate-pulse";
+            gainedXP = 200;
+        } else {
+            SoundEngine.playSound('gachaFail');
+            message = "💨 銘謝惠顧！獲得 50 XP 安慰獎。";
+            msgClass = "mt-4 text-lg text-slate-300";
+            gainedXP = 50;
+        }
+
+        resultDiv.innerHTML = message;
+        resultDiv.className = msgClass;
+
+        // 1. 更新本機端 XP
+        Auth.updateUser('xp', (user.xp || 0) + gainedXP);
+        
+        // 2. 重新判定畫面主題
+        ThemeEngine.apply(Auth.getCurrentUser().xp);
+
+        // 👇👇👇 🌟 關鍵修復：將抽獎獲得的 XP 傳送給雲端 (Google Sheets) 👇👇👇
+
+        fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: "save_record",
+                username: user.username,
+                activity: "幸運抽獎", // 把抽獎當成一種活動紀錄傳給雲端
+                score: 0,
+                xp: gainedXP,       // 告訴雲端要加多少經驗值
+                detail: JSON.stringify({ note: "抽獎機獲得" })
+            })
+        }).then(() => {
+            console.log(`✅ 抽獎獲得的 ${gainedXP} XP 已成功同步至雲端！`);
+        }).catch(e => {
+            console.error("❌ 抽獎 XP 雲端同步失敗", e);
+        });
+        // 👆👆👆 關鍵修復結束 👆👆👆
+
+    }, 2000);
+}
+
+function renderUnlockedFeatures(userXp) {
+    const listContainer = document.getElementById('unlockedFeaturesList');
+    if (!listContainer) return;
+    listContainer.innerHTML = ''; 
+
+    featuresList.forEach(feature => {
+        const isUnlocked = userXp >= feature.xp; 
+        const li = document.createElement('li');
+        li.className = `p-3 rounded-2xl border ${isUnlocked ? 'bg-indigo-50 border-indigo-100' : 'bg-slate-50 border-slate-100 opacity-60'} flex items-center justify-between transition-all duration-300`;
+        li.innerHTML = `
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center ${isUnlocked ? 'bg-indigo-500 text-white shadow-md' : 'bg-slate-200 text-slate-400'}">
+                    <i class="fas ${feature.icon}"></i>
+                </div>
+                <div>
+                    <div class="font-bold ${isUnlocked ? 'text-slate-800' : 'text-slate-500'}">${feature.name}</div>
+                    <div class="text-[11px] ${isUnlocked ? 'text-indigo-600' : 'text-slate-400'}">${feature.desc}</div>
+                </div>
+            </div>
+            <div class="text-right">
+                ${isUnlocked 
+                    ? '<i class="fas fa-unlock-alt text-emerald-500 text-lg drop-shadow-sm"></i>' 
+                    : `<div class="text-[10px] font-black text-slate-400"><i class="fas fa-lock"></i> 需 ${feature.xp} XP</div>`
+                }
+            </div>
+        `;
+        listContainer.appendChild(li);
+    });
+}
+
+function getRankInfo(xp) {
+    if (xp >= 100000) return { title: "🌌 創世星神", bg: "bg-slate-950", badge: "bg-gradient-to-r from-yellow-300 via-yellow-500 to-amber-600 text-black shadow-[0_0_15px_rgba(253,224,71,0.6)] animate-pulse font-black", text: "text-yellow-400 drop-shadow-md" };
+    if (xp >= 50000) return { title: "✨ 萬古神話", bg: "bg-slate-900", badge: "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white animate-pulse shadow-lg", text: "text-white" };
+    if (xp >= 30000) return { title: "🌠 史詩英雄", bg: "bg-emerald-950", badge: "bg-emerald-500 text-emerald-950 font-bold shadow-md", text: "text-emerald-100" };
+    if (xp >= 20000) return { title: "👑 傳奇領主", bg: "bg-amber-900", badge: "bg-yellow-400 text-amber-900 shadow-lg font-bold", text: "text-amber-50" };
+    if (xp >= 15000) return { title: "🔱 榮耀宗師", bg: "bg-fuchsia-900", badge: "bg-fuchsia-200 text-fuchsia-900 font-bold", text: "text-fuchsia-50" };
+    if (xp >= 10000) return { title: "🔥 聖域大師", bg: "bg-red-700", badge: "bg-white text-red-700 font-bold shadow", text: "text-red-50" };
+    if (xp >= 5000) return { title: "💎 頂尖學者", bg: "bg-blue-600", badge: "bg-blue-100 text-blue-800 font-bold", text: "text-white" };
+    if (xp >= 2500) return { title: "🏆 黃金菁英", bg: "bg-yellow-500", badge: "bg-yellow-100 text-yellow-800 font-bold", text: "text-white" };
+    if (xp >= 1000) return { title: "⚔️ 白銀騎士", bg: "bg-slate-300", badge: "bg-slate-600 text-white font-bold", text: "text-slate-800 font-bold" };
+    if (xp >= 300) return { title: "📖 勤奮書生", bg: "bg-orange-100", badge: "bg-orange-500 text-white", text: "text-orange-900" };
+    if (xp >= 100) return { title: "🌱 潛力新秀", bg: "bg-green-50", badge: "bg-green-500 text-white", text: "text-green-900" };
+    return { title: "🥚 初心學徒", bg: "bg-slate-50", badge: "bg-slate-200 text-slate-500", text: "text-slate-700" };
+}
+
+// =========================================
+// 4. API 呼叫 (讀取個人資料與排行榜)
+// =========================================
+async function initProfile() {
+    let user = Auth.getCurrentUser();
+    if (!user || user.username === 'guest') {
+        const playerNameEl = document.getElementById('playerName');
+        if (playerNameEl) playerNameEl.textContent = "訪客";
+        return;
+    }
+
+    document.getElementById('sideUserName').textContent = user.name || user.username;
+    document.getElementById('playerName').textContent = user.name || user.username;
+
+    let currentXP = user.xp || 0; 
+
+    try {
+        const response = await fetch(`${GAS_URL}?action=get_leaderboard&t=${new Date().getTime()}`);
+        const topPlayers = await response.json();
+        const me = topPlayers.find(p => p.username === user.username);
+
+        if (me) {
+            currentXP = Number(me.xp) || 0;
+            const level = Number(me.level) || 1;
+            document.getElementById('playerLevel').textContent = `Lv. ${level}`;
+            
+            const xpInThisLevel = currentXP % 100; 
+            const xpNeeded = 100 - xpInThisLevel;
+            
+            document.getElementById('xpText').textContent = `${currentXP} XP (總計)`;
+            document.getElementById('xpNeeded').textContent = xpNeeded;
+            
+            setTimeout(() => {
+                const xpFill = document.getElementById('xpFill');
+                if (xpFill) xpFill.style.width = `${Math.max((xpInThisLevel / 100) * 100, 2)}%`;
+            }, 500);
+            
+            renderUnlockedFeatures(currentXP);
+        }
+    } catch (error) {
+        console.error("XP 同步失敗:", error);
+    } finally {
+        // ✅ 修正點：使用新的主題引擎！
+        ThemeEngine.apply(currentXP); 
+    }
+}
+
+async function loadLeaderboard() {
+    const listContainer = document.getElementById('leaderboardList');
+    const loadingMsg = document.getElementById('loadingMsg');
+
+    try {
+        const response = await fetch(`${GAS_URL}?action=get_leaderboard`);
+        const topPlayers = await response.json();
+        
+        loadingMsg.style.display = 'none'; 
+        listContainer.innerHTML = ""; 
+
+        if (!topPlayers || topPlayers.length === 0 || topPlayers.error) {
+            listContainer.innerHTML = "<li class='text-center py-10 text-slate-400 font-medium bg-slate-50 rounded-2xl'>目前尚無排名紀錄</li>";
+            return;
+        }
+
+        topPlayers.forEach((player, index) => {
+            const li = document.createElement('li');
+            const rank = getRankInfo(player.xp); 
+
+            li.className = `flex items-center justify-between p-4 ${rank.bg} ${rank.text} hover:scale-[1.02] border border-transparent rounded-2xl transition-all duration-300 mb-3 shadow-sm`;
+            
+            let rankDisplay = `<span class="font-bold text-xl">${index + 1}</span>`;
+            if (index === 0) rankDisplay = '<i class="fas fa-crown text-3xl text-yellow-400"></i>';
+            else if (index === 1) rankDisplay = '<i class="fas fa-medal text-3xl text-slate-300"></i>';
+            else if (index === 2) rankDisplay = '<i class="fas fa-award text-3xl text-amber-500"></i>';
+
+            li.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <div class="w-12 text-center">${rankDisplay}</div>
+                    <div>
+                        <div class="font-extrabold text-lg flex items-center gap-2">
+                            ${player.name || player.username}
+                        </div>
+                        <div class="text-[11px] font-black px-3 py-0.5 rounded-full inline-block mt-1 ${rank.badge}">
+                            ${rank.title}
+                        </div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="font-black text-2xl">
+                        ${player.xp.toLocaleString()} <span class="text-[10px] opacity-70">XP</span>
+                    </div>
+                </div>
+            `;
+            listContainer.appendChild(li);
+        });
+    } catch (error) {
+        loadingMsg.innerHTML = "<span class='text-red-500 font-bold'>伺服器連線失敗</span>";
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    SoundEngine.init();
+    updateTicketUI();
+    initProfile();
+    loadLeaderboard();
+
+    const currentUser = (window.Auth && Auth.getCurrentUser()) || JSON.parse(localStorage.getItem('currentUser') || '{}');
+    if (currentUser && currentUser.xp !== undefined) {
+        ThemeEngine.apply(currentUser.xp);
+    }
+    
+    // 🎵 極速啟動音樂邏輯
+    const startMusic = () => {
+        SoundEngine.playBGM();
+        // 只要播成功了，就拆掉所有監聽器，避免重複執行
+        ['mousedown', 'keydown', 'touchstart'].forEach(event => {
+            window.removeEventListener(event, startMusic);
+        });
+    };
+
+    // 1. 嘗試直接播 (如果使用者是從站內連結點過來的，這行會成功)
+    SoundEngine.playBGM();
+
+    // 2. 萬一被擋，監聽最輕微的動作 (按下滑鼠、敲鍵盤、手機觸碰)
+    // 使用 mousedown 會比 click 更快響起音樂！
+    ['mousedown', 'keydown', 'touchstart'].forEach(event => {
+        window.addEventListener(event, startMusic, { once: true });
+    });
+});
+    // 🏆 這是處理點擊進入的專用函式
+function handleStart() {
+    console.log("偵測到點擊，啟動中...");
+    
+    // 1. 嘗試播放音樂
+    if (typeof SoundEngine !== 'undefined') {
+        SoundEngine.playBGM();
+    }
+
+    // 2. 移除遮罩
+    const overlay = document.getElementById('start-overlay');
+    if (overlay) {
+        overlay.style.transition = 'all 0.4s ease';
+        overlay.style.opacity = '0';
+        overlay.style.pointerEvents = 'none'; // 讓它點不到，防止卡住
+        
+        setTimeout(() => {
+            overlay.remove(); // 直接從 HTML 裡面刪掉，徹底消除
+        }, 500);
+    }
+}
+    </script>
+</body>
+</html>

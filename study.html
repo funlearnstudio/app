@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>重點複習 - 雲端學院</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
+     <link rel="stylesheet" href="assets/css/style.css">
+
+    <script src="mockdata/users.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/generator_engine.js"></script>
+    <script src="mockdata/generator_engine_polyfill.js"></script>
+    <script src="mockdata/AutoTemplateFissionFactory.js"></script>
+    <script src="mockdata/auto_fission_bootstrap.js"></script>
+    <script src="mockdata/paper_generator.js"></script>
+    <script src="mockdata/curriculum_integrated.js"></script>
+    
+    <script src="mockdata/templates_math_algebra_geometry.js"></script>
+    <script src="mockdata/templates_physics_multistep.js"></script>
+    <script src="mockdata/templates_chemistry_core.js"></script>
+    <script src="mockdata/templates_biology_core.js"></script> 
+    <script src="mockdata/templates_earth_science_core.js"></script>
+    <script src="mockdata/templates_english_core.js"></script>
+    <script src="mockdata/templates_chinese_core.js"></script>
+    <script src="mockdata/templates_history_core.js"></script>
+    <script src="mockdata/templates_geography_core.js"></script>
+    <script src="mockdata/templates_civics_core.js"></script>
+</head>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // 1. 檢查 Auth 是否載入
+        if (typeof Auth === 'undefined') {
+            console.error("Auth 模組未載入");
+            return;
+        }
+
+        // 2. 檢查是否有登入者
+        const currentUser = Auth.getCurrentUser();
+
+        // 3. 如果沒人登入，或者是 Guest (如果你不想讓 Guest 用)，就踢走
+        if (!currentUser) {
+            alert("⚠️ 您尚未登入，請先進行登入！");
+            window.location.href = 'index.html'; // 假設你的登入頁是 index.html
+        }
+    });
+</script>
+<body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden">
+<div id="star-container"></div>
+    <header class="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-30">
+        <div class="flex items-center gap-2">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm shadow-sm">學</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+        </div>
+        <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-lg">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+    </header>
+
+    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden backdrop-blur-sm"></div>
+
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-100 flex flex-col z-50 transform -translate-x-full lg:translate-x-0 lg:static lg:h-full sidebar-transition shadow-2xl lg:shadow-none">
+        
+        <div class="h-16 hidden lg:flex items-center px-6 border-b border-slate-50">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+        </div>
+
+       <div class="p-6 lg:block watch-hidden">
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+        <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
+            <i class="fas fa-user-graduate"></i>
+        </div>
+        <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
+        <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
+        <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
+            <i class="fas fa-pen mr-1"></i> 編輯年級
+        </button>
+    </div>
+</div>
+     <nav class="flex-grow px-3 space-y-2 overflow-y-auto no-scrollbar">
+    <p class="text-[10px] font-bold text-slate-400 mb-2 px-4 uppercase tracking-widest">學習導航</p>
+<a href="arena.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-100 text-amber-900 transition-all duration-300 group shadow-[inset_0_1px_2px_rgba(0,0,0,0,0.05)] border border-amber-200/50">
+    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 text-white flex items-center justify-center scale-110 shadow-sm ring-2 ring-white">
+        <i class="fas fa-trophy text-xs"></i>
+    </div>
+    <span class="font-black tracking-wide">榮譽榜</span>
+</a>
+    <a href="mission.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-purple-50 hover:text-purple-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-rocket text-sm"></i>
+        </div>
+        <span class="font-bold">任務中心</span>
+
+    </a>
+
+    <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-book-open text-sm"></i>
+        </div>
+        <span class="font-bold">課程總覽</span>
+    </a>
+
+    <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-red-50 hover:text-red-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-fire text-sm"></i>
+        </div>
+        <span class="font-bold">錯題補救</span>
+    </a>
+
+    <a href="study.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-amber-50 hover:text-amber-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-star text-sm"></i>
+        </div>
+        <span class="font-bold">重點複習</span>
+    </a>
+
+    <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:animate-bounce">
+            <i class="fas fa-gamepad text-sm"></i>
+        </div>
+        <span class="font-bold">遊戲場</span>
+    </a>
+
+    <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-cyan-100 text-cyan-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-comments text-sm"></i>
+        </div>
+        <span class="font-bold">解題論壇</span>
+    </a>
+    
+    <div class="pt-4 mt-4 border-t border-slate-100">
+        <p class="text-[10px] font-bold text-slate-400 mb-2 px-4 uppercase tracking-widest">系統支援</p>
+        
+        <a href="help.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-orange-50 hover:text-orange-600 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+            <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center group-hover:rotate-12 transition-transform">
+                <i class="fas fa-headset text-sm"></i>
+            </div>
+            <span class="font-bold">幫助中心 & 聯絡老師</span>
+        </a>
+
+        <a href="change_password.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-500 hover:bg-slate-100 transition-all group">
+            <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center group-hover:text-slate-600">
+                <i class="fas fa-key text-xs"></i>
+            </div>
+            <span class="text-sm font-medium">更改密碼</span>
+        </a>
+    </div>
+</nav>
+
+        <div class="p-4 border-t border-slate-50">
+            <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs"><i class="fas fa-sign-out-alt"></i> 登出系統</button>
+        </div>
+    </aside>
+<main class="flex-grow flex flex-col lg:flex-row h-full relative overflow-hidden">
+        
+        <div class="w-full lg:w-64 bg-slate-50 border-b lg:border-b-0 lg:border-r border-slate-200 flex-shrink-0 flex flex-col h-[40%] lg:h-full transition-all duration-300">
+            <div class="p-3 lg:p-4 border-b border-slate-200 bg-white">
+                <label class="text-xs font-bold text-gray-400 uppercase">科目選擇</label>
+                <select id="subjectSelect" onchange="loadBookMenu()" class="w-full mt-1 p-2 border border-slate-200 rounded-lg font-bold text-slate-700 focus:outline-none focus:border-blue-500 text-sm lg:text-base">
+                    <optgroup label="主要學科">
+                        <option value="math">📐 數學</option>
+                        <option value="english">🔤 英文</option>
+                        <option value="chinese">🀄 國文</option>
+                    </optgroup>
+                    
+                    <optgroup label="自然科學" id="scienceGroup">
+                        <option value="science" id="optScience" class="hidden">🧪 自然 (理化)</option>
+                        <option value="physics" id="optPhysics">🧲 物理</option>
+                        <option value="chemistry" id="optChemistry">⚗️ 化學</option>
+                        <option value="biology">🧬 生物</option>
+                        <option value="earth">🌍 地球科學</option>
+                    </optgroup>
+
+                    <optgroup label="社會人文">
+                        <option value="history">📜 歷史</option>
+                        <option value="geography">🗺️ 地理</option>
+                        <option value="civics">⚖️ 公民</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="flex-grow overflow-y-auto p-2 space-y-2 lg:space-y-4 no-scrollbar" id="unitMenu">
+                <div class="text-center py-10 text-gray-400 text-sm"><i class="fas fa-spinner fa-spin"></i> 載入中...</div>
+            </div>
+        </div>
+
+        <div class="flex-grow flex flex-col h-full bg-white relative overflow-hidden">
+            <div class="h-14 lg:h-16 border-b border-slate-100 flex items-center justify-between px-4 lg:px-8 bg-white z-10 shrink-0">
+                <div>
+                    <h2 class="text-lg lg:text-xl font-bold text-slate-800 truncate max-w-[200px] lg:max-w-none" id="currentUnitTitle">請選擇單元</h2>
+                    <p class="text-[10px] lg:text-xs text-slate-400" id="currentUnitSub">點擊目錄以檢視重點</p>
+                </div>
+            </div>
+
+            <div class="flex-grow overflow-y-auto p-4 lg:p-8 scroll-smooth" id="contentScroll">
+                <div class="max-w-3xl mx-auto space-y-6" id="notesContainer">
+                    <div class="flex flex-col items-center justify-center h-full text-slate-300 py-10 lg:py-20">
+                        <i class="fas fa-book-open text-4xl lg:text-6xl mb-4"></i>
+                        <p class="text-sm">請從上方(電腦為左側)選擇單元</p>
+                    </div>
+                </div>
+                <div class="h-20"></div> 
+            </div>
+        </div>
+
+        <div id="profileModal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm fade-in">
+            <div class="bg-white rounded-2xl shadow-2xl w-[90%] lg:w-full max-w-sm overflow-hidden transform transition-all scale-100">
+                <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+                    <h3 class="text-white font-bold text-lg"><i class="fas fa-user-edit mr-2"></i> 修改年級</h3>
+                    <button onclick="closeProfileModal()" class="text-white/80 hover:text-white transition">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="p-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">請選擇目前的年級：</label>
+                    <div class="relative">
+                        <select id="editGradeSelect" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white appearance-none transition text-gray-700 font-bold">
+                            <option value="國七">國七</option>
+                    <option value="國八">國八</option>
+                    <option value="國九">國九</option>
+                    <hr>
+                    <option value="高一">高一</option>
+                    <option value="高二">高二</option>
+                    <option value="高三">高三</option>
+                </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-3">※ 修改後，系統將會優先推薦該年級的題目。</p>
+                </div>
+
+                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
+                    <button onclick="closeProfileModal()" class="px-4 py-2 text-gray-500 hover:text-gray-700 font-bold text-sm">取消</button>
+                    <button onclick="saveProfile()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-md hover:shadow-lg transition">
+                        確認修改
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
+// --- 核心主題引擎 (12 個階級升級版) ---
+const ThemeEngine = {
+    // 1. 執行變色
+    apply: function(xp) {
+        console.log("當前頁面主題判定中... XP:", xp);
+        const body = document.body;
+        
+        // ⚠️ 必須在這裡把 12 個主題的 class 全部列出來，確保切換時能清除乾淨
+        body.classList.remove(
+            'theme-novice', 'theme-rookie', 'theme-bronze', 'theme-silver', 
+            'theme-gold', 'theme-diamond', 'theme-master', 'theme-grandmaster', 
+            'theme-legend', 'theme-epic', 'theme-mythic', 'theme-celestial'
+        );
+
+        // 根據 XP 判定主題 (必須從最高分往下寫)
+        if (xp >= 100000) { 
+            body.classList.add('theme-celestial'); 
+            this.createStars(15); // 12. 創世星神 (最高階，流星加倍！)
+        } 
+        else if (xp >= 50000) { 
+            body.classList.add('theme-mythic'); 
+            this.createStars(8);  // 11. 萬古神話 (一般流星)
+        } 
+        else if (xp >= 30000) body.classList.add('theme-epic');         // 10. 史詩英雄
+        else if (xp >= 20000) body.classList.add('theme-legend');       // 9. 傳奇領主
+        else if (xp >= 15000) body.classList.add('theme-grandmaster');  // 8. 榮耀宗師
+        else if (xp >= 10000) body.classList.add('theme-master');       // 7. 聖域大師
+        else if (xp >= 5000)  body.classList.add('theme-diamond');      // 6. 頂尖學者
+        else if (xp >= 2500)  body.classList.add('theme-gold');         // 5. 黃金菁英
+        else if (xp >= 1000)  body.classList.add('theme-silver');       // 4. 白銀騎士
+        else if (xp >= 300)   body.classList.add('theme-bronze');       // 3. 勤奮書生
+        else if (xp >= 100)   body.classList.add('theme-rookie');       // 2. 潛力新秀
+        else                  body.classList.add('theme-novice');       // 1. 初心學徒 (0~99 XP)
+    },
+
+    // 2. 產生流星 (現在可以根據等級決定流星數量)
+    createStars: function(starCount) {
+        const container = document.getElementById('star-container');
+        if (!container || container.hasChildNodes()) return; // 避免重複產生
+        
+        for (let i = 0; i < starCount; i++) {
+            let star = document.createElement('div');
+            star.className = 'shooting-star'; 
+            star.style.top = Math.random() * 80 + 'vh';
+            star.style.left = (Math.random() * 50 + 50) + 'vw';
+            star.style.animationDelay = (Math.random() * 4) + 's';
+            container.appendChild(star);
+        }
+    }
+};
+
+// --- 自動執行 ---
+document.addEventListener('DOMContentLoaded', () => {
+    // 讀取 currentUser，如果沒有就預設 0
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
+    ThemeEngine.apply(user.xp);
+});
+        // 1. 定義全域變數
+        let currentSubject = 'math';
+        let userStage = 'high_school'; 
+
+        window.onload = function() {
+            // --- A. 處理使用者登入與學制判斷 ---
+            const user = Auth.getCurrentUser();
+            if(user) {
+                document.getElementById('sideUserName').textContent = user.name;
+                document.getElementById('sideUserRole').textContent = user.grade;
+                
+                // 判斷是否為國中生
+                if(user.grade && user.grade.includes('國')) {
+                    userStage = 'junior_high';
+                } else {
+                    userStage = 'high_school';
+                }
+            }
+            if(typeof setStage === 'function') setStage(userStage);
+
+            // --- B. 自動調整下拉選單 (重要更新) ---
+            const optScience = document.getElementById('optScience');
+            const optPhysics = document.getElementById('optPhysics');
+            const optChemistry = document.getElementById('optChemistry');
+            const subjectSelect = document.getElementById('subjectSelect');
+
+            if (userStage === 'junior_high') {
+                // 如果是國中生：顯示「自然(理化)」，隱藏物理/化學
+                optScience.classList.remove('hidden');
+                optPhysics.classList.add('hidden');
+                optChemistry.classList.add('hidden');
+                
+                // 如果原本預設是 math，保持 math；但如果沒有選，預設跳轉邏輯
+                // 這裡簡單處理：如果是 math 不動，其他則預設
+            } else {
+                // 如果是高中生：隱藏整合的理化，顯示分科
+                optScience.classList.add('hidden');
+                optPhysics.classList.remove('hidden');
+                optChemistry.classList.remove('hidden');
+            }
+
+            // --- C. 處理網址參數與預設值 ---
+            const urlParams = new URLSearchParams(window.location.search);
+            let filterParam = urlParams.get('filter');
+
+            // 如果參數是物理或化學，且是國中生，強制轉為 science
+            if ((filterParam === 'physics' || filterParam === 'chemistry') && userStage === 'junior_high') {
+                filterParam = 'science';
+            }
+
+            currentSubject = filterParam || 'math';
+            subjectSelect.value = currentSubject;
+
+            // --- D. 初始化 ---
+            setTimeout(() => {
+                if(window.initCurriculumData) window.initCurriculumData(); 
+                patchScienceData(userStage); // 執行資料補丁
+                loadBookMenu();
+            }, 300);
+        };
+// ==========================================
+// ✏️ 個人資料編輯功能
+// ==========================================
+// 手機側邊欄開關
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    if (sidebar.classList.contains('-translate-x-full')) {
+        // 開啟
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+    } else {
+        // 關閉
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+    }
+}
+// 1. 開啟編輯視窗
+function openProfileModal() {
+    const user = Auth.getCurrentUser();
+    if (!user) {
+        alert("請先登入！");
+        return;
+    }
+
+    // 設定下拉選單為目前的年級
+    const select = document.getElementById('editGradeSelect');
+    if (user.grade) {
+        select.value = user.grade;
+    }
+    
+    // 顯示視窗
+    document.getElementById('profileModal').classList.remove('hidden');
+}
+
+// 2. 關閉編輯視窗
+function closeProfileModal() {
+    document.getElementById('profileModal').classList.add('hidden');
+}
+
+async function saveProfile() {
+    const newGrade = document.getElementById('editGradeSelect').value;
+    const user = Auth.getCurrentUser();
+    if (!user) return alert("請先登入！");
+
+    const saveBtn = document.querySelector('#profileModal button[onclick="saveProfile()"]');
+    const originalBtnText = saveBtn.innerText;
+
+    // 1. 進入載入狀態
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 儲存中...';
+
+    try {
+        // 2. 發送請求給 GAS 後端
+        const response = await fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: "update_grade", // 此 action 需與 GAS 後端對應
+                account: user.account || user.username,
+                newGrade: newGrade
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.status === "success") {
+            // 3. 伺服器成功更新後，才更新本地資料
+            if (Auth.updateUser) {
+                Auth.updateUser('grade', newGrade);
+            }
+            
+            const roleEl = document.getElementById('sideUserRole');
+            if (roleEl) roleEl.innerText = newGrade;
+
+            alert(`✅ 修改成功！目前年級已更新為：${newGrade}`);
+            closeProfileModal();
+        } else {
+            alert("❌ 修改失敗：" + (result.message || "未知錯誤"));
+        }
+    } catch (error) {
+        console.error("更新年級發生錯誤:", error);
+        alert("網路連線異常，請稍後再試。");
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerText = originalBtnText;
+    }
+}
+        // 資料補丁：確保國中理化資料存在
+        function patchScienceData(stage) {
+            if (!window.CurriculumLibrary || !window.CurriculumLibrary.data) return;
+
+            // 確保 physics 和 chemistry 陣列存在
+            if (!window.CurriculumLibrary.data['physics']) window.CurriculumLibrary.data['physics'] = [];
+            if (!window.CurriculumLibrary.data['chemistry']) window.CurriculumLibrary.data['chemistry'] = [];
+
+            // 檢查是否已有國中物理
+            const hasJuniorPhysics = window.CurriculumLibrary.data['physics'].some(b => b.stage === 'junior_high');
+            if (!hasJuniorPhysics && stage === 'junior_high') {
+                window.CurriculumLibrary.data['physics'].push({
+                    book: "國中理化 (物理篇)",
+                    stage: "junior_high",
+                    // 標記這是物理來源，供混合時識別
+                    sourceSubject: "physics", 
+                    units: [
+                        { name: "基本測量與密度", tags: ["測量", "密度"] },
+                        { name: "力與運動", tags: ["牛頓運動定律", "力"] },
+                        { name: "功與能", tags: ["功", "能量"] },
+                        { name: "溫度與熱", tags: ["熱學", "比熱"] },
+                        { name: "波動與聲音", tags: ["波動", "聲音"] },
+                        { name: "光與折射", tags: ["光學", "折射"] },
+                        { name: "電與磁", tags: ["電學", "磁場"] }
+                    ]
+                });
+            }
+
+            // 檢查是否已有國中化學
+            const hasJuniorChem = window.CurriculumLibrary.data['chemistry'].some(b => b.stage === 'junior_high');
+            if (!hasJuniorChem && stage === 'junior_high') {
+                window.CurriculumLibrary.data['chemistry'].push({
+                    book: "國中理化 (化學篇)",
+                    stage: "junior_high",
+                    sourceSubject: "chemistry",
+                    units: [
+                        { name: "物質的分類與變化", tags: ["物質", "化學變化"] },
+                        { name: "原子結構與元素週期表", tags: ["原子", "週期表"] },
+                        { name: "化學反應與計量", tags: ["化學反應", "莫耳"] },
+                        { name: "氧化還原", tags: ["氧化還原"] },
+                        { name: "酸鹼鹽", tags: ["酸鹼", "pH值"] },
+                        { name: "有機化合物", tags: ["有機化學", "碳氫化合物"] }
+                    ]
+                });
+            }
+        }
+
+        // 2. 載入選單 (包含合併邏輯)
+        function loadBookMenu() {
+            const subjectSelect = document.getElementById('subjectSelect');
+            if(subjectSelect) currentSubject = subjectSelect.value;
+            
+            const menu = document.getElementById('unitMenu');
+            menu.innerHTML = '';
+
+            if (!window.CurriculumLibrary || !window.CurriculumLibrary.data) {
+                menu.innerHTML = `<div class="p-4 text-center text-sm text-gray-400">資料庫載入中...</div>`;
+                return;
+            }
+
+            let books = [];
+
+            // ★★★ 關鍵修改：處理「science (理化)」的合併邏輯 ★★★
+            if (currentSubject === 'science') {
+                // 1. 抓取物理資料
+                const phyBooks = (window.CurriculumLibrary.data['physics'] || [])
+                    .filter(b => b.stage === userStage)
+                    .map(b => ({...b, realSubject: 'physics'})); // 標記真實科目
+                
+                // 2. 抓取化學資料
+                const chemBooks = (window.CurriculumLibrary.data['chemistry'] || [])
+                    .filter(b => b.stage === userStage)
+                    .map(b => ({...b, realSubject: 'chemistry'})); // 標記真實科目
+
+                // 3. 合併
+                books = [...phyBooks, ...chemBooks];
+
+            } else {
+                // 正常單科處理
+                const allBooks = window.CurriculumLibrary.data[currentSubject] || [];
+                books = allBooks.filter(b => b.stage === userStage)
+                                .map(b => ({...b, realSubject: currentSubject}));
+            }
+
+            if (books.length === 0) {
+                menu.innerHTML = `<div class="p-4 text-center text-sm text-gray-400 bg-slate-100 m-2 rounded">此科目尚無資料</div>`;
+                return;
+            }
+
+            books.forEach((book, bIdx) => {
+                const detailsOpen = bIdx === 0 ? 'open' : '';
+                let unitsHtml = '';
+                
+                book.units.forEach((unit, uIdx) => {
+                    const tagsStr = encodeURIComponent(JSON.stringify(unit.tags || []));
+                    // 點擊時，傳入真實科目 (book.realSubject)，這樣 AI 才知道要用物理還是化學公式
+                    unitsHtml += `
+                        <div class="unit-item px-4 py-3 text-sm text-slate-600 rounded-lg mb-1 flex items-center gap-2 cursor-pointer hover:bg-slate-100" 
+                             onclick="loadUnitContent('${unit.name}', '${tagsStr}', this, '${book.realSubject}')">
+                            <i class="fas fa-circle text-[6px] text-slate-300"></i>
+                            ${unit.name}
+                        </div>`;
+                });
+
+                const html = `
+                    <details ${detailsOpen} class="group">
+                        <summary class="flex items-center justify-between p-3 font-bold text-slate-700 cursor-pointer hover:bg-slate-100 rounded-lg list-none">
+                            <span>${book.book}</span>
+                            <i class="fas fa-chevron-down text-xs text-slate-400 transition-transform group-open:rotate-180"></i>
+                        </summary>
+                        <div class="pl-2 mt-1 space-y-1 border-l-2 border-slate-100 ml-3">
+                            ${unitsHtml}
+                        </div>
+                    </details>
+                `;
+                menu.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+// 3. 內容生成 (全面改為課本/教材重點導向)
+function loadUnitContent(unitName, tagsStr, el, realSubject) {
+    // UI 高亮處理
+    document.querySelectorAll('.unit-item').forEach(i => i.classList.remove('active', 'bg-blue-50', 'text-blue-600', 'font-bold'));
+    el.classList.add('active', 'bg-blue-50', 'text-blue-600', 'font-bold');
+    
+    // 顯示標題
+    let displaySubject = currentSubject;
+    if (currentSubject === 'science') {
+        displaySubject = realSubject === 'physics' ? '理化 (物理篇)' : '理化 (化學篇)';
+    }
+    
+    document.getElementById('currentUnitTitle').textContent = unitName;
+    // 💡 來源修改為：雲端課本教材
+    document.getElementById('currentUnitSub').textContent = `科目：${displaySubject} | 來源：雲端課本教材 (整合版)`;
+// 1. UI 狀態更新 (略，維持原本的高亮邏輯)
+    // ...
+
+    const subject = realSubject || currentSubject;
+    const tags = JSON.parse(decodeURIComponent(tagsStr));
+    const container = document.getElementById('notesContainer');
+    
+    container.innerHTML = '<div class="text-center py-20 text-slate-400 font-bold"><i class="fas fa-print fa-spin mr-2"></i> 正在排版正式課本章節...</div>';
+
+    setTimeout(() => {
+        // 從您的題庫引擎抓取資料
+        const rawData = window.generatePaper({ subject: subject, total: 10, tags: tags });
+
+        if (!rawData || rawData.length === 0) {
+            container.innerHTML = `<div class="p-10 text-center">此章節教材尚在編校中。</div>`;
+            return;
+        }
+
+        // 🚀 關鍵：將每一題轉換為「課本卡片」
+        let finalHtml = `
+            <div class="mb-12 text-center">
+                <h1 class="text-4xl font-black text-slate-900 mb-2">${unitName}</h1>
+                <div class="flex justify-center items-center gap-4 text-slate-400 font-bold tracking-widest">
+                    <span>${subject.toUpperCase()}</span>
+                    <span class="w-2 h-2 bg-slate-200 rounded-full"></span>
+                    <span>STUDY GUIDE</span>
+                </div>
+            </div>
+        `;
+
+        rawData.forEach((item, index) => {
+            finalHtml += window.TextbookFactory.formatToChapter(item, subject, index);
+        });
+
+        container.innerHTML = finalHtml;
+        if(window.MathJax) MathJax.typesetPromise();
+    }, 400);
+}
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>學習歷程與錯題 - 雲端學院</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script src="mockdata/users.js"></script>
+    <script src="assets/js/auth.js"></script>
+</head>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof Auth === 'undefined') {
+            console.error("Auth 模組未載入");
+            return;
+        }
+        const currentUser = Auth.getCurrentUser();
+        if (!currentUser) {
+            alert("⚠️ 您尚未登入，請先進行登入！");
+            window.location.href = 'index.html'; 
+        }
+    });
+</script>
+<body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden">
+<div id="star-container"></div>
+    <header class="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-30">
+        <div class="flex items-center gap-2">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm shadow-sm">學</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+        </div>
+        <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-lg">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+    </header>
+
+    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden backdrop-blur-sm"></div>
+
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-100 flex flex-col z-50 transform -translate-x-full lg:translate-x-0 lg:static lg:h-full sidebar-transition shadow-2xl lg:shadow-none">
+        <div class="h-16 hidden lg:flex items-center px-6 border-b border-slate-50">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+        </div>
+
+        <div class="p-6 lg:block watch-hidden">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
+                <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
+                <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
+                    <i class="fas fa-pen mr-1"></i> 編輯年級
+                </button>
+            </div>
+        </div>
+
+        <nav class="flex-grow px-3 space-y-2 overflow-y-auto no-scrollbar">
+            <p class="text-[10px] font-bold text-slate-400 mb-2 px-4 uppercase tracking-widest">學習導航</p>
+<a href="arena.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-100 text-amber-900 transition-all duration-300 group shadow-[inset_0_1px_2px_rgba(0,0,0,0,0.05)] border border-amber-200/50">
+    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 text-white flex items-center justify-center scale-110 shadow-sm ring-2 ring-white">
+        <i class="fas fa-trophy text-xs"></i>
+    </div>
+    <span class="font-black tracking-wide">榮譽榜</span>
+</a>
+            <a href="mission.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-purple-50 hover:text-purple-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+                <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i class="fas fa-rocket text-sm"></i>
+                </div>
+                <span class="font-bold">任務中心</span>
+
+            </a>
+
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+                <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i class="fas fa-book-open text-sm"></i>
+                </div>
+                <span class="font-bold">課程總覽</span>
+            </a>
+
+            <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-red-50 hover:text-red-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+                <div class="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i class="fas fa-fire text-sm"></i>
+                </div>
+                <span class="font-bold">錯題補救</span>
+            </a>
+
+            <a href="study.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-amber-50 hover:text-amber-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+                <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i class="fas fa-star text-sm"></i>
+                </div>
+                <span class="font-bold">重點複習</span>
+            </a>
+
+            <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+                <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:animate-bounce">
+                    <i class="fas fa-gamepad text-sm"></i>
+                </div>
+                <span class="font-bold">遊戲場</span>
+            </a>
+
+            <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+                <div class="w-8 h-8 rounded-lg bg-cyan-100 text-cyan-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <i class="fas fa-comments text-sm"></i>
+                </div>
+                <span class="font-bold">解題論壇</span>
+            </a>
+            
+            <div class="pt-4 mt-4 border-t border-slate-100">
+                <p class="text-[10px] font-bold text-slate-400 mb-2 px-4 uppercase tracking-widest">系統支援</p>
+                
+                <a href="help.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-orange-50 hover:text-orange-600 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+                    <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center group-hover:rotate-12 transition-transform">
+                        <i class="fas fa-headset text-sm"></i>
+                    </div>
+                    <span class="font-bold">幫助中心 & 聯絡老師</span>
+                </a>
+
+                <a href="change_password.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-500 hover:bg-slate-100 transition-all group">
+                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center group-hover:text-slate-600">
+                        <i class="fas fa-key text-xs"></i>
+                    </div>
+                    <span class="text-sm font-medium">更改密碼</span>
+                </a>
+            </div>
+        </nav>
+
+        <div class="p-4 border-t border-slate-50">
+            <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs"><i class="fas fa-sign-out-alt"></i> 登出系統</button>
+        </div>
+    </aside>
+
+    <main class="flex-grow flex flex-col h-full relative overflow-hidden">
+        <div class="bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 md:p-6 z-10 shrink-0">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                <h1 class="text-xl md:text-2xl font-bold text-gray-800 flex items-center gap-3">
+                    <span class="w-2 h-6 md:h-8 bg-blue-500 rounded-full"></span>
+                    學習歷程與錯題
+                </h1>
+                <div class="flex gap-2 self-end md:self-auto w-full md:w-auto justify-end">
+                    <button onclick="location.reload()" class="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg font-bold text-sm transition" title="重新整理與同步">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <a href="dashboard.html" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg font-bold transition text-sm flex items-center">
+                        <i class="fas fa-arrow-left mr-2"></i>返回
+                    </a>
+                </div>
+            </div>
+            
+            <div class="flex space-x-6 border-b border-gray-200 overflow-x-auto whitespace-nowrap">
+                <button onclick="switchTab('history')" id="tab-history" class="pb-3 px-2 tab-active transition">
+                    <i class="fas fa-list-ul mr-2"></i> 考試紀錄 (<span id="historyCount">0</span>)
+                </button>
+                <button onclick="switchTab('wrong')" id="tab-wrong" class="pb-3 px-2 tab-inactive transition">
+                    <i class="fas fa-times-circle mr-2"></i> 錯題集錦 (<span id="wrongCount">0</span>)
+                </button>
+            </div>
+        </div>
+        
+        <div class="flex-grow overflow-y-auto p-4 md:p-8 scroll-smooth bg-slate-50">
+            <div class="max-w-4xl mx-auto pb-10">
+                <div id="historyView" class="fade-in">
+                    <div id="historyList" class="space-y-4"></div>
+                    <div id="historyEmpty" class="hidden text-center py-20 text-gray-400">
+                        <i class="fas fa-history text-5xl mb-4"></i>
+                        <p>目前沒有任何考試紀錄</p>
+                    </div>
+                </div>
+
+                <div id="wrongView" class="hidden fade-in">
+                    <div id="wrongList" class="space-y-6"></div>
+                    <div id="wrongEmpty" class="hidden text-center py-20 text-gray-400">
+                        <i class="fas fa-check-circle text-5xl mb-4"></i>
+                        <p>太棒了！目前沒有錯題需要複習</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="profileModal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm fade-in">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100">
+                <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+                    <h3 class="text-white font-bold text-lg"><i class="fas fa-user-edit mr-2"></i> 修改年級</h3>
+                    <button onclick="closeProfileModal()" class="text-white/80 hover:text-white transition">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="p-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">請選擇目前的年級：</label>
+                    <div class="relative">
+                        <select id="editGradeSelect" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white appearance-none transition text-gray-700 font-bold">
+                            <option value="國七">國七</option>
+                            <option value="國八">國八</option>
+                            <option value="國九">國九</option>
+                            <hr>
+                            <option value="高一">高一</option>
+                            <option value="高二">高二</option>
+                            <option value="高三">高三</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-3">※ 修改後，系統將會優先推薦該年級的題目。</p>
+                </div>
+
+                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
+                    <button onclick="closeProfileModal()" class="px-4 py-2 text-gray-500 hover:text-gray-700 font-bold text-sm">取消</button>
+                    <button onclick="saveProfile()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-md hover:shadow-lg transition">
+                        確認修改
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <div id="announcementModal" class="hidden fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300" id="announcementContent">
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-center relative">
+                <button onclick="closeAnnouncement()" class="absolute top-4 right-4 text-white/70 hover:text-white transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+                <div class="w-16 h-16 bg-white/20 rounded-2xl backdrop-blur-md mx-auto flex items-center justify-center mb-4 shadow-inner">
+                    <i class="fas fa-bullhorn text-3xl text-white"></i>
+                </div>
+                <h3 class="text-2xl font-black text-white tracking-widest">系統最新公告</h3>
+            </div>
+            <div class="p-8">
+                <div class="mb-8">
+                    <span id="annDateDisplay" class="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-lg tracking-widest mb-3 border border-blue-100"></span>
+                    <h4 id="annTitleDisplay" class="text-xl font-black text-slate-800 mb-3 leading-snug"></h4>
+                    <div id="annContentDisplay" class="text-sm text-slate-500 leading-relaxed space-y-2 font-medium"></div>
+                </div>
+                <button onclick="closeAnnouncement()" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-blue-600 transition-colors shadow-lg shadow-slate-200 flex items-center justify-center gap-2">
+                    <span>我知道了，開始使用</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
+// --- 核心主題引擎 (12 個階級升級版) ---
+const ThemeEngine = {
+    // 1. 執行變色
+    apply: function(xp) {
+        console.log("當前頁面主題判定中... XP:", xp);
+        const body = document.body;
+        
+        // ⚠️ 必須在這裡把 12 個主題的 class 全部列出來，確保切換時能清除乾淨
+        body.classList.remove(
+            'theme-novice', 'theme-rookie', 'theme-bronze', 'theme-silver', 
+            'theme-gold', 'theme-diamond', 'theme-master', 'theme-grandmaster', 
+            'theme-legend', 'theme-epic', 'theme-mythic', 'theme-celestial'
+        );
+
+        // 根據 XP 判定主題 (必須從最高分往下寫)
+        if (xp >= 100000) { 
+            body.classList.add('theme-celestial'); 
+            this.createStars(15); // 12. 創世星神 (最高階，流星加倍！)
+        } 
+        else if (xp >= 50000) { 
+            body.classList.add('theme-mythic'); 
+            this.createStars(8);  // 11. 萬古神話 (一般流星)
+        } 
+        else if (xp >= 30000) body.classList.add('theme-epic');         // 10. 史詩英雄
+        else if (xp >= 20000) body.classList.add('theme-legend');       // 9. 傳奇領主
+        else if (xp >= 15000) body.classList.add('theme-grandmaster');  // 8. 榮耀宗師
+        else if (xp >= 10000) body.classList.add('theme-master');       // 7. 聖域大師
+        else if (xp >= 5000)  body.classList.add('theme-diamond');      // 6. 頂尖學者
+        else if (xp >= 2500)  body.classList.add('theme-gold');         // 5. 黃金菁英
+        else if (xp >= 1000)  body.classList.add('theme-silver');       // 4. 白銀騎士
+        else if (xp >= 300)   body.classList.add('theme-bronze');       // 3. 勤奮書生
+        else if (xp >= 100)   body.classList.add('theme-rookie');       // 2. 潛力新秀
+        else                  body.classList.add('theme-novice');       // 1. 初心學徒 (0~99 XP)
+    },
+
+    // 2. 產生流星 (現在可以根據等級決定流星數量)
+    createStars: function(starCount) {
+        const container = document.getElementById('star-container');
+        if (!container || container.hasChildNodes()) return; // 避免重複產生
+        
+        for (let i = 0; i < starCount; i++) {
+            let star = document.createElement('div');
+            star.className = 'shooting-star'; 
+            star.style.top = Math.random() * 80 + 'vh';
+            star.style.left = (Math.random() * 50 + 50) + 'vw';
+            star.style.animationDelay = (Math.random() * 4) + 's';
+            container.appendChild(star);
+        }
+    }
+};
+
+// --- 自動執行 ---
+document.addEventListener('DOMContentLoaded', () => {
+    // 讀取 currentUser，如果沒有就預設 0
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
+    ThemeEngine.apply(user.xp);
+});
+        // ==========================================
+        // 📱 UI 與個人資料編輯功能
+        // ==========================================
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
+
+        function openProfileModal() {
+            const user = Auth.getCurrentUser();
+            if (!user) return alert("請先登入！");
+            
+            if (localStorage.getItem(`hasUpdatedGrade_${user.username}`)) {
+                return alert("⚠️ 您已經修改過年級，系統限制只能存檔一次！");
+            }
+
+            const select = document.getElementById('editGradeSelect');
+            if (user.grade) select.value = user.grade;
+            document.getElementById('profileModal').classList.remove('hidden');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').classList.add('hidden');
+        }
+
+        async function saveProfile() {
+            const newGrade = document.getElementById('editGradeSelect').value;
+            const user = Auth.getCurrentUser();
+            if (!user) return alert("請先登入！");
+
+            if (localStorage.getItem(`hasUpdatedGrade_${user.username}`)) {
+                alert("⚠️ 系統限制只能存檔一次！");
+                closeProfileModal();
+                return;
+            }
+
+            const saveBtn = document.querySelector('#profileModal button[onclick="saveProfile()"]');
+            const originalBtnText = saveBtn.innerText;
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 儲存中...';
+
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: "update_grade", account: user.account || user.username, newGrade: newGrade })
+                });
+                const result = await response.json();
+                if (result.status === "success" || result.result === "success") {
+                    if (Auth.updateUser) Auth.updateUser('grade', newGrade);
+                    const roleEl = document.getElementById('sideUserRole');
+                    if (roleEl) roleEl.innerText = newGrade;
+                    
+                    localStorage.setItem(`hasUpdatedGrade_${user.username}`, 'true');
+                    alert(`✅ 修改成功！目前年級已更新為：${newGrade}`);
+                    closeProfileModal();
+                    
+                    const editBtn = document.querySelector('button[onclick="openProfileModal()"]');
+                    if (editBtn) editBtn.style.display = 'none';
+                } else {
+                    alert("❌ 修改失敗：" + (result.message || "未知錯誤"));
+                }
+            } catch (error) {
+                console.error("更新年級發生錯誤:", error);
+                alert("網路連線異常，請稍後再試。");
+            } finally {
+                if(saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerText = originalBtnText;
+                }
+            }
+        }
+
+        // ==========================================
+        // 💾 資料處理與渲染核心 (學習歷程 & 錯題)
+        // ==========================================
+        let historyDB = [];
+        let wrongDB = [];
+        let historyKey = "";
+        let wrongKey = "";
+
+        window.onload = function() {
+            if (typeof Auth === 'undefined') return;
+            const user = Auth.getCurrentUser();
+            
+            if(user) {
+                const nameEl = document.getElementById('sideUserName');
+                const roleEl = document.getElementById('sideUserRole');
+                if(nameEl) nameEl.textContent = user.name;
+                if(roleEl) roleEl.textContent = user.grade;
+                
+                if (localStorage.getItem(`hasUpdatedGrade_${user.username}`)) {
+                    const editBtn = document.querySelector('button[onclick="openProfileModal()"]');
+                    if (editBtn) editBtn.style.display = 'none';
+                }
+            }
+
+            historyKey = user ? `history_${user.username}` : `history_guest`;
+            wrongKey = user ? `wrong_questions_${user.username}` : `wrong_questions_guest`;
+
+            loadLocalData();
+            renderAll();
+            fetchAnnouncement(); 
+
+            if (user && user.username !== 'guest') {
+                syncFromCloud(user.username);
+            }
+        };
+
+        function loadLocalData() {
+            historyDB = []; wrongDB = [];
+            if (historyKey) {
+                try {
+                    const data = JSON.parse(localStorage.getItem(historyKey));
+                    if (Array.isArray(data)) historyDB = data;
+                } catch(e) { console.error(e); }
+            }
+            if (wrongKey) {
+                try {
+                    const data = JSON.parse(localStorage.getItem(wrongKey));
+                    if (Array.isArray(data)) wrongDB = data;
+                } catch(e) { console.error(e); }
+            }
+            sortAndFilter();
+        }
+
+       // ==========================================
+        // 🌟 1. 修復雲端同步：改用固定特徵產生 ID，並重構錯題收集邏輯
+        // ==========================================
+        function syncFromCloud(username) {
+            const hCount = document.getElementById('historyCount');
+            const wCount = document.getElementById('wrongCount');
+            if(hCount) hCount.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            if(wCount) wCount.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            fetch(`${GAS_URL}?action=get_history&username=${username}`)
+            .then(res => res.json())
+            .then(cloudData => {
+                const myData = cloudData.filter(item => (item.owner || item.username) === username);
+                
+                myData.forEach(item => {
+                    // ✨ 關鍵修復：拔除亂數！改用「時間+分數」產生固定的專屬 ID
+                    if (!item.id) {
+                        const safeTime = new Date(item.date).getTime() || 0;
+                        item.id = `cloud_${safeTime}_${item.score}`;
+                    }
+                    // 將雲端資料加入 (待會 sortAndFilter 會做終極去重)
+                    historyDB.push(item);
+                });
+
+                // ✨ 修正錯題暴增問題：直接從「所有歷史紀錄」中重新萃取錯題，最乾淨！
+                let newWrongDB = [];
+                historyDB.forEach(exam => {
+                    if (exam.wrongList && Array.isArray(exam.wrongList)) {
+                        newWrongDB = newWrongDB.concat(exam.wrongList);
+                    }
+                });
+                wrongDB = newWrongDB;
+
+                sortAndFilter();
+                
+                if(historyKey) localStorage.setItem(historyKey, JSON.stringify(historyDB));
+                if(wrongKey) localStorage.setItem(wrongKey, JSON.stringify(wrongDB));
+                renderAll();
+            })
+            .catch(err => {
+                console.error("同步失敗:", err);
+                updateCounts(); 
+            });
+        }
+
+        // ==========================================
+        // 🌟 2. 終極去重防護：清除之前因為 Bug 產生的重複資料
+        // ==========================================
+        function sortAndFilter() {
+            // -- 考卷去重 (把之前暴增的考卷清掉) --
+            const uniqueHistory = [];
+            const seenHistory = new Set();
+            
+            historyDB.forEach(record => {
+                // 利用「時間 + 分數 + 標題」作為唯一特徵，過濾掉一模一樣的考卷
+                const timeKey = new Date(record.date).getTime() || 0;
+                const dedupeKey = `${timeKey}_${record.score}_${record.title}`;
+                
+                if (!seenHistory.has(dedupeKey)) {
+                    seenHistory.add(dedupeKey);
+                    uniqueHistory.push(record);
+                }
+            });
+            historyDB = uniqueHistory;
+
+            // -- 排序 (最新的在最上面) --
+            historyDB.sort((a, b) => {
+                const timeA = new Date(a.date).getTime() || Number(a.id) || 0;
+                const timeB = new Date(b.date).getTime() || Number(b.id) || 0;
+                return timeB - timeA;
+            });
+            
+            // -- 錯題去重 --
+            const uniqueWrongs = [];
+            const seenWrongs = new Set();
+            wrongDB.forEach(q => {
+                // 只要題目敘述一模一樣，就當作同一題
+                if(!seenWrongs.has(q.question)) {
+                    seenWrongs.add(q.question);
+                    uniqueWrongs.push(q);
+                }
+            });
+            wrongDB = uniqueWrongs;
+        }
+        function renderAll() {
+            renderHistory();
+            renderWrong();
+            updateCounts();
+        }
+
+        function updateCounts() {
+            const hCount = document.getElementById('historyCount');
+            const wCount = document.getElementById('wrongCount');
+            if(hCount) hCount.textContent = historyDB.length;
+            if(wCount) wCount.textContent = wrongDB.length;
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('historyList');
+            const empty = document.getElementById('historyEmpty');
+            if(!container) return;
+            container.innerHTML = '';
+
+            if (historyDB.length === 0) {
+                if(empty) empty.classList.remove('hidden');
+                return;
+            }
+            if(empty) empty.classList.add('hidden');
+
+            historyDB.forEach(record => {
+                let scoreColor = record.score >= 90 ? "text-green-600" : (record.score < 60 ? "text-red-600" : "text-gray-600");
+                
+                // 🌟 修復 onclick 問題，加上單引號保護字串，並處理缺少答對題數的情況
+                let detailText = record.totalCount ? `答對 ${record.correctCount}/${record.totalCount}` : `雲端同步紀錄`;
+                
+                const html = `
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition flex items-center justify-between cursor-pointer" onclick="viewResult('${record.id}')">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 font-bold text-lg">${record.score}</div>
+                            <div>
+                                <h3 class="font-bold text-gray-800">${record.title}</h3>
+                                <p class="text-xs text-gray-500">${record.date || '未知日期'} • ${detailText}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">${record.subject || '一般'}</span>
+                            <i class="fas fa-chevron-right text-gray-300"></i>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        function renderWrong() {
+            const container = document.getElementById('wrongList');
+            const empty = document.getElementById('wrongEmpty');
+            if(!container) return;
+            container.innerHTML = '';
+
+            if (wrongDB.length === 0) {
+                if(empty) empty.classList.remove('hidden');
+                return;
+            }
+            if(empty) empty.classList.add('hidden');
+
+            wrongDB.forEach((q, idx) => {
+                let optionsHtml = '';
+                if(q.options) {
+                    q.options.forEach((opt, i) => {
+                        let style = "bg-white border-gray-200 text-gray-600";
+                        let icon = String.fromCharCode(65+i);
+                        if (i === q.answer) style = "bg-green-50 border-green-300 text-green-800";
+                        else if (i === q.yourAns) style = "bg-red-50 border-red-300 text-red-800";
+                        optionsHtml += `<div class="p-2 border rounded mb-1 flex items-center gap-2 ${style}"><span class="font-bold">${icon}</span> ${opt}</div>`;
+                    });
+                }
+
+                const explain = (q.explanation && Array.isArray(q.explanation)) ? q.explanation.join('<br>') : (q.explanation || "無解析");
+                const safeQuestion = q.question.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                
+                const html = `
+                    <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm group hover:border-blue-200 transition">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-bold text-gray-800 text-lg flex-grow mr-4">${q.question}</h3>
+                            <div class="flex gap-2 shrink-0">
+                                <button onclick="askInForum('${safeQuestion}')" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition flex items-center gap-1">
+                                    <i class="fas fa-comment-dots"></i> AI 解題
+                                </button>
+                            </div>
+                        </div>
+                        <div class="space-y-1 mb-4 text-sm">${optionsHtml}</div>
+                        <div class="bg-slate-50 p-4 rounded text-sm text-slate-700 border-l-4 border-indigo-400">
+                            <strong>解析：</strong><br>${explain}
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+            if (window.MathJax) MathJax.typesetPromise();
+        }
+
+        window.askInForum = function(qText) {
+            const targetQ = wrongDB.find(q => q.question.replace(/'/g, "\\'").replace(/"/g, '&quot;') === qText || q.question === qText);
+            if (targetQ) {
+                const draftPost = {
+                    title: `[請教] 關於錯題：${targetQ.question.substring(0, 15)}...`,
+                    content: `AI 老師您好，我在練習時做錯了這題，請幫我詳細解說觀念：\n\n**題目**：\n${targetQ.question}\n\n**我的選項**：${targetQ.options[targetQ.yourAns]}\n**正確答案**：${targetQ.options[targetQ.answer]}\n\n**我不懂的地方**：\n(請在此輸入您的疑問)`
+                };
+                localStorage.setItem('forum_draft', JSON.stringify(draftPost));
+                window.location.href = 'forum.html';
+            } else {
+                alert("發生錯誤：找不到該題目資料");
+            }
+        };
+
+        // 🌟 修正傳入 ID 的型別問題，確保可以正確跳轉至診斷分析
+        window.viewResult = function(recordId) {
+            const record = historyDB.find(r => String(r.id) === String(recordId));
+            if (record) {
+                localStorage.setItem('examResult', JSON.stringify(record));
+                window.location.href = "analysis.html";
+            } else {
+                alert("無法開啟此測驗紀錄，資料可能已損毀。");
+            }
+        };
+
+        window.switchTab = function(tab) {
+            const histBtn = document.getElementById('tab-history');
+            const wrongBtn = document.getElementById('tab-wrong');
+            const histView = document.getElementById('historyView');
+            const wrongView = document.getElementById('wrongView');
+
+            if (tab === 'history') {
+                histBtn.className = "pb-3 px-2 tab-active transition";
+                wrongBtn.className = "pb-3 px-2 tab-inactive transition";
+                histView.classList.remove('hidden');
+                wrongView.classList.add('hidden');
+            } else {
+                histBtn.className = "pb-3 px-2 tab-inactive transition";
+                wrongBtn.className = "pb-3 px-2 tab-active transition";
+                histView.classList.add('hidden');
+                wrongView.classList.remove('hidden');
+                if (window.MathJax) MathJax.typesetPromise();
+            }
+        };
+
+        // ==========================================
+        // 📢 系統公告功能 
+        // ==========================================
+        let currentAnnVersion = null; 
+        async function fetchAnnouncement() {
+            try {
+                const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: "get_announcement" }) });
+                const resData = await response.json();
+                
+                if (resData.result === "success" && resData.data && resData.data.isActive) {
+                    const ann = resData.data;
+                    currentAnnVersion = ann.version; 
+                    const currentUser = Auth.getCurrentUser()?.username || "guest";
+                    const storageKey = `read_ann_${currentUser}`;
+                    const lastReadVersion = localStorage.getItem(storageKey);
+
+                    if (lastReadVersion !== currentAnnVersion) {
+                        renderAnnouncement(ann);
+                    }
+                }
+            } catch (error) { console.error("無法抓取公告:", error); }
+        }
+
+        function renderAnnouncement(ann) {
+            document.getElementById('annDateDisplay').innerText = ann.date || "最新消息";
+            document.getElementById('annTitleDisplay').innerText = ann.title;
+            document.getElementById('annContentDisplay').innerHTML = ann.content.replace(/\n/g, '<br>');
+            setTimeout(showAnnouncement, 500);
+        }
+
+        function showAnnouncement() {
+            const modal = document.getElementById('announcementModal');
+            const content = document.getElementById('announcementContent');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeAnnouncement() {
+            const modal = document.getElementById('announcementModal');
+            const content = document.getElementById('announcementContent');
+            modal.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+            
+            if (currentAnnVersion) {
+                const currentUser = Auth.getCurrentUser()?.username || "guest";
+                localStorage.setItem(`read_ann_${currentUser}`, currentAnnVersion);
+            }
+        }
+    </script>
+</body>
+</html>

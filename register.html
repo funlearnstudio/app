@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>註冊會員 - 雲端學院</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #f4f6f8; font-family: 'Noto Sans TC', sans-serif; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen py-8 relative">
+
+    <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-gray-100 relative z-10">
+        <div class="text-center mb-6">
+            <div class="w-12 h-12 bg-blue-600 rounded-lg text-white flex items-center justify-center font-bold text-2xl mx-auto mb-4 shadow-lg"><i class="fas fa-user-plus"></i></div>
+            <h2 class="text-2xl font-bold text-gray-800">建立新帳號</h2>
+            <p class="text-sm text-gray-500 mt-2">請先選擇您的身份</p>
+        </div>
+
+        <form id="regForm" class="space-y-5">
+            <div class="flex gap-4 mb-4">
+                <label class="flex-1 cursor-pointer">
+                    <input type="radio" name="role" value="student" class="peer sr-only" checked onchange="toggleRoleUI()">
+                    <div class="p-3 text-center rounded-xl border-2 border-gray-100 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 font-bold transition">
+                        <i class="fas fa-user-graduate mr-1"></i> 學生
+                    </div>
+                </label>
+                <label class="flex-1 cursor-pointer">
+                    <input type="radio" name="role" value="parent" class="peer sr-only" onchange="toggleRoleUI()">
+                    <div class="p-3 text-center rounded-xl border-2 border-gray-100 peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-700 font-bold transition">
+                        <i class="fas fa-user-shield mr-1"></i> 家長
+                    </div>
+                </label>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">真實姓名</label>
+                <input type="text" id="name" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition" placeholder="請輸入真實姓名" required>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">設定登入帳號</label>
+                <input type="text" id="username" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition" placeholder="請設定一組英數帳號" required>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">設定密碼</label>
+                <input type="password" id="password" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition" placeholder="請設定密碼" required>
+            </div>
+
+            <div id="studentFields" class="block">
+                <label class="block text-sm font-bold text-gray-700 mb-1">目前年級</label>
+                <select id="grade" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition">
+                    <option value="國七">國七</option>
+                    <option value="國八">國八</option>
+                    <option value="國九">國九</option>
+                    <option value="高一">高一</option>
+                    <option value="高二">高二</option>
+                    <option value="高三">高三</option>
+                </select>
+            </div>
+
+            <div id="parentFields" class="hidden">
+                <label class="block text-sm font-bold text-gray-700 mb-1 text-orange-600"><i class="fas fa-link"></i> 綁定學生帳號</label>
+                <input type="text" id="childUsername" class="w-full p-3 bg-orange-50 border border-orange-200 rounded-xl focus:outline-none focus:border-orange-500 transition" placeholder="請輸入您孩子的「登入帳號」">
+                <p class="text-xs text-gray-400 mt-1">※ 孩子必須先完成註冊，您才能進行綁定</p>
+            </div>
+
+            <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200 flex justify-center items-center gap-2 mt-4">
+                <span>立即註冊</span>
+            </button>
+        </form>
+
+        <div class="mt-6 text-center text-sm flex justify-center items-center gap-4 divide-x divide-gray-300">
+            <a href="index.html" class="text-gray-500 hover:text-blue-600 font-bold pr-4">已有帳號？返回登入</a>
+            <button onclick="openForgotModal()" class="text-gray-500 hover:text-red-500 font-bold pl-4 transition">忘記密碼？</button>
+        </div>
+    </div>
+
+    <div id="forgotModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden border border-slate-100 transform scale-95 transition-transform duration-300" id="forgotModalContent">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-black text-slate-800"><i class="fas fa-key text-red-500 mr-2"></i>重設密碼</h3>
+                    <button onclick="closeForgotModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times text-lg"></i></button>
+                </div>
+                <p class="text-xs text-slate-500 font-bold mb-5 leading-relaxed">請輸入您的「登入帳號」與「真實姓名」進行身分驗證，驗證成功即可設定新密碼。</p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <input type="text" id="fp-username" placeholder="請輸入註冊時用的登入帳號" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-red-400 font-bold text-sm">
+                    </div>
+                    <div>
+                        <input type="text" id="fp-name" placeholder="請輸入註冊時用的真實姓名" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-red-400 font-bold text-sm">
+                    </div>
+                    <div class="pt-2 border-t border-slate-100">
+                        <input type="password" id="fp-newpassword" placeholder="請輸入新的密碼" class="w-full p-3 bg-red-50 border border-red-200 rounded-xl focus:outline-none focus:border-red-500 font-bold text-sm">
+                    </div>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button onclick="closeForgotModal()" class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold hover:bg-slate-200 transition">取消</button>
+                    <button onclick="submitForgotPassword()" id="fp-btn" class="flex-1 bg-red-500 text-white py-3 rounded-xl font-bold hover:bg-red-600 shadow-lg shadow-red-200 transition">確認重設</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
+
+        // ==========================================
+        // 1. 註冊邏輯 (保留你原本的程式碼)
+        // ==========================================
+        function toggleRoleUI() {
+            const role = document.querySelector('input[name="role"]:checked').value;
+            const studentFields = document.getElementById('studentFields');
+            const parentFields = document.getElementById('parentFields');
+            const gradeInput = document.getElementById('grade');
+            const childUsernameInput = document.getElementById('childUsername');
+
+            if (role === 'parent') {
+                studentFields.classList.add('hidden'); studentFields.classList.remove('block');
+                parentFields.classList.add('block'); parentFields.classList.remove('hidden');
+                gradeInput.removeAttribute('required');
+                childUsernameInput.setAttribute('required', 'true');
+            } else {
+                studentFields.classList.add('block'); studentFields.classList.remove('hidden');
+                parentFields.classList.add('hidden'); parentFields.classList.remove('block');
+                gradeInput.setAttribute('required', 'true');
+                childUsernameInput.removeAttribute('required');
+            }
+        }
+
+        document.getElementById('regForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 註冊處理中...';
+            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+
+            const role = document.querySelector('input[name="role"]:checked').value;
+            const registerData = {
+                action: "register",
+                role: role,
+                name: document.getElementById('name').value.trim(),
+                username: document.getElementById('username').value.trim(),
+                password: document.getElementById('password').value.trim(),
+                grade: role === 'student' ? document.getElementById('grade').value : "",
+                childUsername: role === 'parent' ? document.getElementById('childUsername').value.trim() : ""
+            };
+
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: "POST", redirect: "follow",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify(registerData)
+                });
+                const data = await response.json();
+                if (data.result === "success") {
+                    alert("🎉 註冊成功！請使用新帳號登入。");
+                    window.location.href = "index.html";
+                } else {
+                    alert("❌ 註冊失敗：" + (data.message || "未知錯誤"));
+                    resetButton();
+                }
+            } catch (error) {
+                alert("⚠️ 無法連線至伺服器，請檢查網路狀態。");
+                resetButton();
+            }
+
+            function resetButton() {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+            }
+        });
+
+        // ==========================================
+        // 🌟 2. 忘記密碼邏輯 (新增)
+        // ==========================================
+        function openForgotModal() {
+            const modal = document.getElementById('forgotModal');
+            const content = document.getElementById('forgotModalContent');
+            modal.classList.remove('hidden');
+            // 小小的延遲讓動畫生效
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeForgotModal() {
+            const modal = document.getElementById('forgotModal');
+            const content = document.getElementById('forgotModalContent');
+            modal.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                // 清空輸入框
+                document.getElementById('fp-username').value = '';
+                document.getElementById('fp-name').value = '';
+                document.getElementById('fp-newpassword').value = '';
+            }, 300);
+        }
+
+        async function submitForgotPassword() {
+            const username = document.getElementById('fp-username').value.trim();
+            const name = document.getElementById('fp-name').value.trim();
+            const newPassword = document.getElementById('fp-newpassword').value.trim();
+            const btn = document.getElementById('fp-btn');
+
+            if (!username || !name || !newPassword) {
+                return alert("請完整填寫帳號、姓名與新密碼！");
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 處理中...';
+
+            const payload = {
+                action: "reset_password", // 對應後端的 action
+                username: username,
+                name: name,
+                newPassword: newPassword
+            };
+
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: "POST",
+                    redirect: "follow",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === "success") {
+                    alert("✅ 密碼已成功重設！請使用新密碼登入。");
+                    closeForgotModal();
+                } else {
+                    alert("❌ 驗證失敗：" + data.message);
+                }
+            } catch (err) {
+                alert("網路異常，請稍後再試。");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '確認重設';
+            }
+        }
+
+        window.onload = toggleRoleUI;
+    </script>
+</body>
+</html>

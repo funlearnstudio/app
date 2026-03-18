@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>雲端學院 - 智慧學習平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
+    <link rel="manifest" href="/manifest.json">
+
+<meta name="theme-color" content="#000000">
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js');
+  }
+</script>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<meta name="apple-mobile-web-app-title" content="學雲端學院">
+
+<link rel="apple-touch-icon" href="1-1ce8683e.ico"">
+    <script src="mockdata/users.js"></script>
+    <script src="assets/js/auth.js"></script>
+
+    <style>
+       .blob {
+    /* 暫時加上這一行，先把球藏起來 */
+    display: none; 
+
+    /* ...原本的代碼... */
+    position: absolute;
+    filter: blur(40px);
+    /* ... */
+}
+        .blob-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: #bfdbfe; border-radius: 50%; animation: float 6s infinite ease-in-out; }
+        .blob-2 { bottom: -10%; right: -10%; width: 400px; height: 400px; background: #e9d5ff; border-radius: 50%; animation: float 8s infinite ease-in-out reverse; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(20px); } }
+        
+        /* 平滑捲動 */
+        html { scroll-behavior: smooth; }
+    </style>
+    <style>
+       
+       /* 建議：直接在這裡確保 html 也是白色的，避免手機下拉回彈時出現黑底 */
+      /* 請直接替換掉原本 head 裡面的這段 style */
+
+    html, body {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden !important; /* 強制執行 */
+        background-color: #ffffff;
+        margin: 0;
+        padding: 0;
+        position: relative; /* 穩定版面 */
+    }
+</style>
+</head>
+    
+<body class="min-h-screen flex flex-col font-sans bg-white overflow-x-hidden">
+
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    
+    <nav class="w-full px-6 py-4 flex justify-between items-center z-50 fixed top-0 bg-white/80 backdrop-blur-md shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl text-white flex items-center justify-center font-bold text-xl shadow-lg">學</div>
+            <span class="text-2xl font-bold text-gray-800 tracking-wide">雲端學院</span>
+        </div>
+     <div class="hidden lg:flex gap-8 text-gray-600 font-medium">
+    <a href="#features" class="hover:text-blue-600 transition">平台特色</a>
+    <a href="#role-features" class="hover:text-blue-600 transition font-bold text-blue-500">家長與學生</a>
+    <a href="#roadmap" class="hover:text-blue-600 transition">平台里程</a>
+    <a href="#pricing" class="hover:text-blue-600 transition">方案費用</a>
+    <a href="#faq" class="hover:text-blue-600 transition">常見問題</a>
+</div>
+        <div>
+            <a href="register.html" class="bg-blue-600 text-white px-5 py-2 rounded-full font-bold hover:bg-blue-700 transition shadow-md">
+                免費註冊
+            </a>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-6 pt-32 pb-12 md:pb-20 flex flex-col lg:flex-row items-center justify-between gap-12 relative z-10">
+        
+        <div class="md:w-1/2 space-y-6">
+            <div class="inline-block bg-blue-100 text-blue-700 px-4 py-1 rounded-full text-sm font-bold tracking-wide mb-2 animate-pulse">
+                🚀 2026 全新升級：導入 AI 題庫生成
+            </div>
+            <h1 class="text-4xl md:text-6xl font-extrabold text-gray-900 leading-tight">
+                學習，<br>
+                從未如此 <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">精準高效</span>
+            </h1>
+            <p class="text-lg text-gray-500 leading-relaxed">
+                結合大數據分析與智慧出題系統。為學生提供個人化補救，為老師提供精準診斷。
+                <br>現在加入，立即體驗全科無限題庫。
+            </p>
+            <div class="flex gap-4 pt-4">
+                <a href="#pricing" class="px-8 py-3 bg-gray-800 text-white rounded-lg font-bold hover:bg-gray-900 transition shadow-lg">
+                    查看方案
+                </a>
+                <a href="#features" class="px-8 py-3 bg-white text-gray-700 border border-gray-200 rounded-lg font-bold hover:bg-gray-50 transition">
+                    了解更多
+                </a>
+            </div>
+            <div class="pt-6 flex items-center gap-6 text-sm text-gray-400">
+                <span><i class="fas fa-check text-blue-500 mr-1"></i> 免費試用</span>
+                <span><i class="fas fa-check text-blue-500 mr-1"></i> 無須綁定信用卡</span>
+                <span><i class="fas fa-check text-blue-500 mr-1"></i> 支援所有裝置</span>
+            </div>
+        </div>
+
+        <div class="md:w-5/12 w-full">
+            <div class="bg-white p-8 rounded-2xl shadow-2xl border border-gray-100 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 to-purple-600"></div>
+                
+                <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">會員登入</h2>
+
+              <form id="loginForm" class="space-y-5">
+    <div>
+        <label class="block text-gray-700 text-xs font-bold mb-2 uppercase">帳號</label>
+        <div class="relative">
+            <i class="fas fa-user absolute left-3 top-3.5 text-gray-400"></i>
+            <input type="text" id="username" class="w-full pl-10 p-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition text-base" placeholder="輸入帳號" value="">
+        </div>
+    </div>
+    <div>
+        <label class="block text-gray-700 text-xs font-bold mb-2 uppercase">密碼</label>
+        <div class="relative">
+            <i class="fas fa-lock absolute left-3 top-3.5 text-gray-400"></i>
+            <input type="password" id="password" class="w-full pl-10 p-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition text-base" placeholder="輸入密碼" value="">
+        </div>
+    </div>
+    
+    <button type="submit" id="loginBtn" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white p-3.5 rounded-lg font-bold hover:shadow-lg hover:from-blue-700 hover:to-blue-800 transition transform active:scale-95 flex justify-center items-center gap-2">
+        <span>立即登入</span> <i class="fas fa-arrow-right"></i>
+    </button>
+</form>
+               <div class="mt-6 pt-6 border-t border-gray-100 text-center text-sm flex justify-center items-center gap-4 divide-x divide-gray-300">
+    <a href="register.html" class="text-blue-600 font-bold hover:underline pr-4">立即註冊</a>
+    <button type="button" onclick="openForgotModal()" class="text-gray-500 hover:text-red-500 font-bold pl-4 transition">忘記密碼？</button>
+</div>
+            </div>
+        </div>
+    </main>
+    
+    <section id="stats" class="scroll-mt-28 py-12 bg-white border-y border-gray-100">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid grid-cols-2 mx-auto  text-center">
+                <div>
+                    <div class="text-4xl font-extrabold text-purple-600 mb-2">1.2 億</div>
+                    <div class="text-gray-500 text-sm font-bold">累計生成題數</div>
+                </div>
+                <div>
+                    <div class="text-4xl font-extrabold text-orange-500 mb-2">全台</div>
+                    <div class="text-gray-500 text-sm font-bold">國高中學校採用</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+   <section id="features" class="scroll-mt-28 py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold text-gray-800">三大核心技術</h2>
+                <p class="text-gray-500 mt-4">透過科技輔助，讓學習更有效率</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div class="p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition duration-300 group">
+        <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition">
+            <i class="fas fa-robot"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-800 mb-3">AI 智慧出題</h3>
+        <p class="text-gray-600 leading-relaxed">運用演算法動態生成題目，數值與情境每次都不同，徹底解決死背答案的問題。</p>
+    </div>
+    <div class="p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition duration-300 group">
+    <div class="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition">
+        <i class="fas fa-bullseye"></i>
+    </div>
+    <h3 class="text-xl font-bold text-gray-800 mb-3">精準弱點診斷</h3>
+    <p class="text-gray-600 leading-relaxed">透過雷達圖分析五大能力指標，精準抓出學習盲點，並提供個人化補救建議。</p>
+</div>
+    <div class="p-8 bg-white rounded-2xl shadow-sm hover:shadow-xl transition duration-300 group">
+        <div class="w-16 h-16 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition">
+            <i class="fas fa-user-friends"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-800 mb-3">親師生帳號聯動</h3>
+        <p class="text-gray-600 leading-relaxed">數據即時同步，家長可透過手機登入家長帳號掌握孩子狀況，學生可在不同裝置上學習並練習。</p>
+    </div>
+</div>
+        </div>
+    </section>
+    <section id="role-features" class="scroll-mt-28 py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <span class="text-blue-600 font-bold tracking-wider uppercase text-sm">For Students & Parents</span>
+                <h2 class="text-3xl font-bold text-gray-800 mt-2">量身打造的專屬功能</h2>
+                <p class="text-gray-500 mt-4">無論是自主學習還是從旁輔助，我們都準備了最實用的工具</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div class="bg-blue-50/50 rounded-3xl p-8 md:p-10 border border-blue-100 hover:shadow-xl transition-shadow duration-300 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-blue-200 rounded-full blur-3xl opacity-50 group-hover:scale-110 transition-transform duration-500"></div>
+                    <div class="relative z-10">
+                        <div class="flex items-center gap-4 mb-8">
+                            <div class="w-14 h-14 bg-blue-600 text-white rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-blue-200">
+                                <i class="fas fa-user-graduate"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-gray-800">學生專屬功能</h3>
+                        </div>
+                        <ul class="space-y-6">
+                            <li class="flex items-start gap-4">
+                                <div class="mt-1 w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0"><i class="fas fa-gamepad"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-gray-800 text-lg">遊戲化學習體驗</h4>
+                                    <p class="text-gray-500 text-sm mt-1 leading-relaxed">寫題累積 XP 經驗值，升級解鎖「創世星神」等 12 階級專屬面板，還能用抽獎券抽隱藏大獎！</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-4">
+                                <div class="mt-1 w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0"><i class="fas fa-book-medical"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-gray-800 text-lg">專屬自動錯題本</h4>
+                                    <p class="text-gray-500 text-sm mt-1 leading-relaxed">凡寫錯的題目自動收錄，AI 會針對弱點重新出題，並提供詳盡解析，直到真正弄懂為止。</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-4">
+                                <div class="mt-1 w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0"><i class="fas fa-chart-pie"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-gray-800 text-lg">五力分析雷達圖</h4>
+                                    <p class="text-gray-500 text-sm mt-1 leading-relaxed">即時分析你的邏輯推導、計算速度、概念理解等能力指標，精準找出最需要補強的單元。</p>
+                                </div>
+                            </li>
+                        </ul>
+                        <div class="mt-10">
+                            <a href="register.html" class="inline-flex items-center justify-center w-full py-3 bg-white text-blue-600 font-bold rounded-xl border-2 border-blue-100 hover:border-blue-300 hover:bg-blue-50 transition">學生免費註冊 <i class="fas fa-arrow-right ml-2"></i></a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-emerald-50/50 rounded-3xl p-8 md:p-10 border border-emerald-100 hover:shadow-xl transition-shadow duration-300 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-emerald-200 rounded-full blur-3xl opacity-50 group-hover:scale-110 transition-transform duration-500"></div>
+                    <div class="relative z-10">
+                        <div class="flex items-center gap-4 mb-8">
+                            <div class="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-emerald-200">
+                                <i class="fas fa-user-friends"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-gray-800">家長監護功能</h3>
+                        </div>
+                        <ul class="space-y-6">
+                            <li class="flex items-start gap-4">
+                                <div class="mt-1 w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0"><i class="fas fa-link"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-gray-800 text-lg">帳號一鍵輕鬆綁定</h4>
+                                    <p class="text-gray-500 text-sm mt-1 leading-relaxed">註冊家長帳號並輸入孩子的登入帳號，即可完成綁定，若有多位孩子也可輕鬆切換查看。</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-4">
+                                <div class="mt-1 w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0"><i class="fas fa-mobile-alt"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-gray-800 text-lg">即時學習數據報表</h4>
+                                    <p class="text-gray-500 text-sm mt-1 leading-relaxed">不再需要苦等段考成績，隨時打開手機就能查看孩子今天的練題數量、正確率與花費時間。</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-4">
+                                <div class="mt-1 w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0"><i class="fas fa-search-location"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-gray-800 text-lg">同步追蹤精準弱點</h4>
+                                    <p class="text-gray-500 text-sm mt-1 leading-relaxed">家長端可同步觀看孩子的錯題庫與能力雷達圖，了解孩子在哪個單元卡關，給予適時的協助與鼓勵。</p>
+                                </div>
+                            </li>
+                        </ul>
+                        <div class="mt-10">
+                            <a href="register.html" class="inline-flex items-center justify-center w-full py-3 bg-white text-emerald-600 font-bold rounded-xl border-2 border-emerald-100 hover:border-emerald-300 hover:bg-emerald-50 transition">建立家長帳號 <i class="fas fa-arrow-right ml-2"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+<section id="roadmap" class="scroll-mt-28 py-20 bg-white border-y border-gray-100 overflow-hidden">
+        <div class="max-w-4xl mx-auto px-6 relative">
+            
+            <div class="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-blue-50 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
+
+            <div class="text-center mb-16 relative z-10">
+                <span class="text-blue-600 font-bold tracking-wider uppercase text-sm">Roadmap</span>
+                <h2 class="text-3xl font-bold text-gray-800 mt-2">平台發展里程碑</h2>
+                <p class="text-gray-500 mt-4">從構想到實踐，我們持續進化的開發歷程</p>
+            </div>
+
+            <div class="relative pl-12 md:pl-0">
+    <div class="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-200 md:left-1/2 md:-ml-0.5"></div>
+    
+
+                <div class="space-y-12">
+
+                    <div class="relative flex flex-col md:flex-row items-center justify-between group">
+                        <div class="order-1 md:w-5/12 text-left md:text-right mb-2 md:mb-0 pl-8 md:pl-0">
+                            <span class="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full mb-1">
+                                <i class="fas fa-check-circle mr-1"></i> Phase 1-3
+                            </span>
+                            <div class="text-sm text-gray-400 font-mono">已完成</div>
+                        </div>
+                        
+                        <div class="absolute left-0 md:left-1/2 md:-translate-x-1/2 w-4 h-4 rounded-full bg-blue-600 border-4 border-white shadow-md ring-2 ring-blue-100 z-10 group-hover:scale-125 transition duration-300"></div>
+
+                        <div class="order-2 md:w-5/12 pl-8 md:pl-0">
+                            <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition duration-300 relative">
+                                <div class="hidden md:block absolute top-6 -left-2 w-4 h-4 bg-gray-50 border-l border-b border-gray-100 transform rotate-45"></div>
+                                
+                                <h3 class="font-bold text-gray-800 text-lg mb-2">核心架構與雲端串接</h3>
+                                <p class="text-gray-600 text-sm leading-relaxed">
+                                    建立 RWD 響應式介面，並透過 <strong>Google Apps Script (GAS)</strong> 實現前後端資料串接，解決了跨裝置「考試紀錄」與「錯題庫」同步的技術難題。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative flex flex-col md:flex-row-reverse items-center justify-between group">
+                        <div class="order-1 md:w-5/12 text-left mb-2 md:mb-0 pl-8 md:pl-0">
+                            <span class="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full mb-1">
+                                <i class="fas fa-check-circle mr-1"></i> Phase 4-5
+                            </span>
+                            <div class="text-sm text-gray-400 font-mono">已完成</div>
+                        </div>
+                        
+                        <div class="absolute left-0 md:left-1/2 md:-translate-x-1/2 w-4 h-4 rounded-full bg-blue-600 border-4 border-white shadow-md ring-2 ring-blue-100 z-10 group-hover:scale-125 transition duration-300"></div>
+
+                        <div class="order-2 md:w-5/12 pl-8 md:pl-0">
+                            <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition duration-300 relative">
+                                <div class="hidden md:block absolute top-6 -right-2 w-4 h-4 bg-gray-50 border-r border-t border-gray-100 transform rotate-45"></div>
+                                
+                                <h3 class="font-bold text-gray-800 text-lg mb-2">遊戲化學習 & UI 優化</h3>
+                                <p class="text-gray-600 text-sm leading-relaxed">
+                                    開發「學習遊戲場」與金幣獎勵系統，提升學習動機。優化演算法，加入前端<strong>「已解決黑名單」</strong>機制，防止已刪除的錯題重複出現。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative flex flex-col md:flex-row items-center justify-between group">
+                        <div class="order-1 md:w-5/12 text-left md:text-right mb-2 md:mb-0 pl-8 md:pl-0">
+                            <span class="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full mb-1">
+                                <i class="fas fa-check-circle mr-1"></i> Phase 6
+                            </span>
+                            <div class="text-sm text-gray-400 font-mono">已完成</div>
+                        </div>
+                        
+                        <div class="absolute left-0 md:left-1/2 md:-translate-x-1/2 w-4 h-4 rounded-full bg-blue-600 border-4 border-white shadow-md ring-2 ring-blue-100 z-10 group-hover:scale-125 transition duration-300"></div>
+
+                        <div class="order-2 md:w-5/12 pl-8 md:pl-0">
+                            <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition duration-300 relative">
+                                <div class="hidden md:block absolute top-6 -right-2 w-4 h-4 bg-gray-50 border-r border-t border-gray-100 transform rotate-45"></div>
+                                
+                                <h3 class="font-bold text-gray-800 text-lg mb-2">視覺化數據分析</h3>
+                                <p class="text-gray-600 text-sm leading-relaxed">
+                                    導入 <strong>Chart.js</strong> 繪圖引擎，將龐大的答題數據轉化為「五力分析雷達圖」，提供學生更直觀的強弱項診斷。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative flex flex-col md:flex-row items-center justify-between group">
+                        <div class="order-1 md:w-5/12 text-left md:text-right mb-2 md:mb-0 pl-8 md:pl-0">
+                            <span class="inline-block px-3 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-full mb-1 animate-pulse">
+                                <i class="fas fa-hammer mr-1"></i>Phase 7-8
+                            </span>
+                            <div class="text-sm text-gray-400 font-mono">進行中</div>
+                        </div>
+                        
+                        <div class="absolute left-0 md:left-1/2 md:-translate-x-1/2 w-4 h-4 rounded-full bg-amber-400 border-4 border-white shadow-md ring-2 ring-amber-100 z-10 group-hover:scale-125 transition duration-300"></div>
+
+                        <div class="order-2 md:w-5/12 pl-8 md:pl-0">
+                            <div class="bg-white p-6 rounded-2xl border-2 border-amber-100 shadow-lg relative">
+                                <div class="hidden md:block absolute top-6 -left-2 w-4 h-4 bg-white border-l border-b border-amber-100 transform rotate-45"></div>
+                                
+                                <h3 class="font-bold text-gray-800 text-lg mb-2">加入更多題目模組</h3>
+                                <p class="text-gray-600 text-sm leading-relaxed">
+                                    正在開發<strong>各科無限量出題及錯題解釋系統</strong>，針對學生的錯題提供<strong>精彩自動化解析</strong>。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    
+    </section>
+   <section id="pricing" class="scroll-mt-28 py-20 bg-white overflow-hidden">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold text-gray-800">選擇適合您的方案</h2>
+                <p class="text-gray-500 mt-4">我們致力於教育普及，基礎功能永久免費</p>
+            </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+    
+    <div class="order-2 md:order-1 border border-gray-200 rounded-2xl p-8 bg-gray-50 hover:border-purple-300 transition">
+        <h3 class="text-xl font-bold text-purple-700">教師進階版</h3>
+        <div class="my-4">
+            <span class="text-4xl font-bold text-gray-800">免費申請</span>
+        </div>
+        <p class="text-gray-500 mb-6 text-sm">僅限學校教師憑證申請使用。</p>
+        <ul class="space-y-4 mb-8 text-sm">
+            <li class="flex items-center text-gray-600"><i class="fas fa-check text-purple-500 mr-3"></i> 班級管理系統</li>
+            <li class="flex items-center text-gray-600"><i class="fas fa-check text-purple-500 mr-3"></i> 一鍵派發作業</li>
+            <li class="flex items-center text-gray-600"><i class="fas fa-check text-purple-500 mr-3"></i> 全班學情分析</li>
+        </ul>
+        <button onclick="alert('請聯繫校務系統管理員開通權限')" class="block w-full py-3 border border-purple-600 text-purple-600 text-center rounded-xl font-bold hover:bg-purple-50 transition">
+            教師申請
+        </button>
+    </div>
+
+    <div class="order-1 md:order-2 border-2 border-blue-500 rounded-2xl p-8 relative transform scale-105 shadow-2xl bg-white z-10">
+        <div class="absolute top-0 right-0 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">
+            最受歡迎
+        </div>
+        <h3 class="text-xl font-bold text-gray-800">學生基礎版</h3>
+        <div class="my-4">
+            <span class="text-5xl font-extrabold text-blue-600">NT$ 0</span>
+            <span class="text-gray-400">/ 永久免費</span>
+        </div>
+        <p class="text-gray-500 mb-6 text-sm">適合全台國高中生自主學習使用。</p>
+        <ul class="space-y-4 mb-8">
+            <li class="flex items-center text-gray-700"><i class="fas fa-check text-green-500 mr-3"></i> 無限次 AI 出題</li>
+            <li class="flex items-center text-gray-700"><i class="fas fa-check text-green-500 mr-3"></i> 基礎診斷報告</li>
+            <li class="flex items-center text-gray-700"><i class="fas fa-check text-green-500 mr-3"></i> 錯題紀錄庫</li>
+            <li class="flex items-center text-gray-700"><i class="fas fa-check text-green-500 mr-3"></i> 親師生平台連動</li>
+        </ul>
+        <a href="register.html" class="block w-full py-3 bg-blue-600 text-white text-center rounded-xl font-bold hover:bg-blue-700 transition">
+            立即免費註冊
+        </a>
+    </div>
+
+    <div class="order-3 border border-gray-200 rounded-2xl p-8 bg-gray-50 hover:border-gray-400 transition">
+        <h3 class="text-xl font-bold text-gray-700">校園授權版</h3>
+        <div class="my-4">
+            <span class="text-4xl font-bold text-gray-800">客製化</span>
+        </div>
+        <p class="text-gray-500 mb-6 text-sm">適合補習班或學校機構導入。</p>
+        <ul class="space-y-4 mb-8 text-sm">
+            <li class="flex items-center text-gray-600"><i class="fas fa-check text-gray-500 mr-3"></i> 校務系統整合</li>
+            <li class="flex items-center text-gray-600"><i class="fas fa-check text-gray-500 mr-3"></i> 專屬題庫上傳</li>
+            <li class="flex items-center text-gray-600"><i class="fas fa-check text-gray-500 mr-3"></i> API 串接服務</li>
+        </ul>
+        <button onclick="alert('將轉接業務專員')" class="block w-full py-3 border border-gray-400 text-gray-600 text-center rounded-xl font-bold hover:bg-gray-100 transition">
+            聯絡我們
+        </button>
+    </div>
+</div>
+
+            </div>
+        </div>
+    </section>
+
+    <section id="faq" class="scroll-mt-28 py-16 bg-gray-50">
+        <div class="max-w-4xl mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-12">常見問題</h2>
+            <div class="space-y-4">
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="font-bold text-lg text-gray-800 mb-2">Q: 學生版真的是免費的嗎？</h3>
+                    <p class="text-gray-600">是的，為了推廣數位學習，我們提供全國國高中生永久免費使用基礎功能，包含無限題庫練習。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="font-bold text-lg text-gray-800 mb-2">Q: 題庫內容符合 108 課綱嗎？</h3>
+                    <p class="text-gray-600">完全符合。我們的題庫由專業教師團隊依據教育部最新 108 課綱編寫，並涵蓋各版本教材。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="font-bold text-lg text-gray-800 mb-2">Q: 家長如何查看孩子成績？</h3>
+                    <p class="text-gray-600">家長登入孩子帳號後，即可在手機上即時查看學習週報與雷達圖分析。</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="font-bold text-lg text-gray-800 mb-2">Q: AI 智慧出題與一般題庫有什麼不同？</h3>
+                    <p class="text-gray-600">一般題庫是固定的靜態題目，容易死背答案。我們的 AI 演算法會動態變換數值與情境，確保學生是真正理解解題邏輯而非記憶選項。</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="font-bold text-lg text-gray-800 mb-2">Q: 可以在平板或電腦上使用嗎？</h3>
+                    <p class="text-gray-600">沒問題！我們支援跨平台使用，無論是筆電、iPad 或手機，數據都會即時同步，讓孩子隨時隨地都能無縫接軌進行學習。</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="font-bold text-lg text-gray-800 mb-2">Q: 雷達圖分析包含哪些能力指標？</h3>
+                    <p class="text-gray-600">我們針對學科特性劃分「邏輯推導、計算速度、概念理解、應用分析、細心度」五大指標，精準找出學習盲點並提供補救建議。</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="font-bold text-lg text-gray-800 mb-2">Q: 題目太難或太簡單，AI 會調整嗎？</h3>
+                    <p class="text-gray-600">會的。系統具備「動態難度平衡」機制，會根據學生答題的正確率與反應時間，自動媒合最適合當前程度的練習題，避免挫折感。</p>
+                </div>
+              
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="font-bold text-lg text-gray-800 mb-2">Q: 孩子的學習數據會被公開嗎？</h3>
+                    <p class="text-gray-600">絕對不會。所有的學習數據僅供該帳號持有者與關聯的家長查看，我們嚴格遵守個資法，確保學生的隱私安全。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+<footer class="bg-gray-900 text-gray-400 py-12 mt-16">
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12 mb-12">
+            <div class="col-span-1 md:col-span-1">
+                <div class="flex items-center gap-2 mb-4">
+                    <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white font-bold shadow-sm">學</div>
+                    <span class="text-xl font-bold text-white tracking-tight">雲端學院</span>
+                </div>
+                <p class="text-xs leading-relaxed">
+                    致力於透過 AI 技術個人化學習路徑，讓每個孩子都能找到最適合自己的學習節奏。
+                </p>
+            </div>
+
+            <div>
+                <h4 class="text-white font-bold mb-6 flex items-center gap-2">
+                    <span class="w-1 h-4 bg-blue-500 rounded-full"></span>產品服務
+                </h4>
+                <ul class="space-y-3 text-sm">
+                    <li><a href="page.html?id=features" class="hover:text-white hover:translate-x-1 inline-block transition">功能介紹</a></li>
+                    <li><a href="page.html?id=changelog" class="hover:text-white hover:translate-x-1 inline-block transition">更新日誌</a></li>
+                    <li><a href="page.html?id=api_docs" class="hover:text-white hover:translate-x-1 inline-block transition">API 文件</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="text-white font-bold mb-6 flex items-center gap-2">
+                    <span class="w-1 h-4 bg-blue-500 rounded-full"></span>學習資源
+                </h4>
+                <ul class="space-y-3 text-sm">
+                    <li><a href="page.html?id=methods" class="hover:text-white hover:translate-x-1 inline-block transition">學習方法論</a></li>
+                    <li><a href="page.html?id=admission" class="hover:text-white hover:translate-x-1 inline-block transition">升學資訊</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="text-white font-bold mb-6 flex items-center gap-2">
+                    <span class="w-1 h-4 bg-blue-500 rounded-full"></span>關於我們
+                </h4>
+                <ul class="space-y-3 text-sm">
+                    <li><a href="page.html?id=about" class="hover:text-white hover:translate-x-1 inline-block transition">公司簡介</a></li>
+                    <li><a href="help.html" class="hover:text-white hover:translate-x-1 inline-block transition">聯絡客服</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="border-t border-gray-800 pt-8">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
+                <p>&copy; 2026 學雲端學院. All Rights Reserved.</p>
+                <div class="flex gap-6">
+                    <a href="page.html?id=terms" class="hover:text-white transition">隱私權政策</a>
+                    <a href="page.html?id=privacy" class="hover:text-white transition">服務條款</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+<div id="forgotModal" class="hidden fixed inset-0 z-[150] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden border border-slate-100 transform scale-95 transition-transform duration-300" id="forgotModalContent">
+            <div class="p-6 md:p-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-black text-slate-800"><i class="fas fa-key text-red-500 mr-2"></i>重設密碼</h3>
+                    <button onclick="closeForgotModal()" class="text-slate-400 hover:text-slate-600 transition"><i class="fas fa-times text-lg"></i></button>
+                </div>
+                <p class="text-xs text-slate-500 font-bold mb-6 leading-relaxed">請輸入您的「登入帳號」與「真實姓名」進行身分驗證，驗證成功即可設定新密碼。</p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <input type="text" id="fp-username" placeholder="請輸入註冊時用的登入帳號" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-red-400 focus:bg-white font-bold text-sm transition">
+                    </div>
+                    <div>
+                        <input type="text" id="fp-name" placeholder="請輸入註冊時用的真實姓名" class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-red-400 focus:bg-white font-bold text-sm transition">
+                    </div>
+                    <div class="pt-3 border-t border-slate-100 mt-2">
+                        <input type="password" id="fp-newpassword" placeholder="請輸入新的密碼" class="w-full p-3.5 bg-red-50 border border-red-200 rounded-xl focus:outline-none focus:border-red-500 focus:bg-white font-bold text-sm transition">
+                    </div>
+                </div>
+
+                <div class="flex gap-3 mt-8">
+                    <button onclick="closeForgotModal()" class="flex-1 bg-slate-100 text-slate-600 py-3.5 rounded-xl font-bold hover:bg-slate-200 transition">取消</button>
+                    <button onclick="submitForgotPassword()" id="fp-btn" class="flex-1 bg-red-500 text-white py-3.5 rounded-xl font-bold hover:bg-red-600 shadow-lg shadow-red-200 transition active:scale-95">確認重設</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+   <script>
+    // ⚠️ 請確認這裡是你最新的 GAS 部署網址
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
+
+    // =========================================
+    // 1. 登入系統邏輯
+    // =========================================
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+        try {
+            const user = JSON.parse(savedUser);
+            // 若要自動登入，可取消下方註解
+            // redirectUser(user.role); 
+        } catch(e) {
+            localStorage.removeItem('currentUser');
+        }
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const u = document.getElementById('username').value.trim();
+        const p = document.getElementById('password').value.trim();
+        const btn = document.getElementById('loginBtn');
+        const originalBtnText = btn.innerHTML;
+
+        if(!u || !p) {
+            alert("請輸入帳號與密碼");
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> 驗證中...';
+
+        const payload = { action: "login", username: u, password: p };
+
+        fetch(GAS_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.result === "success") {
+                const user = data.user;
+                const safeRole = String(user.role).trim().toLowerCase(); // 防呆處理
+
+                // 🌟 1. 存入整包資訊
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                
+                // 🌟 2. 存入散裝資訊 (雙重保險)
+                localStorage.setItem('username', user.username);
+                localStorage.setItem('name', user.name);
+                localStorage.setItem('role', safeRole);
+
+                // 🌟 3. 處理家長專屬邏輯：把存在 grade 裡的綁定帳號抽出來存
+                if (safeRole === 'parent') {
+                    localStorage.setItem('childUsername', user.grade);
+                }
+
+                alert(`歡迎回來，${user.name}！`);
+                redirectUser(safeRole);
+            } else {
+                alert("登入失敗：" + data.message);
+                resetButton();
+            }
+        })
+        .catch(err => {
+            console.error('詳細錯誤:', err);
+            alert("連線發生錯誤，請檢查網路或稍後再試。"); 
+            resetButton();
+        });
+
+        function resetButton() {
+            btn.disabled = false;
+            btn.innerHTML = originalBtnText;
+        }
+    });
+
+    function redirectUser(role) {
+        if (role === 'student') window.location.href = 'dashboard.html';
+        else if (role === 'teacher') window.location.href = 'teacher_dashboard.html';
+        else if (role === 'parent') window.location.href = 'parent_dashboard.html';
+        else window.location.href = 'dashboard.html';
+    }
+       // =========================================
+    // 🌟 忘記密碼邏輯
+    // =========================================
+    function openForgotModal() {
+        const modal = document.getElementById('forgotModal');
+        const content = document.getElementById('forgotModalContent');
+        modal.classList.remove('hidden');
+        // 小小延遲讓動畫生效
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            content.classList.remove('scale-95');
+        }, 10);
+    }
+
+    function closeForgotModal() {
+        const modal = document.getElementById('forgotModal');
+        const content = document.getElementById('forgotModalContent');
+        modal.classList.add('opacity-0');
+        content.classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            // 關閉時清空輸入框
+            document.getElementById('fp-username').value = '';
+            document.getElementById('fp-name').value = '';
+            document.getElementById('fp-newpassword').value = '';
+        }, 300);
+    }
+
+    async function submitForgotPassword() {
+        const username = document.getElementById('fp-username').value.trim();
+        const name = document.getElementById('fp-name').value.trim();
+        const newPassword = document.getElementById('fp-newpassword').value.trim();
+        const btn = document.getElementById('fp-btn');
+
+        if (!username || !name || !newPassword) {
+            return alert("請完整填寫帳號、姓名與新密碼！");
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 處理中...';
+
+        const payload = {
+            action: "reset_password", // 對接你 GAS 寫好的 API
+            username: username,
+            name: name,
+            newPassword: newPassword
+        };
+
+        try {
+            const response = await fetch(GAS_URL, {
+                method: "POST",
+                redirect: "follow",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(payload)
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === "success") {
+                alert("✅ 密碼已成功重設！請使用新密碼登入。");
+                closeForgotModal();
+                // 自動幫他填入剛重設好的帳號和密碼到登入框，體驗更好！
+                document.getElementById('username').value = username;
+                document.getElementById('password').value = newPassword;
+            } else {
+                alert("❌ 驗證失敗：" + data.message);
+            }
+        } catch (err) {
+            alert("網路異常，請稍後再試。");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '確認重設';
+        }
+    }
+    </script>
+    <div id="announcementModal" class="hidden fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300" id="announcementContent">
+            
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-center relative">
+                <button onclick="closeAnnouncement()" class="absolute top-4 right-4 text-white/70 hover:text-white transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+                <div class="w-16 h-16 bg-white/20 rounded-2xl backdrop-blur-md mx-auto flex items-center justify-center mb-4 shadow-inner">
+                    <i class="fas fa-bullhorn text-3xl text-white"></i>
+                </div>
+                <h3 class="text-2xl font-black text-white tracking-widest">系統最新公告</h3>
+            </div>
+
+            <div class="p-8">
+                <div class="mb-8">
+                    <span id="annDateDisplay" class="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-lg tracking-widest mb-3 border border-blue-100">
+                        </span>
+                    <h4 id="annTitleDisplay" class="text-xl font-black text-slate-800 mb-3 leading-snug">
+                        </h4>
+                    <div id="annContentDisplay" class="text-sm text-slate-500 leading-relaxed space-y-2 font-medium">
+                        </div>
+                </div>
+
+                <button onclick="closeAnnouncement()" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-blue-600 transition-colors shadow-lg shadow-slate-200 flex items-center justify-center gap-2">
+                    <span>我知道了，開始使用</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+<script>
+    // 🌟 全站公告邏輯：確保每個帳號在每則新公告發布時都只顯示一次
+    let currentAnnVersion = null; 
+
+    // 1. 學生端/用戶端檢查邏輯
+    async function fetchAnnouncement() {
+        // 注意：請確保 GAS_URL 已經在外部定義，或直接寫入網址
+        const url = typeof GAS_URL !== 'undefined' ? GAS_URL : "你的_GAS_網址";
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: JSON.stringify({ action: "get_announcement" })
+            });
+            const resData = await response.json();
+
+            // 如果後端回傳成功，且公告是啟用狀態 (isActive)
+            if (resData.result === "success" && resData.data && resData.data.isActive) {
+                const ann = resData.data;
+                currentAnnVersion = ann.version; // 取得 GAS 產生的 v_xxxx 版本號
+                
+                // 🌟 關鍵：取得當前帳號名稱 (請確認 HTML 中有這個 ID，或改用你的變數)
+                // 這裡嘗試抓 userName 或 teacherName，如果都沒有就用 guest
+                const currentUser = (document.getElementById('userName') || document.getElementById('teacherName'))?.innerText.trim() || "guest";
+                
+                // 檢查本地瀏覽器紀錄
+                const readVersion = localStorage.getItem(`read_ann_${currentUser}`);
+
+                // 如果本地紀錄的版本號與雲端不同，就顯示公告
+                if (readVersion !== currentAnnVersion) {
+                    renderAnnouncement(ann);
+                }
+            }
+        } catch (error) {
+            console.error("抓取公告時發生錯誤:", error);
+        }
+    }
+
+    // 2. 將資料塞入 HTML 並準備顯示
+    function renderAnnouncement(ann) {
+        const dateEl = document.getElementById('annDateDisplay');
+        const titleEl = document.getElementById('annTitleDisplay');
+        const contentEl = document.getElementById('annContentDisplay');
+
+        if (dateEl) dateEl.innerText = ann.date || "最新消息";
+        if (titleEl) titleEl.innerText = ann.title;
+        if (contentEl) {
+            // 將換行符 \n 轉為 <br> 標籤
+            contentEl.innerHTML = ann.content.replace(/\n/g, '<br>');
+        }
+        
+        // 延遲 0.5 秒彈出，視覺效果更平滑
+        setTimeout(showAnnouncement, 500);
+    }
+
+    // 3. 執行彈窗顯示動畫
+    function showAnnouncement() {
+        const modal = document.getElementById('announcementModal');
+        const content = document.getElementById('announcementContent');
+        if (!modal || !content) return;
+
+        modal.classList.remove('hidden');
+        // 透過觸發重繪來啟動 Tailwind 動畫
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            content.classList.remove('scale-95');
+        }, 10);
+    }
+
+    // 4. 關閉公告並標記為「已讀」
+    function closeAnnouncement() {
+        const modal = document.getElementById('announcementModal');
+        const content = document.getElementById('announcementContent');
+        if (!modal || !content) return;
+
+        // 縮小與淡出動畫
+        modal.classList.add('opacity-0');
+        content.classList.add('scale-95');
+        
+        setTimeout(() => { 
+            modal.classList.add('hidden'); 
+        }, 300);
+        
+        // 🌟 核心：紀錄此帳號已看過這個版本
+        if (currentAnnVersion) {
+            const currentUser = (document.getElementById('userName') || document.getElementById('teacherName'))?.innerText.trim() || "guest";
+            localStorage.setItem(`read_ann_${currentUser}`, currentAnnVersion);
+        }
+    }
+
+    // 初始化：網頁載入完成後執行
+    window.addEventListener('DOMContentLoaded', fetchAnnouncement);
+</script>
+</body>
+</html>

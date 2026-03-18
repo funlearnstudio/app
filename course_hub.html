@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>課程單元 - 雲端學院</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
+    <link rel="stylesheet" href="assets/css/style.css">
+    
+    <script src="mockdata/users.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="mockdata/curriculum_integrated.js"></script>
+</head>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // 1. 檢查 Auth 是否載入
+        if (typeof Auth === 'undefined') {
+            console.error("Auth 模組未載入");
+            return;
+        }
+
+        // 2. 檢查是否有登入者
+        const currentUser = Auth.getCurrentUser();
+
+        // 3. 如果沒人登入，或者是 Guest (如果你不想讓 Guest 用)，就踢走
+        if (!currentUser) {
+            alert("⚠️ 您尚未登入，請先進行登入！");
+            window.location.href = 'index.html'; // 假設你的登入頁是 index.html
+        }
+        
+    });
+</script>
+<body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden bg-[#f8fafc]">
+<div id="star-container"></div>
+    <header class="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-30 relative">
+        <div class="flex items-center gap-2">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm shadow-sm">學</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+        </div>
+        <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-lg">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+    </header>
+
+    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden backdrop-blur-sm transition-opacity"></div>
+
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-100 flex flex-col z-50 transform -translate-x-full lg:translate-x-0 lg:static lg:h-full sidebar-transition shadow-2xl lg:shadow-none">
+        
+        <div class="h-16 hidden lg:flex items-center px-6 border-b border-slate-50">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+        </div>
+
+      <div class="p-6 lg:block watch-hidden">
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+        <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
+            <i class="fas fa-user-graduate"></i>
+        </div>
+        <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
+        <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
+        <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
+            <i class="fas fa-pen mr-1"></i> 編輯年級
+        </button>
+    </div>
+</div>
+    <nav class="flex-grow px-3 space-y-2 overflow-y-auto no-scrollbar">
+    <p class="text-[10px] font-bold text-slate-400 mb-2 px-4 uppercase tracking-widest">學習導航</p>
+<a href="arena.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-100 text-amber-900 transition-all duration-300 group shadow-[inset_0_1px_2px_rgba(0,0,0,0,0.05)] border border-amber-200/50">
+    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 text-white flex items-center justify-center scale-110 shadow-sm ring-2 ring-white">
+        <i class="fas fa-trophy text-xs"></i>
+    </div>
+    <span class="font-black tracking-wide">榮譽榜</span>
+</a>
+    <a href="mission.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-purple-50 hover:text-purple-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-rocket text-sm"></i>
+        </div>
+        <span class="font-bold">任務中心</span>
+    </a>
+
+    <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-book-open text-sm"></i>
+        </div>
+        <span class="font-bold">課程總覽</span>
+    </a>
+
+    <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-red-50 hover:text-red-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-fire text-sm"></i>
+        </div>
+        <span class="font-bold">錯題補救</span>
+    </a>
+
+    <a href="study.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-amber-50 hover:text-amber-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-star text-sm"></i>
+        </div>
+        <span class="font-bold">重點複習</span>
+    </a>
+
+    <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:animate-bounce">
+            <i class="fas fa-gamepad text-sm"></i>
+        </div>
+        <span class="font-bold">遊戲場</span>
+    </a>
+
+    <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+        <div class="w-8 h-8 rounded-lg bg-cyan-100 text-cyan-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="fas fa-comments text-sm"></i>
+        </div>
+        <span class="font-bold">解題論壇</span>
+    </a>
+    
+    <div class="pt-4 mt-4 border-t border-slate-100">
+        <p class="text-[10px] font-bold text-slate-400 mb-2 px-4 uppercase tracking-widest">系統支援</p>
+        
+        <a href="help.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-orange-50 hover:text-orange-600 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
+            <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center group-hover:rotate-12 transition-transform">
+                <i class="fas fa-headset text-sm"></i>
+            </div>
+            <span class="font-bold">幫助中心 & 聯絡老師</span>
+        </a>
+
+        <a href="change_password.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-500 hover:bg-slate-100 transition-all group">
+            <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center group-hover:text-slate-600">
+                <i class="fas fa-key text-xs"></i>
+            </div>
+            <span class="text-sm font-medium">更改密碼</span>
+        </a>
+    </div>
+</nav>
+        <div class="p-4 border-t border-slate-50">
+            <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs"><i class="fas fa-sign-out-alt"></i> 登出系統</button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full relative overflow-hidden min-w-0">
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
+            
+            <div class="flex items-center gap-2 text-sm text-gray-500 mb-6">
+                <a href="dashboard.html" class="hover:text-blue-600">課程總覽</a>
+                <i class="fas fa-chevron-right text-xs"></i>
+                <span id="breadcrumbCurrent" class="font-bold text-slate-700">載入中...</span>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 mb-8 shadow-sm relative overflow-hidden">
+                <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div>
+                        <div class="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold mb-3" id="gradeBadge">學制</div>
+                        <h1 class="text-3xl md:text-4xl font-extrabold text-slate-800 mb-2 leading-tight" id="courseTitle">課程名稱</h1>
+                        <p class="text-slate-500 text-sm md:text-base">選擇下方的快速功能，或瀏覽詳細章節開始學習。</p>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-3 w-full md:w-auto">
+                        <a id="linkStudy" href="#" class="flex-1 md:flex-none justify-center px-5 py-3 bg-indigo-50 text-indigo-700 rounded-xl font-bold hover:bg-indigo-100 transition flex items-center gap-2">
+                            <i class="fas fa-highlighter"></i> <span class="whitespace-nowrap">重點複習</span>
+                        </a>
+                        <a id="linkArcade" href="#" class="flex-1 md:flex-none justify-center px-5 py-3 bg-orange-50 text-orange-700 rounded-xl font-bold hover:bg-orange-100 transition flex items-center gap-2">
+                            <i class="fas fa-gamepad"></i> <span class="whitespace-nowrap">玩遊戲</span>
+                        </a>
+                        <a id="linkExamAll" href="#" class="flex-1 md:flex-none justify-center px-5 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition flex items-center gap-2">
+                            <i class="fas fa-play"></i> <span class="whitespace-nowrap">全冊測驗</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden min-h-[400px]">
+                <div class="flex border-b border-slate-200 overflow-x-auto no-scrollbar" id="bookTabs">
+                    </div>
+
+                <div class="p-4 md:p-8 bg-slate-50/50" id="unitContainer">
+                    <div class="text-center py-20 text-gray-400">
+                        <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
+                        <p>正在載入課程大綱...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="h-10"></div>
+        </div>
+    </main>
+
+    <div id="profileModal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm fade-in px-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100">
+            <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-white font-bold text-lg"><i class="fas fa-user-edit mr-2"></i> 修改年級</h3>
+                <button onclick="closeProfileModal()" class="text-white/80 hover:text-white transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2">請選擇目前的年級：</label>
+                <div class="relative">
+                    <select id="editGradeSelect" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white appearance-none transition text-gray-700 font-bold">
+                         <option value="國七">國七</option>
+                    <option value="國八">國八</option>
+                    <option value="國九">國九</option>
+                    <hr>
+                    <option value="高一">高一</option>
+                    <option value="高二">高二</option>
+                    <option value="高三">高三</option>
+                </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400 mt-3">※ 修改後，系統將會優先推薦該年級的題目。</p>
+            </div>
+
+            <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
+                <button onclick="closeProfileModal()" class="px-4 py-2 text-gray-500 hover:text-gray-700 font-bold text-sm">取消</button>
+                <button onclick="saveProfile()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-md hover:shadow-lg transition">
+                    確認修改
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 🛠️ 系統核心變數
+        // ==========================================
+        const urlParams = new URLSearchParams(window.location.search);
+        const subject = urlParams.get('subject') || 'math';
+        const stage = urlParams.get('stage') || 'junior_high';
+        const title = decodeURIComponent(urlParams.get('title') || '課程');
+        const gradeParam = urlParams.get('grade') || '';
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
+
+        let currentBooks = [];
+        let activeBookIndex = 0;  // 請替換為您實際的 GAS Web App URL
+       // ==========================================
+// 🎨 核心主題引擎 (12 個階級升級版)
+// ==========================================
+const ThemeEngine = {
+    apply: function(xp) {
+        console.log("儀表板主題判定中... XP:", xp);
+        const body = document.body;
+        
+        // 清除舊主題
+        body.classList.remove(
+            'theme-novice', 'theme-rookie', 'theme-bronze', 'theme-silver', 
+            'theme-gold', 'theme-diamond', 'theme-master', 'theme-grandmaster', 
+            'theme-legend', 'theme-epic', 'theme-mythic', 'theme-celestial'
+        );
+
+        // 根據 XP 判定並加入新主題
+        if (xp >= 100000) { body.classList.add('theme-celestial'); this.createStars(15); } 
+        else if (xp >= 50000) { body.classList.add('theme-mythic'); this.createStars(8); } 
+        else if (xp >= 30000) body.classList.add('theme-epic');         
+        else if (xp >= 20000) body.classList.add('theme-legend');       
+        else if (xp >= 15000) body.classList.add('theme-grandmaster');  
+        else if (xp >= 10000) body.classList.add('theme-master');       
+        else if (xp >= 5000)  body.classList.add('theme-diamond');      
+        else if (xp >= 2500)  body.classList.add('theme-gold');         
+        else if (xp >= 1000)  body.classList.add('theme-silver');       
+        else if (xp >= 300)   body.classList.add('theme-bronze');       
+        else if (xp >= 100)   body.classList.add('theme-rookie');       
+        else                  body.classList.add('theme-novice');       
+    },
+
+    createStars: function(starCount) {
+        const container = document.getElementById('star-container');
+        if (!container || container.hasChildNodes()) return; 
+        
+        for (let i = 0; i < starCount; i++) {
+            let star = document.createElement('div');
+            star.className = 'shooting-star'; 
+            star.style.top = Math.random() * 80 + 'vh';
+            star.style.left = (Math.random() * 50 + 50) + 'vw';
+            star.style.animationDelay = (Math.random() * 4) + 's';
+            container.appendChild(star);
+        }
+    }
+};
+
+// 網頁載入時自動執行主題變色
+document.addEventListener('DOMContentLoaded', () => {
+    let userXP = 0;
+    if (typeof Auth !== 'undefined') {
+        const user = Auth.getCurrentUser();
+        if (user && user.xp) userXP = user.xp;
+    } else {
+        const localUser = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
+        userXP = localUser.xp;
+    }
+    ThemeEngine.apply(userXP);
+});
+        // ==========================================
+        // 🚀 初始化
+        // ==========================================
+window.onload = function() {
+            if (window.Auth && !Auth.requireLogin()) return;
+            
+            // 1. 初始化使用者顯示
+            const user = Auth.getCurrentUser();
+            if (user) {
+                const nameEl = document.getElementById('sideUserName');
+                const roleEl = document.getElementById('sideUserRole');
+                if (nameEl) nameEl.innerText = user.name || "學生";
+                if (roleEl) roleEl.innerText = user.grade || "未設定年級";
+            }
+
+            // 2. 設定頁面靜態資訊
+            document.getElementById('courseTitle').textContent = title;
+            document.getElementById('breadcrumbCurrent').textContent = title;
+            document.getElementById('gradeBadge').textContent = stage === 'high_school' ? '高中部' : '國中部';
+
+            // 3. 設定快速按鈕連結
+            document.getElementById('linkStudy').href = `study.html?filter=${subject}`;
+            document.getElementById('linkArcade').href = `arcade.html?subject=${subject}`;
+            document.getElementById('linkExamAll').href = `exam.html?subject=${subject}&title=${encodeURIComponent(title + "總複習")}&count=20&grade=${encodeURIComponent(gradeParam)}`;
+
+            // 4. 載入課程資料 (確保對應到你的 curriculum_integrated.js 結構)
+            if(window.initCurriculumData) window.initCurriculumData();
+            
+            // 這裡修正為直接從 CurriculumLibrary 取值，因為你的檔案結構看起來是 global 的
+            const rawData = (window.CurriculumLibrary.data ? window.CurriculumLibrary.data[subject] : window.CurriculumLibrary[subject]) || [];
+            
+            // 5. 過濾與排序
+            currentBooks = rawData.filter(book => book.stage === stage);
+            
+            if (currentBooks.length === 0) {
+                document.getElementById('unitContainer').innerHTML = `
+                    <div class="text-center py-20">
+                        <i class="fas fa-search text-4xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500 font-bold">尚無此課程資料</p>
+                        <p class="text-sm text-gray-400 mt-2">Subject: ${subject} / Stage: ${stage}</p>
+                    </div>`;
+                return;
+            }
+
+            // 智能排序：嘗試解析 "Book 1", "第一冊" 等
+            currentBooks.sort((a, b) => {
+                const getNum = (item) => {
+                    const str = (item.book || item.name || "").toString();
+                    const match = str.match(/\d+/);
+                    if (match) return parseInt(match[0]);
+                    const map = { '一':1, '二':2, '三':3, '四':4, '五':5, '六':6, '七':7, '八':8, '九':9, '全':0 };
+                    for(let k in map) { if(str.includes(k)) return map[k]; }
+                    return 99;
+                };
+                return getNum(a) - getNum(b);
+            });
+
+            // 🌟 6. 智慧單元定位 (核心新增)
+            const targetUnit = urlParams.get('unit'); // 接收來自任務中心的單元名稱
+            let targetBookIdx = 0; // 預設顯示第一冊
+
+            if (targetUnit) {
+                // 在所有冊別中搜尋哪一冊包含這個單元
+                const foundIdx = currentBooks.findIndex(book => 
+                    book.units.some(u => u.name === targetUnit)
+                );
+                if (foundIdx !== -1) {
+                    targetBookIdx = foundIdx;
+                    activeBookIndex = foundIdx;
+                }
+            }
+
+            // 7. 渲染畫面
+            renderTabs();
+            renderUnits(targetBookIdx);
+
+            // 🌟 8. 自動捲動並高亮目標單元 (進階優化)
+            if (targetUnit) {
+                setTimeout(() => {
+                    const unitElements = document.querySelectorAll('#unitContainer .fade-in');
+                    unitElements.forEach(el => {
+                        if (el.innerText.includes(targetUnit)) {
+                            // 加上亮藍色外框標示
+                            el.classList.add('ring-4', 'ring-blue-400', 'ring-opacity-50', 'bg-blue-50/50');
+                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    });
+                }, 600);
+            }
+        };
+
+        // ==========================================
+        // 📱 UI 互動功能 (側邊欄 & Modal)
+        // ==========================================
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            }
+        }
+
+        function openProfileModal() {
+            const user = Auth.getCurrentUser();
+            const select = document.getElementById('editGradeSelect');
+            if (user && user.grade) select.value = user.grade;
+            document.getElementById('profileModal').classList.remove('hidden');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').classList.add('hidden');
+        }
+async function saveProfile() {
+    const newGrade = document.getElementById('editGradeSelect').value;
+    const user = Auth.getCurrentUser();
+    if (!user) return alert("請先登入！");
+
+    const saveBtn = document.querySelector('#profileModal button[onclick="saveProfile()"]');
+    const originalBtnText = saveBtn.innerText;
+
+    // 1. 進入載入狀態
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 儲存中...';
+
+    try {
+        // 2. 發送請求給 GAS 後端
+        const response = await fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: "update_grade", // 此 action 需與 GAS 後端對應
+                account: user.account || user.username,
+                newGrade: newGrade
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.status === "success") {
+            // 3. 伺服器成功更新後，才更新本地資料
+            if (Auth.updateUser) {
+                Auth.updateUser('grade', newGrade);
+            }
+            
+            const roleEl = document.getElementById('sideUserRole');
+            if (roleEl) roleEl.innerText = newGrade;
+
+            alert(`✅ 修改成功！目前年級已更新為：${newGrade}`);
+            closeProfileModal();
+        } else {
+            alert("❌ 修改失敗：" + (result.message || "未知錯誤"));
+        }
+    } catch (error) {
+        console.error("更新年級發生錯誤:", error);
+        alert("網路連線異常，請稍後再試。");
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerText = originalBtnText;
+    }
+}
+        // ==========================================
+        // 📚 渲染邏輯
+        // ==========================================
+        function renderTabs() {
+            const container = document.getElementById('bookTabs');
+            container.innerHTML = '';
+            
+            currentBooks.forEach((book, idx) => {
+                const btn = document.createElement('button');
+                const isActive = idx === activeBookIndex;
+                btn.className = `px-6 py-4 text-sm whitespace-nowrap transition-colors flex-shrink-0 ${isActive ? 'tab-active' : 'tab-inactive'}`;
+                btn.textContent = book.name || book.book || `第 ${idx+1} 冊`; 
+                btn.onclick = () => {
+                    activeBookIndex = idx;
+                    renderTabs();
+                    renderUnits(idx);
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function renderUnits(bookIdx) {
+            const container = document.getElementById('unitContainer');
+            const bookData = currentBooks[bookIdx];
+            
+            if (!bookData || !bookData.units || bookData.units.length === 0) {
+                container.innerHTML = '<p class="text-center py-10 text-gray-400">本冊尚無單元資料</p>';
+                return;
+            }
+
+            let html = '<div class="grid grid-cols-1 gap-4">';
+            
+            bookData.units.forEach((unit, uIdx) => {
+                const tags = unit.tags || [];
+                const topics = unit.topics || [];
+                const displayTags = tags.length > 0 ? tags : topics;
+                const tagParam = displayTags.join(','); 
+
+                const examLink = `exam.html?subject=${subject}&title=${encodeURIComponent(unit.name)}&count=10&grade=${encodeURIComponent(tagParam)}`;
+                const gameLink = `arcade.html?subject=${subject}&grade=${encodeURIComponent(tagParam)}`;
+
+                const topicsHtml = displayTags.map(t => `<span class="bg-white border border-slate-200 text-slate-500 text-xs px-2 py-1 rounded">${t}</span>`).join('');
+        
+                html += `
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 hover:shadow-md transition group fade-in" style="animation-delay: ${uIdx * 0.05}s">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div class="flex-grow min-w-0"> <h3 class="font-bold text-lg text-slate-800 mb-2 flex items-center gap-2 flex-wrap">
+                                    <span class="bg-slate-100 text-slate-500 text-xs px-2 py-1 rounded shrink-0">單元 ${uIdx + 1}</span>
+                                    <span class="break-words">${unit.name}</span>
+                                </h3>
+                                <div class="flex flex-wrap gap-2">
+                                    ${topicsHtml}
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-2 w-full md:w-auto mt-2 md:mt-0 shrink-0">
+                                <a href="study.html?filter=${subject}" class="flex-1 md:flex-none px-3 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-50 text-center flex items-center justify-center">
+                                    <i class="fas fa-book-open md:mr-1"></i> <span class="hidden md:inline">複習</span>
+                                </a>
+
+                                <a href="${gameLink}" class="flex-1 md:flex-none px-3 py-2 bg-orange-50 text-orange-600 border border-orange-100 rounded-lg text-sm font-bold hover:bg-orange-100 text-center flex items-center justify-center transition">
+                                    <i class="fas fa-gamepad md:mr-1"></i> <span class="hidden md:inline">遊戲</span><span class="md:hidden">玩</span>
+                                </a>
+
+                                <a href="${examLink}" class="flex-1 md:flex-none px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 shadow-sm text-center flex items-center justify-center transition">
+                                    <i class="fas fa-pencil-alt md:mr-1"></i> <span class="hidden md:inline">測驗</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

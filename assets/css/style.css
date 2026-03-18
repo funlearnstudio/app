@@ -1,0 +1,278 @@
+/* ==========================================================================
+   智慧評量系統 - 全站共用終極樣式表 (style.css)
+   ========================================================================== */
+
+/* --- 1. 全域基礎設定與動畫 --- */
+body { 
+    font-family: 'Noto Sans TC', sans-serif; 
+    background-color: #f1f5f9; 
+    transition: background 0.8s ease, color 0.5s ease; 
+    min-height: 100vh; 
+    margin: 0;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.5); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(107, 114, 128, 0.8); }
+
+.task-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #ffedd5; }
+.task-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.15); border-color: #fdba74; }
+
+.sidebar-transition { transition: transform 0.3s ease-in-out; }
+.fade-in { animation: fadeIn 0.5s ease-out forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 流星容器 */
+#star-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+
+/* ==========================================================================
+   2. 12 階級動態背景主題 (Theme Palette)
+   ========================================================================== */
+body.theme-novice { background-color: #f8fafc !important; }
+body.theme-rookie { background-color: #dcfce7 !important; }
+body.theme-bronze { background-color: #ffedd5 !important; }
+body.theme-silver { background: linear-gradient(135deg, #f8fafc 0%, #cbd5e1 25%, #94a3b8 50%, #cbd5e1 75%, #f1f5f9 100%) !important; }
+body.theme-gold { background: linear-gradient(135deg, #fef08a 0%, #eab308 100%) !important; }
+body.theme-diamond { background: linear-gradient(135deg, #e0f2fe, #bae6fd) !important; }
+body.theme-master { background: linear-gradient(135deg, #fee2e2, #fecaca) !important; }
+body.theme-grandmaster { background: linear-gradient(135deg, #701a75 0%, #be185d 100%) !important; color: white !important; }
+body.theme-legend { background: #451a03 !important; color: #fef3c7 !important; }
+body.theme-epic { background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%) !important; color: white !important; }
+body.theme-mythic { background: radial-gradient(circle, #1e1b4b, #020617) !important; color: white !important; }
+body.theme-celestial { background: radial-gradient(circle at center, #000000 0%, #170529 50%, #000000 100%) !important; color: #fde047 !important; }
+/* ==========================================================================
+   3. 🔮 終極玻璃擬真去背大絕招 (精準版)
+   ========================================================================== */
+/* 只針對「外層大區塊 (bg-white, bg-slate-50)」做透明，移除暴力的 *= 選擇器避免誤殺 */
+body[class*="theme-"] .bg-white,
+body[class*="theme-"] .bg-slate-50,
+body[class*="theme-"] .bg-gray-50,
+body[class*="theme-"] aside,
+body[class*="theme-"] #sidebar,
+body[class*="theme-"] .sidebar-content,
+body[class*="theme-"] nav,
+body[class*="theme-"] main,
+body[class*="theme-"] section,
+body[class*="theme-"] ul,
+body[class*="theme-"] li,
+body[class*="theme-"] #leaderboardContainer,
+body[class*="theme-"] .ai-assistant-card {
+    background-color: rgba(255, 255, 255, 0.1) !important; 
+    backdrop-filter: blur(10px) !important; 
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important; 
+    box-shadow: none !important;
+}
+
+/* 拔掉礙眼的漸層藍色塊與大頭貼白底 (避開 XP 進度條與幸運大抽獎) */
+body[class*="theme-"] [class*="bg-gradient-"]:not(#xpFill):not(.from-purple-500) { background: transparent !important; }
+body[class*="theme-"] .relative.w-24.h-24 { background-color: transparent !important; border-color: rgba(255, 255, 255, 0.3) !important; }
+
+/* 手機版側邊欄遮罩 */
+body[class*="theme-"] .sidebar-transition { background-color: rgba(15, 23, 42, 0.8) !important; }
+body[class*="theme-"] footer { background-color: rgba(255, 255, 255, 0.2) !important; }
+
+/* ==========================================================================
+   4. 🎨 特殊內部區塊救回 (AI解答區、進度條底層)
+   ========================================================================== */
+/* ✨ 救回 AI 助教的解答框、程式碼區塊 (給它們一層半透明的黑底或白底) */
+body[class*="theme-"] .bg-gray-100, 
+body[class*="theme-"] .bg-slate-100,
+body[class*="theme-"] .bg-gray-200,
+body[class*="theme-"] pre {
+    background-color: rgba(0, 0, 0, 0.05) !important; /* 淡淡的陰影底色，讓文字能跳出來 */
+    backdrop-filter: none !important; /* 內部不需要磨砂，以免太卡 */
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    border-radius: 0.5rem !important; /* 確保圓角還在 */
+}
+
+/* 深色主題 (傳奇/神話) 下的 AI 解答區，底色要更深一點 */
+body.theme-legend .bg-gray-100, body.theme-mythic .bg-gray-100,
+body.theme-legend .bg-slate-100, body.theme-mythic .bg-slate-100,
+body.theme-legend pre, body.theme-mythic pre {
+    background-color: rgba(0, 0, 0, 0.3) !important; 
+    color: #cbd5e1 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 一般主題的進度條底色不要太白 */
+body[class*="theme-"]:not(.theme-legend):not(.theme-mythic) .bg-slate-100 {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+}
+/* 卡片陰影強化 */
+body[class*="theme-"] .shadow-xl, body[class*="theme-"] .shadow-lg { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important; }
+/* 側邊欄懸停效果 */
+body.theme-legend aside a:hover, body.theme-mythic aside a:hover { background-color: rgba(255, 255, 255, 0.2) !important; }
+/* ==========================================================================
+   5. ✏️ 字體顏色智慧適應 (Dark / Light Mode)
+   ========================================================================== */
+/* 傳奇與神話 (深色模式) 強制轉白 */
+body.theme-legend *, body.theme-mythic * { color: inherit; }
+body.theme-legend .bg-white *, body.theme-mythic .bg-white *,
+body.theme-legend #leaderboardContainer *, body.theme-mythic #leaderboardContainer *,
+body.theme-legend aside *, body.theme-mythic aside *,
+body.theme-legend .text-slate-800, body.theme-mythic .text-slate-800,
+body.theme-legend .text-gray-700, body.theme-mythic .text-gray-700,
+body.theme-legend .text-gray-600, body.theme-mythic .text-gray-600 {
+    color: #f8fafc !important; 
+}
+body.theme-legend aside a, body.theme-mythic aside a,
+body.theme-legend aside i, body.theme-mythic aside i { color: rgba(255, 255, 255, 0.9) !important; }
+
+/* 青銅主題 (橘色) 特殊字體保護：只改一般文字，避開徽章 */
+body.theme-bronze h2, body.theme-bronze h3, body.theme-bronze p, 
+body.theme-bronze #playerName, body.theme-bronze .text-slate-800,
+body.theme-bronze span:not(.text-\\[11px\\]) {
+    color: #7c2d12 !important;
+}
+
+/* ==========================================================================
+   6. 🛡️ 絕對防護機制 (保護徽章、圖示、XP條不被透明化破壞)
+   ========================================================================== */
+/* 救回側邊欄與排行榜的彩色圖示 */
+body[class*="theme-"] aside i.fas, body[class*="theme-"] aside i.fab, body[class*="theme-"] aside svg,
+body[class*="theme-"] .fa-crown, body[class*="theme-"] .fa-medal, body[class*="theme-"] .fa-award {
+    color: inherit !important; 
+}
+/* 救回排行榜上的「等級徽章」(Badge) */
+body[class*="theme-"] .text-\\[11px\\] {
+    background-color: inherit !important; 
+    color: inherit !important;
+    backdrop-filter: none !important; 
+    border: none !important;
+}
+/* 唯一例外防護：XP經驗進度條 */
+body[class*="theme-"] #xpFill {
+    background: linear-gradient(to right, #ea580c, #f97316) !important;
+    color: transparent !important; 
+}
+body.theme-bronze .profile-header-bg, body.theme-bronze .bg-gradient-to-r.from-blue-600 {
+    background: linear-gradient(to right, #f97316, #fb923c) !important; 
+}
+/* ==========================================================================
+   🚑 緊急修復補丁：救回排行榜、頭像與姓名表情
+   ========================================================================== */
+
+/* 1. 救回大頭貼/表情底色：給頭像一個固定的深色底，讓透明的 SVG 圖案可以浮現出來 */
+body[class*="theme-"] .w-12.h-12.rounded-full, 
+body[class*="theme-"] .w-24.h-24.rounded-full,
+body[class*="theme-"] .overflow-hidden.rounded-full {
+    background-color: #1e293b !important; /* 深藍灰底色 */
+    border: 2px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 2. 救回排行榜清單 (li) 的卡片感：不要讓它完全透明到看不見 */
+body[class*="theme-"] #leaderboardList li {
+    background-color: rgba(255, 255, 255, 0.08) !important; /* 微微的白底 */
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 0.75rem !important;
+    margin-bottom: 0.5rem !important;
+    backdrop-filter: none !important; /* 關閉清單的毛玻璃效果，防止表情符號渲染異常 */
+}
+
+/* 3. 確保排行榜上的名字與分數是清楚的亮色 */
+body[class*="theme-"] #leaderboardList li div,
+body[class*="theme-"] #leaderboardList li span {
+    color: #ffffff !important; 
+}
+
+/* 4. 🛡️ 絕對防護：把「等級徽章」的背景色和原本的文字顏色救回來 */
+body[class*="theme-"] #leaderboardList li .text-\\[11px\\] {
+    background-color: inherit !important;
+    color: inherit !important;
+    border: none !important;
+}
+
+/* ==========================================================================
+   🏆 排行榜專屬完美防護 (確保大頭貼、徽章與文字不被渲染掉)
+   ========================================================================== */
+
+/* 1. 救回大頭貼底色：強制給一個深藍灰底，讓透明的臉孔浮現出來 */
+#leaderboardList .relative.w-12.h-12,
+#leaderboardList .rounded-full.bg-slate-800 {
+    background-color: #1e293b !important;
+    border: 2px solid rgba(255, 255, 255, 0.5) !important;
+}
+
+/* 2. 救回徽章 (Badge) 的獨立底色：解除所有強制覆蓋，還原 Tailwind 預設顏色 */
+#leaderboardList .text-\\[11px\\] {
+    background-color: unset !important; 
+    backdrop-filter: none !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important; /* 加點微陰影增加立體感 */
+}
+
+/* 3. 防止名字跟名次在玻璃背景下看不見 (加上白色發光特效) */
+body[class*="theme-"] #leaderboardList li .text-slate-800,
+body[class*="theme-"] #leaderboardList li .text-slate-700 {
+    color: #1e293b !important; /* 確保是深色字 */
+    text-shadow: 0px 0px 5px rgba(255, 255, 255, 0.9) !important; /* 加上白底光暈，文字絕對清晰 */
+}
+
+/* 4. 如果進入深色主題 (傳奇、神話等)，文字自動轉白發光 */
+body.theme-legend #leaderboardList li .text-slate-800,
+body.theme-legend #leaderboardList li .text-slate-700,
+body.theme-mythic #leaderboardList li .text-slate-800,
+body.theme-mythic #leaderboardList li .text-slate-700 {
+    color: #ffffff !important;
+    text-shadow: 0px 0px 5px rgba(0, 0, 0, 0.8) !important; /* 加上黑底光暈 */
+}
+/* ==========================================================================
+   🏆 排行榜終極完美版 (大頭貼清晰 + 卡片高質感 + 徽章顏色回歸)
+   ========================================================================== */
+
+/* 1. 大頭貼底色：強制實心亮白底，圖案不變透明 */
+body[class*="theme-"] #leaderboardList .w-12.h-12,
+body[class*="theme-"] #leaderboardList .rounded-full.bg-slate-800 {
+    background-color: #f8fafc !important; 
+    border: 2px solid rgba(255, 255, 255, 0.6) !important;
+}
+
+/* 2. 救回排行榜上的「等級徽章」(Badge) 顏色 */
+body[class*="theme-"] .text-\\[11px\\] {
+    backdrop-filter: none !important; /* 徽章不需要磨砂玻璃效果 */
+    border: none !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important; /* 加上一點微陰影讓徽章更立體 */
+    
+    /* ⚠️ 絕對不要在這裡寫 background-color 跟 color！放手讓 Tailwind 自動上色！ */
+}
+
+/* 3. 名字與分數轉白發光 (精準鎖定，絕對不波及徽章！) */
+body[class*="theme-"] #leaderboardList li .text-slate-800,
+body[class*="theme-"] #leaderboardList li .text-slate-700,
+body[class*="theme-"] #leaderboardList li .text-slate-300,
+body[class*="theme-"] #leaderboardList .text-2xl {
+    color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* 4. 🌟 解除徽章封印：完全不碰顏色，讓系統根據等級自動上色！ */
+body[class*="theme-"] #leaderboardList li .text-\\[11px\\] {
+    backdrop-filter: none !important; /* 關閉模糊 */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5) !important; /* 加一點立體感就好 */
+    /* 這裡絕對不加 background-color 跟 color，讓 Tailwind 發揮魔法！ */
+}
+/* ==========================================================================
+   🌟 個人卡片橫幅 (Banner) 終極變色版 (強制鎖定側邊欄，絕對有效)
+   ========================================================================== */
+
+/* 1. 先把側邊欄裡的「藍色漸層區塊」的透明封印完全解除 */
+body[class*="theme-"] aside .bg-gradient-to-r,
+body[class*="theme-"] aside [class*="from-blue-"] {
+    opacity: 1 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important; 
+}
+
+/* 2. 注入各等級專屬漸層色 (權重最高) */
+body.theme-rookie aside .bg-gradient-to-r, body.theme-rookie aside [class*="from-blue-"] { background: linear-gradient(to right, #22c55e, #16a34a) !important; }
+body.theme-bronze aside .bg-gradient-to-r, body.theme-bronze aside [class*="from-blue-"] { background: linear-gradient(to right, #f97316, #fb923c) !important; }
+body.theme-silver aside .bg-gradient-to-r, body.theme-silver aside [class*="from-blue-"] { background: linear-gradient(to right, #94a3b8, #cbd5e1) !important; }
+body.theme-gold aside .bg-gradient-to-r, body.theme-gold aside [class*="from-blue-"] { background: linear-gradient(to right, #eab308, #fde047) !important; }
+body.theme-diamond aside .bg-gradient-to-r, body.theme-diamond aside [class*="from-blue-"] { background: linear-gradient(to right, #0ea5e9, #38bdf8) !important; }
+body.theme-master aside .bg-gradient-to-r, body.theme-master aside [class*="from-blue-"] { background: linear-gradient(to right, #ef4444, #f87171) !important; }
+body.theme-grandmaster aside .bg-gradient-to-r, body.theme-grandmaster aside [class*="from-blue-"] { background: linear-gradient(to right, #d946ef, #c026d3) !important; }
+body.theme-epic aside .bg-gradient-to-r, body.theme-epic aside [class*="from-blue-"] { background: linear-gradient(to right, #10b981, #047857) !important; }
+body.theme-legend aside .bg-gradient-to-r, body.theme-legend aside [class*="from-blue-"] { background: linear-gradient(to right, #b45309, #f59e0b) !important; }
+body.theme-mythic aside .bg-gradient-to-r, body.theme-mythic aside [class*="from-blue-"] { background: linear-gradient(to right, #6366f1, #a855f7, #ec4899) !important; }
+body.theme-celestial aside .bg-gradient-to-r, body.theme-celestial aside [class*="from-blue-"] { background: linear-gradient(to right, #000000, #4c1d95, #000000) !important; border-bottom: 2px solid #fde047; }

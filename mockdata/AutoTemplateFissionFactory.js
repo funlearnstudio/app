@@ -1,0 +1,113 @@
+(function(global){
+    'use strict';
+
+    // 建立工廠函式
+    function initFactory() {
+        const G = global.RigorousGenerator || (window.global && window.global.RigorousGenerator);
+        
+        // 防呆：如果引擎還沒載入，就等一下
+        if (!G) { 
+            setTimeout(initFactory, 100); 
+            return; 
+        }
+
+        console.log("🏭 [Factory] 正在啟動裂變工廠...");
+
+        // ==========================================
+        //  1. 定義情境資料庫
+        // ==========================================
+        const DB = {
+            roles: [
+                "AI工程師", "全端工程師", "電競選手", "YouTuber", "外送員", 
+                "股市分析師", "建築師", "急診室醫生", "便利商店店員", "健身教練",
+                "FBI探員", "黑客", "法醫", "機長", "新聞主播",
+                "火星太空人", "時空旅人", "吸血鬼獵人", "魔法學徒", "煉金術士",
+                "馴龍高手", "深海潛水員", "忍者", "海盜船長", "殭屍倖存者",
+                "考古學家", "私家偵探", "特務 007", "超能力者", "絕地武士",
+                "米其林主廚", "動物森友會玩家", "饒舌歌手", "總統", "流浪漢",
+                "富二代", "植物學家", "幼稚園老師", "公車司機", "算命師",
+                "催眠師", "魔術師", "馴獸師", "登山客", "極限運動員",
+                "拍賣官", "圖書館管理員", "博物館驚魂夜警衛", "動物園飼育員", "鏟屎官"
+            ],
+            places: [
+                "在全聯福利中心", "在 101 大樓頂端", "在撒哈拉沙漠", "在玉山山頂",
+                "在 IKEA 迷宮", "在核電廠控制室", "在手術室", "在法院證人席",
+                "在演唱會後台", "在擠滿人的捷運車廂", "在無人島", "在南極研究站",
+                "在羅浮宮", "在迪士尼樂園", "在國際太空站", "在潛水艇裡",
+                "在百慕達三角洲", "在霍格華茲魔法學校", "在海底兩萬哩", "在喪屍圍城的賣場",
+                "在時光機裡", "在直播間", "在黑洞邊緣", "在金字塔密室",
+                "在古羅馬競技場", "在元宇宙", "在召喚峽谷", "在侏羅紀公園",
+                "在鐵達尼號沈船旁", "在月球背面", "在異世界轉生點", "在鬼屋",
+                "在糖果屋", "在天空之城", "在亞特蘭提斯", "在火星殖民地"
+            ],
+            formats: [
+                { type: "news", label: "新聞", tpl: (q)=>`【緊急快訊】據最新報導指出：\n${q}\n專家表示這將影響全球局勢。` },
+                { type: "diary", label: "日記", tpl: (q)=>`【探險日記 Day 42】\n今天發生了奇怪的事：\n${q}\n我該怎麼辦？` },
+                { type: "email", label: "信件", tpl: (q)=>`Subject: 緊急求助\nTo: 教授\n\n我在研究中遇到了瓶頸：\n${q}\n盼覆。` },
+                { type: "chat", label: "對話", tpl: (q)=>`A：「欸，考你一題。」\nB：「放馬過來。」\nA：「${q}」\nB：「這...」` },
+                { type: "post", label: "社群", tpl: (q)=>`#急 #在線等 #求救\n${q}\n答對的請喝珍奶！🥤` },
+                { type: "system", label: "系統", tpl: (q)=>`[SYSTEM WARNING]\n偵測到邏輯錯誤：\n${q}\n請輸入正確指令以修復系統。` },
+                { type: "exam", label: "試題", tpl: (q)=>`【115年學測 模擬試題】\n${q}` },
+                { type: "quest", label: "任務", tpl: (q)=>`【主線任務更新】\nNPC 給了你一個謎題：\n${q}\n解開後可獲得傳說裝備。` },
+                { type: "video", label: "短影音", tpl: (q)=>`【抖音挑戰】如果你能在一分鐘內回答這個問題：\n「${q}」\n你就是天才！` },
+                { type: "memo", label: "便條", tpl: (q)=>`冰箱上貼著一張紙條：\n「出門前記得處理這件事：${q}」` }
+            ]
+        };
+
+        // ==========================================
+        //  2. 建立包裝器 (Context Wrappers)
+        // ==========================================
+        const CONTEXT_WRAPPERS = {}; // ★★★ 修正點：在這裡先宣告 ★★★
+
+        // A. 基礎標準版
+        CONTEXT_WRAPPERS['standard'] = (q) => q;
+
+        // B. 角色扮演版
+        for (let i = 0; i < 200; i++) {
+            CONTEXT_WRAPPERS[`roleplay_${i}`] = (q) => {
+                // 從 G.utils 獲取工具
+                const { pick } = G.utils; 
+                const r = pick(DB.roles);
+                const p = pick(DB.places);
+                return `【情境：${r}】\n你現在${p}，眼前出現了一個難題：\n「${q}」\n身為專業的${r}，你該如何解決？`;
+            };
+        }
+
+        // C. 格式變化版
+        DB.formats.forEach((fmt) => {
+            CONTEXT_WRAPPERS[fmt.type] = fmt.tpl;
+        });
+
+        // ==========================================
+        //  3. 匯出策略到引擎
+        // ==========================================
+        G.fissionStrategies = {
+            wrap: function(baseFunc, contextType) {
+                return function(ctx, rnd) {
+                    const baseData = baseFunc(ctx, rnd);
+                    const wrapper = CONTEXT_WRAPPERS[contextType] || CONTEXT_WRAPPERS['standard'];
+                    const newQuestion = wrapper(baseData.question);
+
+                    let suffix = "基礎";
+                    if (contextType.includes('roleplay')) suffix = "素養應用";
+                    else if (['news', 'diary', 'email'].includes(contextType)) suffix = "閱讀理解";
+                    else if (['quest', 'video', 'chat'].includes(contextType)) suffix = "生活情境";
+
+                    return {
+                        ...baseData,
+                        question: newQuestion,
+                        concept: `${baseData.concept} (${suffix})`,
+                        templateId: `${baseData.templateId || 'unknown'}_${contextType}` 
+                    };
+                };
+            },
+            availableContexts: Object.keys(CONTEXT_WRAPPERS) // 這裡現在能正確讀取到了
+        };
+
+        console.log(`✅ 自動裂變工廠已就緒：已生成 ${Object.keys(CONTEXT_WRAPPERS).length} 種情境模組。`);
+    }
+
+    // 啟動
+    initFactory();
+
+})(typeof window !== 'undefined' ? window : global);
