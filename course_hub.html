@@ -235,41 +235,57 @@
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
 
         let currentBooks = [];
-        let activeBookIndex = 0;  // 請替換為您實際的 GAS Web App URL
-       // ==========================================
-// 🎨 核心主題引擎 (12 個階級升級版)
-// ==========================================
-const ThemeEngine = {
-    apply: function(xp) {
-        console.log("儀表板主題判定中... XP:", xp);
+        let activeBookIndex = 0; 
+        const ThemeEngine = {
+    // 1. 執行變色 (改為 async 並加入 API 請求)
+    apply: async function(username) {
+        console.log("正在從雲端同步主題... 用戶:", username);
         const body = document.body;
         
-        // 清除舊主題
+        // 先移除所有主題 class
         body.classList.remove(
             'theme-novice', 'theme-rookie', 'theme-bronze', 'theme-silver', 
             'theme-gold', 'theme-diamond', 'theme-master', 'theme-grandmaster', 
             'theme-legend', 'theme-epic', 'theme-mythic', 'theme-celestial'
         );
 
-        // 根據 XP 判定並加入新主題
-        if (xp >= 100000) { body.classList.add('theme-celestial'); this.createStars(15); } 
-        else if (xp >= 50000) { body.classList.add('theme-mythic'); this.createStars(8); } 
-        else if (xp >= 30000) body.classList.add('theme-epic');         
-        else if (xp >= 20000) body.classList.add('theme-legend');       
-        else if (xp >= 15000) body.classList.add('theme-grandmaster');  
-        else if (xp >= 10000) body.classList.add('theme-master');       
-        else if (xp >= 5000)  body.classList.add('theme-diamond');      
-        else if (xp >= 2500)  body.classList.add('theme-gold');         
-        else if (xp >= 1000)  body.classList.add('theme-silver');       
-        else if (xp >= 300)   body.classList.add('theme-bronze');       
-        else if (xp >= 100)   body.classList.add('theme-rookie');       
-        else                  body.classList.add('theme-novice');       
+        let xp = 0;
+        try {
+            // 呼叫你的 GAS，使用 action=get_leaderboard 或自行新增 get_user_stats
+            // 這裡示範直接從登入資訊或排行榜 API 抓取
+            const response = await fetch(`${GAS_URL}?action=get_leaderboard`);
+            const leaderboard = await response.json();
+            const userData = leaderboard.find(u => u.username === username);
+            
+            if (userData) {
+                xp = userData.xp;
+                console.log(`雲端 XP 同步成功: ${xp}`);
+            }
+        } catch (e) {
+            console.error("XP 同步失敗，採用本地暫存:", e);
+            // 備案：如果網路失敗，嘗試讀取上次快照
+            const cached = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
+            xp = cached.xp;
+        }
+
+        // 根據 XP 判定 (邏輯保持)
+        if (xp >= 100000) { body.classList.add('theme-celestial'); this.createStars(15); }
+        else if (xp >= 50000) { body.classList.add('theme-mythic'); this.createStars(8); }
+        else if (xp >= 30000) body.classList.add('theme-epic');
+        else if (xp >= 20000) body.classList.add('theme-legend');
+        else if (xp >= 15000) body.classList.add('theme-grandmaster');
+        else if (xp >= 10000) body.classList.add('theme-master');
+        else if (xp >= 5000)  body.classList.add('theme-diamond');
+        else if (xp >= 2500)  body.classList.add('theme-gold');
+        else if (xp >= 1000)  body.classList.add('theme-silver');
+        else if (xp >= 300)   body.classList.add('theme-bronze');
+        else if (xp >= 100)   body.classList.add('theme-rookie');
+        else                  body.classList.add('theme-novice');
     },
 
     createStars: function(starCount) {
         const container = document.getElementById('star-container');
-        if (!container || container.hasChildNodes()) return; 
-        
+        if (!container || container.hasChildNodes()) return;
         for (let i = 0; i < starCount; i++) {
             let star = document.createElement('div');
             star.className = 'shooting-star'; 
@@ -280,7 +296,6 @@ const ThemeEngine = {
         }
     }
 };
-
 // 網頁載入時自動執行主題變色
 document.addEventListener('DOMContentLoaded', () => {
     let userXP = 0;
