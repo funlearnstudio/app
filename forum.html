@@ -260,7 +260,8 @@
 // ✏️ 個人資料與介面功能
 // ==========================================
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
-// --- 核心主題引擎 ---const ThemeEngine = {
+// --- 核心主題引擎 ---
+const ThemeEngine = {
     apply: async function(username) {
         console.log("開始同步主題... 用戶:", username);
         const body = document.body;
@@ -328,7 +329,7 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_O
         }
     }
 };
-};
+
 
 // --- 自動執行 ---
 document.addEventListener('DOMContentLoaded', () => {
