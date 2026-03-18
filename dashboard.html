@@ -225,52 +225,69 @@
  const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
 const ThemeEngine = {
     apply: async function(username) {
-        console.log("開始同步主題... 用戶:", username);
         const body = document.body;
+        console.log("🚀 [ThemeEngine] 開始同步。目標用戶:", username);
 
-        // 1. 先清除所有舊主題
-        const allThemes = [
+        // 1. 清除舊樣式
+        body.classList.remove(
             'theme-novice', 'theme-rookie', 'theme-bronze', 'theme-silver', 
             'theme-gold', 'theme-diamond', 'theme-master', 'theme-grandmaster', 
             'theme-legend', 'theme-epic', 'theme-mythic', 'theme-celestial'
-        ];
-        body.classList.remove(...allThemes);
+        );
 
         try {
-            // 2. 從你的 GAS API 抓取排行榜資料
+            // 2. 抓取排行榜 (這包含 XP 資訊)
             const response = await fetch(`${GAS_URL}?action=get_leaderboard`);
             const leaderboard = await response.json();
             
-            // 3. 尋找匹配的用戶
-            const userData = leaderboard.find(u => String(u.username).trim().toLowerCase() === String(username).trim().toLowerCase());
-            
-            // 💡 關鍵：確保 xp 是數字類型
-            let xp = userData ? Number(userData.xp) : 0;
-            console.log("確定 XP 數值:", xp);
+            console.log("📊 [API 回傳內容]:", leaderboard);
 
-            // 4. 判定邏輯 (由高至低)
-            let selectedTheme = 'theme-novice';
-            if (xp >= 100000) { selectedTheme = 'theme-celestial'; this.createStars(15); }
-            else if (xp >= 50000) { selectedTheme = 'theme-mythic'; this.createStars(8); }
-            else if (xp >= 30000) selectedTheme = 'theme-epic';
-            else if (xp >= 20000) selectedTheme = 'theme-legend';
-            else if (xp >= 15000) selectedTheme = 'theme-grandmaster';
-            else if (xp >= 10000) selectedTheme = 'theme-master';
-            else if (xp >= 5000)  selectedTheme = 'theme-diamond';
-            else if (xp >= 2500)  selectedTheme = 'theme-gold';
-            else if (xp >= 1000)  selectedTheme = 'theme-silver';
-            else if (xp >= 300)   selectedTheme = 'theme-bronze';
-            else if (xp >= 100)   selectedTheme = 'theme-rookie';
+            // 3. 進行精準匹配 (強制轉字串 + 去空格)
+            const userData = leaderboard.find(u => {
+                const apiUser = String(u.username).trim().toLowerCase();
+                const targetUser = String(username).trim().toLowerCase();
+                return apiUser === targetUser;
+            });
 
-            // 5. 執行變色
-            body.classList.add(selectedTheme);
-            console.log("已成功套用主題:", selectedTheme);
+            let xp = 0;
+            if (userData) {
+                xp = Number(userData.xp) || 0;
+                console.log(`✅ 成功匹配！${username} 的雲端 XP 為:`, xp);
+            } else {
+                console.warn(`⚠️ 排行榜中找不到 ${username}。請檢查以下原因：`);
+                console.log("1. 該用戶在試算表中 [身份] 欄位是否為 'teacher' 或 'admin'？(如果是則會被過濾)");
+                console.log("2. 試算表 [users] 分頁是否存在該帳號？");
+                
+                // 嘗試從本地緩存救急
+                const localUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+                xp = Number(localUser.xp) || 0;
+                console.log("🕒 使用本地快照 XP:", xp);
+            }
+
+            // 4. 分級邏輯 (保持不變)
+            let theme = 'theme-novice';
+            if (xp >= 100000) theme = 'theme-celestial';
+            else if (xp >= 50000) theme = 'theme-mythic';
+            else if (xp >= 30000) theme = 'theme-epic';
+            else if (xp >= 20000) theme = 'theme-legend';
+            else if (xp >= 15000) theme = 'theme-grandmaster';
+            else if (xp >= 10000) theme = 'theme-master';
+            else if (xp >= 5000)  theme = 'theme-diamond';
+            else if (xp >= 2500)  theme = 'theme-gold';
+            else if (xp >= 1000)  theme = 'theme-silver';
+            else if (xp >= 300)   theme = 'theme-bronze';
+            else if (xp >= 100)   theme = 'theme-rookie';
+
+            body.classList.add(theme);
+            if (xp >= 50000) this.createStars(xp >= 100000 ? 15 : 8);
+            console.log("🎨 最終套用主題:", theme);
 
         } catch (e) {
-            console.error("主題引擎出錯:", e);
-            body.classList.add('theme-novice'); // 報錯時保底
+            console.error("❌ 主題引擎崩潰:", e);
+            body.classList.add('theme-novice');
         }
     },
+    // ... createStars 保持不變
 
     createStars: function(starCount) {
         let container = document.getElementById('star-container');
