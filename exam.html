@@ -353,46 +353,56 @@ window.onload = function() {
     const urlParams = new URLSearchParams(window.location.search);
     const subjectFromUrl = urlParams.get('subject');
     console.log("當前測驗科目：", subjectFromUrl); 
-// --- 核心主題引擎 (12 個階級升級版) ---
-const ThemeEngine = {
-    // 1. 執行變色
-    apply: function(xp) {
-        console.log("當前頁面主題判定中... XP:", xp);
+// --- 核心主題引擎 (12 個階級升級版) ---const ThemeEngine = {
+    // 1. 執行變色 (改為 async 並加入 API 請求)
+    apply: async function(username) {
+        console.log("正在從雲端同步主題... 用戶:", username);
         const body = document.body;
         
-        // ⚠️ 必須在這裡把 12 個主題的 class 全部列出來，確保切換時能清除乾淨
+        // 先移除所有主題 class
         body.classList.remove(
             'theme-novice', 'theme-rookie', 'theme-bronze', 'theme-silver', 
             'theme-gold', 'theme-diamond', 'theme-master', 'theme-grandmaster', 
             'theme-legend', 'theme-epic', 'theme-mythic', 'theme-celestial'
         );
 
-        // 根據 XP 判定主題 (必須從最高分往下寫)
-        if (xp >= 100000) { 
-            body.classList.add('theme-celestial'); 
-            this.createStars(15); // 12. 創世星神 (最高階，流星加倍！)
-        } 
-        else if (xp >= 50000) { 
-            body.classList.add('theme-mythic'); 
-            this.createStars(8);  // 11. 萬古神話 (一般流星)
-        } 
-        else if (xp >= 30000) body.classList.add('theme-epic');         // 10. 史詩英雄
-        else if (xp >= 20000) body.classList.add('theme-legend');       // 9. 傳奇領主
-        else if (xp >= 15000) body.classList.add('theme-grandmaster');  // 8. 榮耀宗師
-        else if (xp >= 10000) body.classList.add('theme-master');       // 7. 聖域大師
-        else if (xp >= 5000)  body.classList.add('theme-diamond');      // 6. 頂尖學者
-        else if (xp >= 2500)  body.classList.add('theme-gold');         // 5. 黃金菁英
-        else if (xp >= 1000)  body.classList.add('theme-silver');       // 4. 白銀騎士
-        else if (xp >= 300)   body.classList.add('theme-bronze');       // 3. 勤奮書生
-        else if (xp >= 100)   body.classList.add('theme-rookie');       // 2. 潛力新秀
-        else                  body.classList.add('theme-novice');       // 1. 初心學徒 (0~99 XP)
+        let xp = 0;
+        try {
+            // 呼叫你的 GAS，使用 action=get_leaderboard 或自行新增 get_user_stats
+            // 這裡示範直接從登入資訊或排行榜 API 抓取
+            const response = await fetch(`${GAS_URL}?action=get_leaderboard`);
+            const leaderboard = await response.json();
+            const userData = leaderboard.find(u => u.username === username);
+            
+            if (userData) {
+                xp = userData.xp;
+                console.log(`雲端 XP 同步成功: ${xp}`);
+            }
+        } catch (e) {
+            console.error("XP 同步失敗，採用本地暫存:", e);
+            // 備案：如果網路失敗，嘗試讀取上次快照
+            const cached = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
+            xp = cached.xp;
+        }
+
+        // 根據 XP 判定 (邏輯保持)
+        if (xp >= 100000) { body.classList.add('theme-celestial'); this.createStars(15); }
+        else if (xp >= 50000) { body.classList.add('theme-mythic'); this.createStars(8); }
+        else if (xp >= 30000) body.classList.add('theme-epic');
+        else if (xp >= 20000) body.classList.add('theme-legend');
+        else if (xp >= 15000) body.classList.add('theme-grandmaster');
+        else if (xp >= 10000) body.classList.add('theme-master');
+        else if (xp >= 5000)  body.classList.add('theme-diamond');
+        else if (xp >= 2500)  body.classList.add('theme-gold');
+        else if (xp >= 1000)  body.classList.add('theme-silver');
+        else if (xp >= 300)   body.classList.add('theme-bronze');
+        else if (xp >= 100)   body.classList.add('theme-rookie');
+        else                  body.classList.add('theme-novice');
     },
 
-    // 2. 產生流星 (現在可以根據等級決定流星數量)
     createStars: function(starCount) {
         const container = document.getElementById('star-container');
-        if (!container || container.hasChildNodes()) return; // 避免重複產生
-        
+        if (!container || container.hasChildNodes()) return;
         for (let i = 0; i < starCount; i++) {
             let star = document.createElement('div');
             star.className = 'shooting-star'; 
