@@ -1,0 +1,7 @@
+{
+  "name": "exam-system",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "npx --yes javascript-obfuscator ./mockdata --output ./mockdata --compact true --string-array true --string-array-encoding base64 && npx --yes javascript-obfuscator ./assets/js --output ./assets/js --compact true --string-array true --string-array-encoding base64"
+  }
+}
