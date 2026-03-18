@@ -347,37 +347,7 @@
     let isSubmitting = false; 
 // --- 🌟 題庫自動載入與解密系統 ---
 window.onload = function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const unitFileName = urlParams.get('unit') || 'default_test';
 
-    // 🌟 關鍵修改：路徑指向 mockdata
-    const scriptTag = document.createElement('script');
-    scriptTag.src = `mockdata/${unitFileName}.js`; 
-    document.head.appendChild(scriptTag);
-
-    scriptTag.onload = () => {
-        if (window._DATA_VAULT) {
-            try {
-                // 解密邏輯
-                const reversed = window._DATA_VAULT.split('').reverse().join('');
-                const decoded = decodeURIComponent(atob(reversed));
-                mockQuestions = JSON.parse(decoded);
-                
-                console.log("✅ 題庫載入且解密成功！");
-                
-                // 執行你原本的測驗初始化函數
-                initGame(); 
-            } catch (e) {
-                alert("❌ 題庫解密失敗，檔案格式可能有誤！");
-            }
-        } else {
-            alert("⚠️ 讀取不到加密資料！");
-        }
-    };
-
-    scriptTag.onerror = () => {
-        alert(`❌ 找不到題庫檔案：mockdata/${unitFileName}.js\n請確認網址的 ?unit= 名稱是否正確，或是機器人有沒有成功跑完！`);
-    };
 };
     // 在 exam 頁面的 script 開頭檢查
     const urlParams = new URLSearchParams(window.location.search);
