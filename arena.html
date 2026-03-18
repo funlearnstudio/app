@@ -681,37 +681,56 @@ const featuresList = [
     { xp: 50000, name: "萬古神話流星", icon: "fa-meteor", desc: "解鎖深邃宇宙黑與專屬流星雨" },
     { xp: 100000, name: "創世星神領域", icon: "fa-sun", desc: "解鎖終極黑洞特效與加倍流星雨" }
 ];
-
-// =========================================
-// 2. 核心引擎 (主題變色 & 音效)
-// =========================================
 const ThemeEngine = {
-    apply: function(xp) {
-        console.log("當前頁面主題判定中... XP:", xp);
+    // 1. 執行變色 (改為 async 並加入 API 請求)
+    apply: async function(username) {
+        console.log("正在從雲端同步主題... 用戶:", username);
         const body = document.body;
         
+        // 先移除所有主題 class
         body.classList.remove(
             'theme-novice', 'theme-rookie', 'theme-bronze', 'theme-silver', 
             'theme-gold', 'theme-diamond', 'theme-master', 'theme-grandmaster', 
             'theme-legend', 'theme-epic', 'theme-mythic', 'theme-celestial'
         );
 
-        if (xp >= 100000) { body.classList.add('theme-celestial'); this.createStars(15); } 
-        else if (xp >= 50000) { body.classList.add('theme-mythic'); this.createStars(8); } 
-        else if (xp >= 30000) body.classList.add('theme-epic');         
-        else if (xp >= 20000) body.classList.add('theme-legend');       
-        else if (xp >= 15000) body.classList.add('theme-grandmaster');  
-        else if (xp >= 10000) body.classList.add('theme-master');       
-        else if (xp >= 5000)  body.classList.add('theme-diamond');      
-        else if (xp >= 2500)  body.classList.add('theme-gold');         
-        else if (xp >= 1000)  body.classList.add('theme-silver');       
-        else if (xp >= 300)   body.classList.add('theme-bronze');       
-        else if (xp >= 100)   body.classList.add('theme-rookie');       
-        else                  body.classList.add('theme-novice');       
+        let xp = 0;
+        try {
+            // 呼叫你的 GAS，使用 action=get_leaderboard 或自行新增 get_user_stats
+            // 這裡示範直接從登入資訊或排行榜 API 抓取
+            const response = await fetch(`${GAS_URL}?action=get_leaderboard`);
+            const leaderboard = await response.json();
+            const userData = leaderboard.find(u => u.username === username);
+            
+            if (userData) {
+                xp = userData.xp;
+                console.log(`雲端 XP 同步成功: ${xp}`);
+            }
+        } catch (e) {
+            console.error("XP 同步失敗，採用本地暫存:", e);
+            // 備案：如果網路失敗，嘗試讀取上次快照
+            const cached = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
+            xp = cached.xp;
+        }
+
+        // 根據 XP 判定 (邏輯保持)
+        if (xp >= 100000) { body.classList.add('theme-celestial'); this.createStars(15); }
+        else if (xp >= 50000) { body.classList.add('theme-mythic'); this.createStars(8); }
+        else if (xp >= 30000) body.classList.add('theme-epic');
+        else if (xp >= 20000) body.classList.add('theme-legend');
+        else if (xp >= 15000) body.classList.add('theme-grandmaster');
+        else if (xp >= 10000) body.classList.add('theme-master');
+        else if (xp >= 5000)  body.classList.add('theme-diamond');
+        else if (xp >= 2500)  body.classList.add('theme-gold');
+        else if (xp >= 1000)  body.classList.add('theme-silver');
+        else if (xp >= 300)   body.classList.add('theme-bronze');
+        else if (xp >= 100)   body.classList.add('theme-rookie');
+        else                  body.classList.add('theme-novice');
     },
+
     createStars: function(starCount) {
         const container = document.getElementById('star-container');
-        if (!container || container.hasChildNodes()) return; 
+        if (!container || container.hasChildNodes()) return;
         for (let i = 0; i < starCount; i++) {
             let star = document.createElement('div');
             star.className = 'shooting-star'; 
@@ -722,7 +741,6 @@ const ThemeEngine = {
         }
     }
 };
-
 const SoundEngine = {
     // 把網址換成你本地端資料夾的路徑 👇
     bgm: new Audio('assets/bgm .mp3'), 
