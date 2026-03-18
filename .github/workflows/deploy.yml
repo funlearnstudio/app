@@ -1,4 +1,4 @@
-name: 自動加密並部署網站
+name: 自動混淆程式碼並發布網站
 
 on:
   push:
@@ -9,7 +9,7 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: 下載程式碼
+      - name: 下載你的正常程式碼
         uses: actions/checkout@v3
 
       - name: 設定 Node.js 環境
@@ -17,12 +17,14 @@ jobs:
         with:
           node-version: '18'
 
-      - name: 執行自動加密腳本
-        run: node encrypt.js
+      - name: 🌟 執行代碼混淆魔法 (把正常代碼變天書)
+        # npx 會自動下載混淆套件，並覆蓋原本的檔案 (只有在機器人體內覆蓋，不會影響你的原始碼)
+        run: |
+          npx javascript-obfuscator ./mockdata --output ./mockdata --compact true --string-array true --string-array-encoding 'base64'
+          npx javascript-obfuscator ./assets/js --output ./assets/js --compact true --string-array true --string-array-encoding 'base64'
 
-      - name: 發布到 GitHub Pages
+      - name: 將變身後的網站發布到 GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./  
-          exclude_assets: 'raw_data,encrypt.js' # 把明文和腳本藏起來
+          publish_dir: ./
