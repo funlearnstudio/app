@@ -187,7 +187,27 @@
                     </div>
                 </div>
             </div>
-
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 fade-in hidden" id="cheatAnalysisSection">
+                <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2 border-b pb-3">
+                    <i class="fas fa-user-shield text-red-500"></i> 考試行為診斷
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="p-5 rounded-xl border bg-gray-50" id="timeCheatBox">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-600"><i class="fas fa-stopwatch"></i></div>
+                            <h4 class="font-bold text-gray-700">作答節奏分析</h4>
+                        </div>
+                        <p class="text-sm text-gray-600 pl-11" id="timeCheatText">分析中...</p>
+                    </div>
+                    <div class="p-5 rounded-xl border bg-gray-50" id="tabCheatBox">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-600"><i class="fas fa-window-restore"></i></div>
+                            <h4 class="font-bold text-gray-700">專注度分析 (切換分頁)</h4>
+                        </div>
+                        <p class="text-sm text-gray-600 pl-11" id="tabCheatText">分析中...</p>
+                    </div>
+                </div>
+            </div>
             <div class="fade-in">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b pb-4">
                     <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -468,7 +488,7 @@ function updateScoreBoard(result) {
     if (el) el.textContent = `${subject} | ${date}`;
 }
 
-// 🌟 新增：渲染考試行為分析 (切換分頁與作答節奏)
+// 🌟 修正：渲染考試行為分析 (支援物件格式解析)
 function updateCheatAnalysis(result) {
     const section = document.getElementById('cheatAnalysisSection');
     const timeBox = document.getElementById('timeCheatText');
@@ -493,18 +513,36 @@ function updateCheatAnalysis(result) {
         tabBox.innerHTML = '<span class="text-gray-400">無數據</span>';
     }
 
-    // 2. 作答節奏分析
+    // 2. 作答節奏分析 (支援 JSON 物件格式)
     if (result.cheat) {
-        if (result.cheat === true || String(result.cheat).includes("異常") || String(result.cheat).includes("過快")) {
-            timeBox.innerHTML = `<span class="text-red-500 font-bold"><i class="fas fa-bolt"></i> 偵測到作答節奏異常 (過快)</span>`;
+        let isCheat = false;
+        let cheatMsg = "";
+
+        // 當 cheat 是你提供的物件格式 {"cheatLevel": "HIGH", "fastCount": 10}
+        if (typeof result.cheat === 'object') {
+            if (result.cheat.cheatLevel === "HIGH" || result.cheat.fastCount > 0) {
+                isCheat = true;
+                cheatMsg = `偵測到異常快轉（共有 ${result.cheat.fastCount} 題作答過快）`;
+            }
+        } 
+        // 兼容舊版的字串或布林值格式
+        else if (result.cheat === true || String(result.cheat).includes("異常") || String(result.cheat).includes("過快")) {
+            isCheat = true;
+            cheatMsg = "偵測到作答節奏異常 (過快)";
+        } else if (typeof result.cheat === 'string' && result.cheat.trim() !== "") {
+            isCheat = true;
+            cheatMsg = result.cheat;
+        }
+
+        if (isCheat) {
+            timeBox.innerHTML = `<span class="text-red-500 font-bold"><i class="fas fa-bolt"></i> ${cheatMsg}</span>`;
         } else {
-            timeBox.innerHTML = `<span class="text-orange-500 font-bold">${result.cheat}</span>`;
+            timeBox.innerHTML = '<span class="text-green-600 font-bold"><i class="fas fa-check-circle"></i> 作答節奏正常，無異常快轉</span>';
         }
     } else {
         timeBox.innerHTML = '<span class="text-green-600 font-bold"><i class="fas fa-check-circle"></i> 作答節奏正常，無異常快轉</span>';
     }
 }
-
 function updateFilterCounts() {
     const correctCount = allQuestionsData.filter(q => q.answer == q.yourAns).length;
     const wrongCount = allQuestionsData.filter(q => q.answer != q.yourAns).length;
