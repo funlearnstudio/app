@@ -599,58 +599,109 @@ document.addEventListener('DOMContentLoaded', () => {
         const subjTitle = document.getElementById('fcSubject');
         if(subjTitle) subjTitle.textContent = getSubjectName(currentSubject);
     };
- // ==========================================
-    // 🌟 XP 經驗值與雲端同步系統 (遊戲場專用)
-   // 🏆 強化版：自動計算稱號並上傳
 async function awardXPAndSync(xpAmount, gameName, scoreAmount) {
     if (!xpAmount || xpAmount <= 0) return;
     
-    // 取得使用者 (支援 guest 排除)
+    // 1. 取得使用者資料 (支援 Auth 模組或本地快照)
     let user = (window.Auth && Auth.getCurrentUser()) || JSON.parse(localStorage.getItem('currentUser') || '{"username":"guest"}');
-    if (user.username === 'guest') return;
+    if (user.username === 'guest' || !user.username) return;
 
-    // 計算新總分
-    const oldXP = user.xp || 0;
-    const newXP = oldXP + xpAmount;
+    // 2. 計算新總分
+    const oldXP = Number(user.xp) || 0;
+    const newTotalXP = oldXP + xpAmount;
     
-    // 更新本地
-    if (window.Auth && typeof Auth.addXP === 'function') {
-        Auth.addXP(xpAmount);
-    } else {
-        user.xp = newXP;
-        localStorage.setItem('currentUser', JSON.stringify(user));
+    // 🌟 3. 最新等級與稱號判定邏輯 (整合你提供的 12 階等級)
+    let selectedTheme = 'theme-novice';
+    let title = "初級學徒";
+
+    if (newTotalXP >= 100000) {
+        selectedTheme = 'theme-celestial';
+        title = "🌌 天神級導師";
+    } else if (newTotalXP >= 50000) {
+        selectedTheme = 'theme-mythic';
+        title = "🌀 神話級至尊";
+    } else if (newTotalXP >= 30000) {
+        selectedTheme = 'theme-epic';
+        title = "⚡ 史詩級英雄";
+    } else if (newTotalXP >= 20000) {
+        selectedTheme = 'theme-legend';
+        title = "📜 傳說級智者";
+    } else if (newTotalXP >= 15000) {
+        selectedTheme = 'theme-grandmaster';
+        title = "👑 大師級學長";
+    } else if (newTotalXP >= 10000) {
+        selectedTheme = 'theme-master';
+        title = "🔥 傳說級學霸"; // 原本 10000 分的功能保留並升級
+    } else if (newTotalXP >= 5000) {
+        selectedTheme = 'theme-diamond';
+        title = "💎 頂尖研究員";
+    } else if (newTotalXP >= 2500) {
+        selectedTheme = 'theme-gold';
+        title = "🏆 資深學者";
+    } else if (newTotalXP >= 1000) {
+        selectedTheme = 'theme-silver';
+        title = "🌟 進階學子";
+    } else if (newTotalXP >= 300) {
+        selectedTheme = 'theme-bronze';
+        title = "📖 努力書生";
+    } else if (newTotalXP >= 100) {
+        selectedTheme = 'theme-rookie';
+        title = "🔰 潛力菜鳥";
     }
 
-    // 更新介面
+    // 4. 計算數位等級 (每 100 XP 一級)
+    const numericLevel = Math.floor(newTotalXP / 100) + 1;
+
+    // 5. 更新本地緩存與介面
+    user.xp = newTotalXP;
+    user.level = numericLevel;
+    user.title = title;
+    localStorage.setItem('currentUser', JSON.stringify(user));
+
+    // 更新介面 XP 顯示
     const xpDisplay = document.getElementById('xpCount');
-    if(xpDisplay) xpDisplay.innerText = newXP;
+    if (xpDisplay) xpDisplay.innerText = newTotalXP;
+    
+    // 🌟 立即連動主題變色 (ThemeEngine)
+    if (typeof ThemeEngine !== 'undefined' && ThemeEngine.apply) {
+        ThemeEngine.apply(newTotalXP);
+    }
 
-    // 計算稱號 (用於榮譽榜排序與展示)
-    let title = "初級學徒";
-    if (newXP >= 500)  title = "📖 努力書生";
-    if (newXP >= 1000) title = "🌟 進階學子";
-    if (newXP >= 2000) title = "🏆 資深學者";
-    if (newXP >= 5000) title = "💎 頂尖研究員";
-    if (newXP >= 10000) title = "🔥 傳說級學霸";
-
-    // 打包包裹
+    // 6. 準備發送給 GAS 的資料包
+    // 🌟 名稱組合：【遊戲場】+ 遊戲名 + (最新稱號 + 最新等級)
+    // 確保包含「遊戲」關鍵字，讓 GAS 自動過濾歷程與平均分
     const payload = {
         action: "save_record",
         username: user.username,
-        activity: "遊戲場-" + gameName,
-        score: scoreAmount || 100,
+        activity: `【遊戲場】${gameName} (${title} Lv.${numericLevel})`, 
+        score: scoreAmount || 0,
         xp: xpAmount,
         detail: JSON.stringify({
             unitName: gameName,
             xpGained: xpAmount,
-            currentTitle: title // 🌟 順便送稱號給試算表
+            currentTitle: title,
+            userLevel: numericLevel,
+            theme: selectedTheme,
+            isEntertainment: true 
         })
     };
 
+    // 7. 同步到 Google 試算表
     return fetch(GAS_URL, {
         method: 'POST',
         body: JSON.stringify(payload)
-    }).catch(e => console.error("同步失敗", e));
+    })
+    .then(response => response.json())
+    .then(res => {
+        console.log(`✅ 同步成功！稱號：${title}, 等級：Lv.${numericLevel}`);
+        
+        // 🌟 原始 Coin 功能保留：滿千分送代幣
+        if (scoreAmount && scoreAmount >= 1000 && typeof window.saveCoins === 'function') {
+             let current = (typeof window.loadCoins === 'function') ? window.loadCoins() : 0;
+             window.saveCoins(current + 1);
+        }
+    })
+    .catch(e => console.error("❌ 同步失敗", e));
 }
     // ==========================================
     // ✏️ 個人資料編輯功能 (必須放在外層)
