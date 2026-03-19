@@ -276,3 +276,37 @@ body.theme-epic aside .bg-gradient-to-r, body.theme-epic aside [class*="from-blu
 body.theme-legend aside .bg-gradient-to-r, body.theme-legend aside [class*="from-blue-"] { background: linear-gradient(to right, #b45309, #f59e0b) !important; }
 body.theme-mythic aside .bg-gradient-to-r, body.theme-mythic aside [class*="from-blue-"] { background: linear-gradient(to right, #6366f1, #a855f7, #ec4899) !important; }
 body.theme-celestial aside .bg-gradient-to-r, body.theme-celestial aside [class*="from-blue-"] { background: linear-gradient(to right, #000000, #4c1d95, #000000) !important; border-bottom: 2px solid #fde047; }
+/* 強制選項標籤為圓形 */
+.option-label, .option-prefix, .choice-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* 這裡設定固定的寬高，確保它是正方形 */
+    width: 32px;
+    height: 32px;
+    min-width: 32px; /* 防止被 flex 壓縮 */
+    min-height: 32px;
+    
+    /* 關鍵：圓角 50% */
+    border-radius: 50%;
+    
+    /* 文字樣式 */
+    font-weight: bold;
+    margin-right: 10px;
+    
+    /* 預設顏色（可依主題調整） */
+    background-color: #f0f0f0;
+    color: #333;
+    border: 2px solid #ddd;
+    
+    /* 避免文字換行擠壓 */
+    flex-shrink: 0; 
+}
+
+/* 考卷頁面選中時的顏色 */
+.selected .option-label {
+    background-color: #4CAF50;
+    color: white;
+    border-color: #45a049;
+}
