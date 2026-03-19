@@ -246,56 +246,94 @@
 
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
-// --- 核心主題引擎 (12 個階級升級版) ---const ThemeEngine = {
-    // 1. 執行變色 (改為 async 並加入 API 請求)
+const ThemeEngine = {
     apply: async function(username) {
-        console.log("正在從雲端同步主題... 用戶:", username);
         const body = document.body;
+        console.log("🚀 [ThemeEngine] 啟動快照優先模式。用戶:", username);
+
+        // --- 階段 1：立即從本地讀取 ---
+        // 抓取整個物件，而不只是 XP，這樣更新時才不會丟失姓名等資料
+        let userRaw = localStorage.getItem('currentUser');
+        let userDataLocal = userRaw ? JSON.parse(userRaw) : { xp: 0 };
+        let currentXP = Number(userDataLocal.xp) || 0;
         
-        // 先移除所有主題 class
-        body.classList.remove(
+        console.log("📦 [本地快照] 當前 XP:", currentXP);
+        this.updateThemeUI(currentXP); 
+
+        // --- 階段 2：背景同步雲端試算表 ---
+        try {
+            const response = await fetch(`${GAS_URL}?action=get_leaderboard`);
+            const leaderboard = await response.json();
+            
+            const cloudUser = leaderboard.find(u => 
+                String(u.username).trim().toLowerCase() === String(username).trim().toLowerCase()
+            );
+
+            if (cloudUser) {
+                const cloudXP = Number(cloudUser.xp);
+                console.log("✅ [雲端回傳] 最新 XP:", cloudXP);
+
+                // ✨ 關鍵判斷：雲端與本地不一致時才更新
+                if (cloudXP !== currentXP) {
+                    console.log("✨ [同步] 偵測到數值差異，更新本地快照與 UI...");
+                    
+                    // 1. 更新內存物件中的 XP (保留原本的其他資料)
+                    userDataLocal.xp = cloudXP;
+                    // 如果雲端有回傳等級也順便更新
+                    if (cloudUser.level) userDataLocal.level = cloudUser.level;
+
+                    // 2. 寫回 localStorage
+                    localStorage.setItem('currentUser', JSON.stringify(userDataLocal));
+                    
+                    // 3. 重新觸發染色與特效
+                    this.updateThemeUI(cloudXP); 
+                }
+            } else {
+                console.warn("⚠️ 雲端找不到該用戶資料。");
+            }
+        } catch (e) {
+            console.error("❌ 雲端同步失敗:", e);
+        }
+    },
+
+    updateThemeUI: function(xp) {
+        const body = document.body;
+        const themes = [
             'theme-novice', 'theme-rookie', 'theme-bronze', 'theme-silver', 
             'theme-gold', 'theme-diamond', 'theme-master', 'theme-grandmaster', 
             'theme-legend', 'theme-epic', 'theme-mythic', 'theme-celestial'
-        );
+        ];
+        body.classList.remove(...themes);
 
-        let xp = 0;
-        try {
-            // 呼叫你的 GAS，使用 action=get_leaderboard 或自行新增 get_user_stats
-            // 這裡示範直接從登入資訊或排行榜 API 抓取
-            const response = await fetch(`${GAS_URL}?action=get_leaderboard`);
-            const leaderboard = await response.json();
-            const userData = leaderboard.find(u => u.username === username);
-            
-            if (userData) {
-                xp = userData.xp;
-                console.log(`雲端 XP 同步成功: ${xp}`);
-            }
-        } catch (e) {
-            console.error("XP 同步失敗，採用本地暫存:", e);
-            // 備案：如果網路失敗，嘗試讀取上次快照
-            const cached = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
-            xp = cached.xp;
+        let selected = 'theme-novice';
+        if (xp >= 100000) selected = 'theme-celestial';
+        else if (xp >= 50000) selected = 'theme-mythic';
+        else if (xp >= 30000) selected = 'theme-epic';
+        else if (xp >= 20000) selected = 'theme-legend';
+        else if (xp >= 15000) selected = 'theme-grandmaster';
+        else if (xp >= 10000) selected = 'theme-master';
+        else if (xp >= 5000)  selected = 'theme-diamond';
+        else if (xp >= 2500)  selected = 'theme-gold';
+        else if (xp >= 1000)  selected = 'theme-silver';
+        else if (xp >= 300)   selected = 'theme-bronze';
+        else if (xp >= 100)   selected = 'theme-rookie';
+
+        body.classList.add(selected);
+        
+        // 特效觸發
+        if (xp >= 50000) {
+            this.createStars(xp >= 100000 ? 15 : 8);
         }
-
-        // 根據 XP 判定 (邏輯保持)
-        if (xp >= 100000) { body.classList.add('theme-celestial'); this.createStars(15); }
-        else if (xp >= 50000) { body.classList.add('theme-mythic'); this.createStars(8); }
-        else if (xp >= 30000) body.classList.add('theme-epic');
-        else if (xp >= 20000) body.classList.add('theme-legend');
-        else if (xp >= 15000) body.classList.add('theme-grandmaster');
-        else if (xp >= 10000) body.classList.add('theme-master');
-        else if (xp >= 5000)  body.classList.add('theme-diamond');
-        else if (xp >= 2500)  body.classList.add('theme-gold');
-        else if (xp >= 1000)  body.classList.add('theme-silver');
-        else if (xp >= 300)   body.classList.add('theme-bronze');
-        else if (xp >= 100)   body.classList.add('theme-rookie');
-        else                  body.classList.add('theme-novice');
     },
 
     createStars: function(starCount) {
-        const container = document.getElementById('star-container');
-        if (!container || container.hasChildNodes()) return;
+        let container = document.getElementById('star-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'star-container';
+            document.body.appendChild(container);
+        }
+        container.innerHTML = ''; 
         for (let i = 0; i < starCount; i++) {
             let star = document.createElement('div');
             star.className = 'shooting-star'; 
