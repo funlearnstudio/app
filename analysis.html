@@ -11,24 +11,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
-<link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css">
 
     <script src="mockdata/users.js"></script>
     <script src="assets/js/auth.js"></script>
 </head>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        if (typeof Auth === 'undefined') {
-            console.error("Auth 模組未載入");
-            return;
-        }
-        const currentUser = Auth.getCurrentUser();
-        if (!currentUser) {
-            alert("⚠️ 您尚未登入，請先進行登入！");
-            window.location.href = 'index.html'; 
-        }
-    });
-</script>
 <body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden">
 <div id="star-container"></div>
     <header class="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-30">
@@ -55,7 +42,8 @@
                     <i class="fas fa-user-graduate"></i>
                 </div>
                 <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
-                <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
+                <div class="text-xs text-gray-500 mb-1" id="sideUserRole">--</div>
+                <div class="text-xs text-blue-600 font-bold mb-3" id="userTitleDisplay">初級學徒</div>
                 <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
                     <i class="fas fa-pen mr-1"></i> 編輯年級
                 </button>
@@ -65,47 +53,41 @@
         <nav class="flex-grow px-3 space-y-2 overflow-y-auto no-scrollbar">
             <p class="text-[10px] font-bold text-slate-400 mb-2 px-4 uppercase tracking-widest">學習導航</p>
             <a href="arena.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-100 text-amber-900 transition-all duration-300 group shadow-[inset_0_1px_2px_rgba(0,0,0,0,0.05)] border border-amber-200/50">
-    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 text-white flex items-center justify-center scale-110 shadow-sm ring-2 ring-white">
-        <i class="fas fa-trophy text-xs"></i>
-    </div>
-    <span class="font-black tracking-wide">榮譽榜</span>
-</a>
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 text-white flex items-center justify-center scale-110 shadow-sm ring-2 ring-white">
+                    <i class="fas fa-trophy text-xs"></i>
+                </div>
+                <span class="font-black tracking-wide">榮譽榜</span>
+            </a>
             <a href="mission.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-purple-50 hover:text-purple-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
                 <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <i class="fas fa-rocket text-sm"></i>
                 </div>
                 <span class="font-bold">任務中心</span>
-                
             </a>
-
             <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
                 <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <i class="fas fa-book-open text-sm"></i>
                 </div>
                 <span class="font-bold">課程總覽</span>
             </a>
-
             <a href="remedial.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-red-50 hover:text-red-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
                 <div class="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <i class="fas fa-fire text-sm"></i>
                 </div>
                 <span class="font-bold">錯題補救</span>
             </a>
-
             <a href="study.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-amber-50 hover:text-amber-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
                 <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <i class="fas fa-star text-sm"></i>
                 </div>
                 <span class="font-bold">重點複習</span>
             </a>
-
             <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
                 <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:animate-bounce">
                     <i class="fas fa-gamepad text-sm"></i>
                 </div>
                 <span class="font-bold">遊戲場</span>
             </a>
-
             <a href="forum.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 transition-all duration-300 group hover:shadow-md hover:-translate-y-0.5">
                 <div class="w-8 h-8 rounded-lg bg-cyan-100 text-cyan-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <i class="fas fa-comments text-sm"></i>
@@ -141,6 +123,7 @@
                 <h1 class="text-lg md:text-2xl font-bold text-gray-800 flex items-center gap-2 md:gap-3 truncate">
                     <span class="w-1.5 h-6 md:w-2 md:h-8 bg-blue-600 rounded-full shrink-0"></span>
                     <span class="truncate">測驗結果診斷</span>
+                    <span id="headerLevel" class="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded-full hidden md:inline-block">Lv.--</span>
                 </h1>
                 <p class="text-xs md:text-sm text-gray-500 mt-1 pl-4 md:pl-5 truncate" id="examMetaInfo">正在載入數據...</p>
             </div>
@@ -184,7 +167,7 @@
                 </div>
             </div> 
 
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 fade-in">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 fade-in hidden" id="cheatAnalysisSection">
                 <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2 border-b pb-3">
                     <i class="fas fa-user-shield text-red-500"></i> 考試行為診斷
                 </h3>
@@ -233,7 +216,7 @@
                 <i class="fas fa-clipboard-list"></i>
             </div>
             <h2 class="text-2xl font-bold text-gray-700 mb-2">尚無測驗數據</h2>
-            <p class="text-gray-500 mb-8">您還沒有完成任何測驗，快去挑戰一下吧！</p>
+            <p class="text-gray-500 mb-8">您還沒有完成任何測驗，或這是一筆遊戲紀錄喔！</p>
             <a href="dashboard.html" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg transition">
                 前往測驗中心
             </a>
@@ -278,27 +261,22 @@
     </main>
 
 <script>
-
 // ==========================================
-// 1. 全域設定與工具
+// 1. 全域設定與 ThemeEngine
 // ==========================================
-    let allQuestionsData = [];
+let allQuestionsData = [];
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
+
 const ThemeEngine = {
     apply: async function(username) {
-        const body = document.body;
         console.log("🚀 [ThemeEngine] 啟動快照優先模式。用戶:", username);
 
-        // --- 階段 1：立即從本地讀取 ---
-        // 抓取整個物件，而不只是 XP，這樣更新時才不會丟失姓名等資料
         let userRaw = localStorage.getItem('currentUser');
         let userDataLocal = userRaw ? JSON.parse(userRaw) : { xp: 0 };
         let currentXP = Number(userDataLocal.xp) || 0;
         
-        console.log("📦 [本地快照] 當前 XP:", currentXP);
         this.updateThemeUI(currentXP); 
 
-        // --- 階段 2：背景同步雲端試算表 ---
         try {
             const response = await fetch(`${GAS_URL}?action=get_leaderboard`);
             const leaderboard = await response.json();
@@ -309,25 +287,13 @@ const ThemeEngine = {
 
             if (cloudUser) {
                 const cloudXP = Number(cloudUser.xp);
-                console.log("✅ [雲端回傳] 最新 XP:", cloudXP);
-
-                // ✨ 關鍵判斷：雲端與本地不一致時才更新
                 if (cloudXP !== currentXP) {
-                    console.log("✨ [同步] 偵測到數值差異，更新本地快照與 UI...");
-                    
-                    // 1. 更新內存物件中的 XP (保留原本的其他資料)
+                    console.log("✨ [同步] 偵測到數值差異，更新 UI...");
                     userDataLocal.xp = cloudXP;
-                    // 如果雲端有回傳等級也順便更新
                     if (cloudUser.level) userDataLocal.level = cloudUser.level;
-
-                    // 2. 寫回 localStorage
                     localStorage.setItem('currentUser', JSON.stringify(userDataLocal));
-                    
-                    // 3. 重新觸發染色與特效
                     this.updateThemeUI(cloudXP); 
                 }
-            } else {
-                console.warn("⚠️ 雲端找不到該用戶資料。");
             }
         } catch (e) {
             console.error("❌ 雲端同步失敗:", e);
@@ -336,32 +302,40 @@ const ThemeEngine = {
 
     updateThemeUI: function(xp) {
         const body = document.body;
+        const level = Math.floor(xp / 100) + 1;
+
+        let selected = 'theme-novice';
+        let title = "初級學徒";
+
+        if (xp >= 100000) { selected = 'theme-celestial'; title = "🌌 天神"; }
+        else if (xp >= 50000) { selected = 'theme-mythic'; title = "🌀 神話"; }
+        else if (xp >= 30000) { selected = 'theme-epic'; title = "⚡ 史詩"; }
+        else if (xp >= 20000) { selected = 'theme-legend'; title = "📜 傳說"; }
+        else if (xp >= 15000) { selected = 'theme-grandmaster'; title = "👑 大師"; }
+        else if (xp >= 10000) { selected = 'theme-master'; title = "🔥 宗師"; }
+        else if (xp >= 5000)  { selected = 'theme-diamond'; title = "💎 鑽石"; }
+        else if (xp >= 2500)  { selected = 'theme-gold'; title = "🏆 黃金"; }
+        else if (xp >= 1000)  { selected = 'theme-silver'; title = "🌟 白銀"; }
+        else if (xp >= 300)   { selected = 'theme-bronze'; title = "📖 青銅"; }
+        else if (xp >= 100)   { selected = 'theme-rookie'; title = "🔰 菜鳥"; }
+
         const themes = [
             'theme-novice', 'theme-rookie', 'theme-bronze', 'theme-silver', 
             'theme-gold', 'theme-diamond', 'theme-master', 'theme-grandmaster', 
             'theme-legend', 'theme-epic', 'theme-mythic', 'theme-celestial'
         ];
         body.classList.remove(...themes);
-
-        let selected = 'theme-novice';
-        if (xp >= 100000) selected = 'theme-celestial';
-        else if (xp >= 50000) selected = 'theme-mythic';
-        else if (xp >= 30000) selected = 'theme-epic';
-        else if (xp >= 20000) selected = 'theme-legend';
-        else if (xp >= 15000) selected = 'theme-grandmaster';
-        else if (xp >= 10000) selected = 'theme-master';
-        else if (xp >= 5000)  selected = 'theme-diamond';
-        else if (xp >= 2500)  selected = 'theme-gold';
-        else if (xp >= 1000)  selected = 'theme-silver';
-        else if (xp >= 300)   selected = 'theme-bronze';
-        else if (xp >= 100)   selected = 'theme-rookie';
-
         body.classList.add(selected);
-        
-        // 特效觸發
-        if (xp >= 50000) {
-            this.createStars(xp >= 100000 ? 15 : 8);
+
+        // 更新 UI 文字
+        if (document.getElementById('userTitleDisplay')) {
+            document.getElementById('userTitleDisplay').innerText = title;
         }
+        if (document.getElementById('headerLevel')) {
+            document.getElementById('headerLevel').innerText = `Lv.${level}`;
+        }
+        
+        if (xp >= 50000) this.createStars(xp >= 100000 ? 15 : 8);
     },
 
     createStars: function(starCount) {
@@ -382,58 +356,55 @@ const ThemeEngine = {
         }
     }
 };
-// --- 自動執行 ---
-document.addEventListener('DOMContentLoaded', () => {
-    // 讀取 currentUser，如果沒有就預設 0
-    const user = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
-    ThemeEngine.apply(user.xp);
-});
+
+// ==========================================
+// 2. 初始化與載入
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     try {
-        initUserInterface();
-        loadExamResult();
+        if (typeof Auth === 'undefined') return;
+        const user = Auth.getCurrentUser();
+        if (!user) {
+            alert("⚠️ 您尚未登入，請先進行登入！");
+            window.location.href = 'index.html'; 
+            return;
+        }
+        initUserInterface(user);
+        loadExamResult(user);
     } catch (e) {
         console.error("系統初始化失敗:", e);
-        alert("載入資料發生錯誤，請重新整理頁面。");
     }
 });
 
-function initUserInterface() {
-    const user = Auth.getCurrentUser();
-        ThemeEngine.apply(user.username); // ✅ 放這裡
-    if (user) {
-        const nameEl = document.getElementById('sideUserName');
-        const roleEl = document.getElementById('sideUserRole');
-        if (nameEl) nameEl.textContent = user.name;
-        if (roleEl) roleEl.textContent = user.grade || "學生";
-        
-        const select = document.getElementById('editGradeSelect');
-        if (select && user.grade) select.value = user.grade;
+function initUserInterface(user) {
+    ThemeEngine.apply(user.username); // 正確呼叫 ThemeEngine
 
-        // ✨ 啟動檢查：如果已經改過年級，直接拔掉按鈕！
-        if (localStorage.getItem(`hasUpdatedGrade_${user.username}`)) {
-            const editBtn = document.querySelector('button[onclick="openProfileModal()"]');
-            if (editBtn) editBtn.style.display = 'none';
-        }
+    const nameEl = document.getElementById('sideUserName');
+    const roleEl = document.getElementById('sideUserRole');
+    if (nameEl) nameEl.textContent = user.name;
+    if (roleEl) roleEl.textContent = user.grade || "學生";
+    
+    const select = document.getElementById('editGradeSelect');
+    if (select && user.grade) select.value = user.grade;
+
+    if (localStorage.getItem(`hasUpdatedGrade_${user.username}`)) {
+        const editBtn = document.querySelector('button[onclick="openProfileModal()"]');
+        if (editBtn) editBtn.style.display = 'none';
     }
 }
-async function loadExamResult() {
+
+async function loadExamResult(user) {
     const reportContent = document.getElementById('reportContent');
     const noDataMessage = document.getElementById('noDataMessage');
-    const user = JSON.parse(localStorage.getItem('currentUser'));
-    if (!user) return;
 
     try {
-        // 加上 t= 防止快取，encodeURIComponent 處理帳號特殊字元
         const response = await fetch(`${GAS_URL}?username=${encodeURIComponent(user.username)}&t=${Date.now()}`);
-        
-        // 如果 response.ok 失敗，會跳到 catch 區塊
         if (!response.ok) throw new Error("網路請求失敗");
 
         const rawData = await response.json();
         
-        // 🌟 防呆 1：確保 history 是陣列，並過濾遊戲紀錄
         let history = Array.isArray(rawData) ? rawData : [];
+        // 過濾遊戲與抽獎
         history = history.filter(item => {
             const t = String(item.title || "");
             return !t.includes("遊戲") && !t.includes("抽獎") && !t.includes("Game");
@@ -445,42 +416,58 @@ async function loadExamResult() {
             return;
         }
 
-        // 取得最新的一筆紀錄
         const lastResult = history[0]; 
         
-        // 🌟 防呆 2：正確定義要傳給渲染函式的資料
-        // 假設你的 GAS 回傳包含 questions 陣列，如果沒有，就用空陣列
-        allQuestionsData = lastResult.questions || []; 
+        // 🌟 防呆：確保提取題目
+        allQuestionsData = lastResult.questions && lastResult.questions.length > 0 
+            ? lastResult.questions 
+            : (lastResult.wrongList || []);
 
         updateScoreBoard(lastResult);
-        
         if (typeof renderRadarChart === "function") {
             renderRadarChart(lastResult.score, lastResult.wrongList || []);
         }
 
         updateFilterCounts();
-        
-        // 🌟 修正點：傳入正確的變數 allQuestionsData
         renderQuestionList(allQuestionsData);
-        
-        ThemeEngine.apply(user.xp || 0);
         
         reportContent?.classList.remove('hidden');
         noDataMessage?.classList.add('hidden');
 
     } catch (e) {
         console.error("雲端載入失敗:", e);
-        // 備援方案：嘗試讀取本地
         const localData = localStorage.getItem('examResult');
         if (localData) {
             const result = JSON.parse(localData);
+            allQuestionsData = result.questions || result.wrongList || [];
             updateScoreBoard(result);
-            renderQuestionList(result.questions || []);
+            renderQuestionList(allQuestionsData);
             reportContent?.classList.remove('hidden');
             noDataMessage?.classList.add('hidden');
         }
     }
 }
+
+// ==========================================
+// 3. UI 數據與圖表渲染
+// ==========================================
+function updateScoreBoard(result) {
+    document.getElementById('scoreDisplay').textContent = result.score || 0;
+    
+    // 自動計算答對題數與總題數
+    let total = result.totalCount || allQuestionsData.length;
+    let correct = result.correctCount || allQuestionsData.filter(q => q.answer === q.yourAns).length;
+    
+    document.getElementById('correctCount').textContent = correct;
+    document.getElementById('totalCount').textContent = total;
+    
+    const subject = result.subject || '單元測驗';
+    const date = result.date || new Date().toLocaleDateString();
+    
+    const el = document.getElementById('examMetaInfo');
+    if (el) el.textContent = `${subject} | ${date}`;
+}
+
 function updateFilterCounts() {
     const correctCount = allQuestionsData.filter(q => q.answer === q.yourAns).length;
     const wrongCount = allQuestionsData.filter(q => q.answer !== q.yourAns).length;
@@ -506,110 +493,11 @@ function changeFilter(type, btn) {
     renderQuestionList(filteredData);
 }
 
-// ==========================================
-// 3. 雲端同步邏輯 (防重複存檔優化)
-// ==========================================
-let isSyncing = false;
-let hasSaved = false; 
-
-function saveToCloud() {
-    const btn = document.getElementById('btnSave');
-    
-    // 如果正在同步，或全域變數標記已存檔，直接擋掉
-    if (isSyncing || hasSaved) return;
-
-    const user = Auth.getCurrentUser();
-    if (!user || user.username === 'guest') return;
-
-    const resultStr = localStorage.getItem('examResult');
-    if (!resultStr) return;
-    const examResult = JSON.parse(resultStr);
-
-    // 如果 localStorage 裡面已經有標記，也直接擋掉
-    if (examResult.isSaved) {
-        markButtonAsSaved();
-        return;
-    }
-
-    isSyncing = true;
-    
-    if (btn) {
-        btn.disabled = true; 
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 同步中...';
-        btn.classList.add('opacity-75', 'cursor-not-allowed');
-    }
-const recordData = {
-        action: "save_record",
-        username: user.username,
-        activity: examResult.title || "單元測驗",
-        score: examResult.score,
-        detail: JSON.stringify({
-            grade: user.grade, 
-            totalCount: examResult.totalCount,
-            correctCount: examResult.correctCount,
-            wrongList: examResult.wrongList || [],
-            
-            // 🌟 關鍵修復：就是補上這一行！讓完整題目跟著一起飛上雲端
-            questions: examResult.questions || [], 
-            
-            cheat: examResult.cheat,
-            tabSwitches: examResult.tabSwitches,
-            syncTime: new Date().toISOString()
-        })
-    };
-    fetch(GAS_URL, {
-        method: "POST",
-        mode: 'no-cors',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(recordData)
-    })
-    .then(() => {
-        hasSaved = true; 
-        isSyncing = false; 
-        
-        // ✨ 存檔成功後，在 localStorage 寫入標記
-        examResult.isSaved = true;
-        localStorage.setItem('examResult', JSON.stringify(examResult));
-
-        markButtonAsSaved();
-    })
-    .catch(err => {
-        console.error("同步失敗:", err);
-        isSyncing = false; 
-        hasSaved = false; 
-        
-        if (btn) {
-            btn.disabled = false; 
-            btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 重試';
-            btn.classList.remove('opacity-75', 'cursor-not-allowed');
-            btn.classList.replace('bg-blue-600', 'bg-red-500');
-        }
-    });
-}
-
-// ✨ 按鈕鎖死專用函數
-function markButtonAsSaved() {
-    const btn = document.getElementById('btnSave');
-    if (btn) {
-        btn.className = "flex items-center gap-2 text-white bg-green-600 font-bold px-3 py-2 rounded-lg cursor-default shadow-none text-sm opacity-100";
-        btn.innerHTML = '<i class="fas fa-check-circle"></i> 紀錄已送出';
-        btn.onclick = null; 
-        btn.disabled = true; 
-    }
-}
-
-// ==========================================
-// 4. 圖表渲染 (Radar Chart)
-// ==========================================
 function renderRadarChart(baseScore = 0, wrongList = []) {
     const canvas = document.getElementById('radarChart');
     if (!canvas) return;
     
-    if (window.myRadarChart) {
-        window.myRadarChart.destroy();
-    }
+    if (window.myRadarChart) window.myRadarChart.destroy();
 
     const ctx = canvas.getContext('2d');
     const labels = ["觀念理解", "邏輯推演", "運算能力", "圖表分析", "素養應用"];
@@ -634,41 +522,22 @@ function renderRadarChart(baseScore = 0, wrongList = []) {
                 backgroundColor: 'rgba(37, 99, 235, 0.2)',
                 borderColor: '#2563eb',
                 pointBackgroundColor: '#2563eb',
-                pointBorderColor: '#fff',
-                pointHoverBackgroundColor: '#fff',
                 pointHoverBorderColor: '#2563eb',
                 borderWidth: 2
             }]
         },
         options: { 
-            responsive: true, 
-            maintainAspectRatio: false,
-            scales: { 
-                r: { 
-                    min: 0, 
-                    max: 100, 
-                    ticks: { display: false, stepSize: 20 },
-                    pointLabels: {
-                        font: { size: 12, family: "'Noto Sans TC', sans-serif", weight: 'bold' },
-                        color: '#4b5563'
-                    },
-                    grid: { color: '#e5e7eb' },
-                    angleLines: { color: '#e5e7eb' }
-                } 
-            },
+            responsive: true, maintainAspectRatio: false,
+            scales: { r: { min: 0, max: 100, ticks: { display: false, stepSize: 20 } } },
             plugins: { legend: { display: false } } 
         }
     });
 }
 
-// ==========================================
-// 5. 錯題列表渲染
-// ==========================================
 function renderQuestionList(list) {
     const listContainer = document.getElementById('wrongList');
     if (!listContainer) return;
 
-    // 無資料
     if (!list || !Array.isArray(list) || list.length === 0) {
         listContainer.innerHTML = `
             <div class="py-16 text-center text-slate-400 bg-white rounded-2xl border border-dashed border-slate-300">
@@ -679,13 +548,9 @@ function renderQuestionList(list) {
     }
 
     let fullHtml = '';
-
     list.forEach((q, idx) => {
-        const isCorrect = (q.answer === q.yourAns); 
-        let explainText = q.explanation 
-            ? (Array.isArray(q.explanation) ? q.explanation.join('<br>') : q.explanation) 
-            : "暫無詳細解析";
-        
+        const isCorrect = (q.answer == q.yourAns); 
+        let explainText = q.explanation ? (Array.isArray(q.explanation) ? q.explanation.join('<br>') : q.explanation) : "暫無詳細解析";
         let optionsHtml = '';
 
         if (q.options && Array.isArray(q.options)) {
@@ -694,27 +559,28 @@ function renderQuestionList(list) {
                 let iconHtml = `<div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">${String.fromCharCode(65+optIdx)}</div>`;
                 let statusHtml = "";
 
-                if (optIdx === q.answer) {
+                if (optIdx == q.answer) {
                     styleClass = "bg-green-50 border-green-300 text-green-800";
-                    statusHtml = `<span class="text-green-600 text-xs">正確</span>`;
-                } else if (optIdx === q.yourAns && !isCorrect) {
+                    statusHtml = `<span class="text-green-600 text-xs font-bold ml-2">正確解答</span>`;
+                } else if (optIdx == q.yourAns && !isCorrect) {
                     styleClass = "bg-red-50 border-red-300 text-red-800";
-                    statusHtml = `<span class="text-red-500 text-xs">你的答案</span>`;
+                    statusHtml = `<span class="text-red-500 text-xs font-bold ml-2">你的答案</span>`;
                 }
 
-                optionsHtml += `
-                    <div class="p-3 border rounded-lg ${styleClass}">
-                        ${iconHtml} ${opt} ${statusHtml}
-                    </div>`;
+                optionsHtml += `<div class="p-3 border rounded-lg flex items-center gap-3 ${styleClass}">${iconHtml} <span>${opt}</span> ${statusHtml}</div>`;
             });
         }
 
         fullHtml += `
-            <div class="bg-white p-6 rounded-xl shadow border">
-                <h3 class="font-bold mb-3">第 ${idx+1} 題 (${isCorrect ? '✔' : '✘'})</h3>
-                <div class="mb-3">${q.question || ''}</div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition">
+                <h3 class="font-bold mb-3 text-lg flex items-center gap-2">
+                    <span class="bg-gray-800 text-white w-7 h-7 flex items-center justify-center rounded-md text-sm">${idx+1}</span>
+                    ${isCorrect ? '<span class="text-green-500"><i class="fas fa-check-circle"></i> 答對</span>' : '<span class="text-red-500"><i class="fas fa-times-circle"></i> 答錯</span>'}
+                </h3>
+                <div class="mb-4 text-gray-800 leading-relaxed">${q.question || q.q || '（題目讀取失敗）'}</div>
                 <div class="space-y-2">${optionsHtml}</div>
-                <div class="mt-4 text-sm text-gray-600 bg-gray-50 p-3 rounded">
+                <div class="mt-4 text-sm text-gray-600 bg-blue-50/50 p-4 rounded-lg border border-blue-100 border-l-4 border-l-blue-500">
+                    <strong class="text-blue-700 block mb-1"><i class="fas fa-lightbulb"></i> 解析：</strong>
                     ${explainText}
                 </div>
             </div>
@@ -722,164 +588,127 @@ function renderQuestionList(list) {
     });
 
     listContainer.innerHTML = fullHtml;
-
-    if (window.MathJax) {
-        MathJax.typesetPromise([listContainer]);
-    }
+    if (window.MathJax) MathJax.typesetPromise([listContainer]);
 }
 
 // ==========================================
-// 6. 輔助函式與 UI 操作
+// 4. 雲端同步與其他功能
 // ==========================================
-function normalizeExamData(data) {
-    if (!data.tabCheat) {
-        const switches = data.tabSwitches || 0;
-        let level = (switches > 5) ? 'HIGH' : (switches > 2 ? 'MEDIUM' : 'NORMAL');
-        data.tabCheat = { level: level, totalSwitch: switches };
+let isSyncing = false;
+let hasSaved = false; 
+
+function saveToCloud() {
+    const btn = document.getElementById('btnSave');
+    if (isSyncing || hasSaved) return;
+
+    const user = Auth.getCurrentUser();
+    if (!user || user.username === 'guest') return;
+
+    const resultStr = localStorage.getItem('examResult');
+    if (!resultStr) return;
+    const examResult = JSON.parse(resultStr);
+
+    if (examResult.isSaved) return markButtonAsSaved();
+
+    isSyncing = true;
+    if (btn) {
+        btn.disabled = true; 
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 同步中...';
+        btn.classList.add('opacity-75', 'cursor-not-allowed');
     }
-    if (!data.cheat) {
-        data.cheat = { cheatLevel: 'NORMAL', fastCount: 0 };
-    }
-    return data;
-}
 
-function updateScoreBoard(result) {
-    document.getElementById('scoreDisplay').textContent = result.score || 0;
-    document.getElementById('correctCount').textContent = result.correctCount || 0;
-    document.getElementById('totalCount').textContent = result.totalCount || 0;
-    const subject = result.subject || '單元測驗';
-    const date = result.date || new Date().toLocaleDateString();
-    updateMetaInfo(`${subject} | ${date}`);
-}
-
-function updateMetaInfo(text) {
-    const el = document.getElementById('examMetaInfo');
-    if (el) el.textContent = text;
-}
-
-function applyCheatResult(result) {
-    const timeBox = document.getElementById('timeCheatBox');
-    const timeText = document.getElementById('timeCheatText');
-    const tabBox = document.getElementById('tabCheatBox');
-    const tabText = document.getElementById('tabCheatText');
-
-    const cheatData = result.cheat;
-    const tabData = result.tabCheat;
-
-    const styles = {
-        'NORMAL': ['border-green-200', 'bg-green-50', 'text-green-700', '正常', 'fas fa-check-circle'],
-        'MEDIUM': ['border-yellow-200', 'bg-yellow-50', 'text-yellow-700', '異常', 'fas fa-exclamation-circle'],
-        'HIGH':   ['border-red-200', 'bg-red-50', 'text-red-700', '嚴重', 'fas fa-exclamation-triangle']
+    const recordData = {
+        action: "save_record",
+        username: user.username,
+        activity: examResult.title || "單元測驗",
+        score: examResult.score,
+        detail: JSON.stringify({
+            grade: user.grade, 
+            totalCount: examResult.totalCount || allQuestionsData.length,
+            correctCount: examResult.correctCount || allQuestionsData.filter(q => q.answer == q.yourAns).length,
+            wrongList: examResult.wrongList || [],
+            questions: examResult.questions || allQuestionsData || [], 
+            cheat: examResult.cheat,
+            tabSwitches: examResult.tabSwitches,
+            syncTime: new Date().toISOString()
+        })
     };
 
-    if (timeBox && timeText) {
-        const s = styles[cheatData.cheatLevel] || styles['NORMAL'];
-        timeBox.className = `p-5 rounded-xl border ${s[0]} ${s[1]} transition hover:shadow-md`;
-        timeText.className = `text-sm font-bold ${s[2]} mt-1 pl-11`;
-        timeText.innerHTML = `作答節奏${s[3]} (過快題數：${cheatData.fastCount || 0})`;
-    }
+    fetch(GAS_URL, { method: "POST", mode: 'no-cors', body: JSON.stringify(recordData) })
+    .then(() => {
+        hasSaved = true; 
+        isSyncing = false; 
+        examResult.isSaved = true;
+        localStorage.setItem('examResult', JSON.stringify(examResult));
+        markButtonAsSaved();
+    })
+    .catch(err => {
+        console.error("同步失敗:", err);
+        isSyncing = false; 
+        if (btn) {
+            btn.disabled = false; 
+            btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 重試';
+            btn.classList.replace('bg-blue-600', 'bg-red-500');
+            btn.classList.remove('opacity-75', 'cursor-not-allowed');
+        }
+    });
+}
 
-    if (tabBox && tabText) {
-        const s = styles[tabData.level] || styles['NORMAL'];
-        tabBox.className = `p-5 rounded-xl border ${s[0]} ${s[1]} transition hover:shadow-md`;
-        tabText.className = `text-sm font-bold ${s[2]} mt-1 pl-11`;
-        tabText.innerHTML = `分頁切換${s[3]} (切換次數：${tabData.totalSwitch || 0})`;
+function markButtonAsSaved() {
+    const btn = document.getElementById('btnSave');
+    if (btn) {
+        btn.className = "flex items-center gap-2 text-white bg-green-600 font-bold px-3 py-2 rounded-lg cursor-default text-sm";
+        btn.innerHTML = '<i class="fas fa-check-circle"></i> 紀錄已送出';
+        btn.onclick = null; btn.disabled = true; 
     }
 }
 
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
-    if (sidebar.classList.contains('-translate-x-full')) {
-        sidebar.classList.remove('-translate-x-full');
-        overlay.classList.remove('hidden');
-    } else {
-        sidebar.classList.add('-translate-x-full');
-        overlay.classList.add('hidden');
-    }
+    sidebar.classList.toggle('-translate-x-full');
+    overlay.classList.toggle('hidden');
 }
 
-// ==========================================
-// 🛡️ 年級修改：永久單次鎖定
-// ==========================================
 function openProfileModal() {
     const user = Auth.getCurrentUser();
     if (!user) return alert("請先登入！");
-    
-    // ✨ 開啟前攔截：如果已經修改過，禁止開啟
-    if (localStorage.getItem(`hasUpdatedGrade_${user.username}`)) {
-        return alert("⚠️ 您已經修改過年級，系統限制只能存檔一次！");
-    }
-
+    if (localStorage.getItem(`hasUpdatedGrade_${user.username}`)) return alert("⚠️ 您已經修改過年級，系統限制只能存檔一次！");
     const select = document.getElementById('editGradeSelect');
     if (user.grade) select.value = user.grade;
     document.getElementById('profileModal').classList.remove('hidden');
 }
 
-function closeProfileModal() {
-    document.getElementById('profileModal').classList.add('hidden');
-}
+function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
 
 async function saveProfile() {
     const newGrade = document.getElementById('editGradeSelect').value;
     const user = Auth.getCurrentUser();
     if (!user) return alert("請先登入！");
-
-    // ✨ 送出前攔截
-    if (localStorage.getItem(`hasUpdatedGrade_${user.username}`)) {
-        alert("⚠️ 系統限制只能存檔一次！");
-        closeProfileModal();
-        return;
-    }
+    if (localStorage.getItem(`hasUpdatedGrade_${user.username}`)) return closeProfileModal();
 
     const saveBtn = document.querySelector('#profileModal button[onclick="saveProfile()"]');
-    const originalBtnText = saveBtn.innerText;
-
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 儲存中...';
+    saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 儲存中...';
 
     try {
         const response = await fetch(GAS_URL, {
-            method: 'POST',
-            body: JSON.stringify({
-                action: "update_grade", 
-                account: user.username,
-                newGrade: newGrade
-            })
+            method: 'POST', body: JSON.stringify({ action: "update_grade", account: user.username, newGrade: newGrade })
         });
-
         const result = await response.json();
-
-        // 兼容各種成功回傳
         if (result.result === "success" || result.status === "success") {
-            if (Auth.updateUser) {
-                Auth.updateUser('grade', newGrade);
-            }
-            
+            if (Auth.updateUser) Auth.updateUser('grade', newGrade);
             const roleEl = document.getElementById('sideUserRole');
             if (roleEl) roleEl.innerText = newGrade;
-
-            // ✨ 存檔成功，永久寫入防呆標記
             localStorage.setItem(`hasUpdatedGrade_${user.username}`, 'true');
-
             alert(`✅ 修改成功！目前年級已更新為：${newGrade}`);
             closeProfileModal();
-
-            // 成功後，立刻把側邊欄的「編輯年級」按鈕拔掉
             const editBtn = document.querySelector('button[onclick="openProfileModal()"]');
             if (editBtn) editBtn.style.display = 'none';
-
-        } else {
-            alert("❌ 修改失敗：" + (result.message || "未知錯誤"));
-        }
+        } else alert("❌ 修改失敗：" + (result.message || "未知錯誤"));
     } catch (error) {
-        console.error("更新年級發生錯誤:", error);
         alert("網路連線異常，請稍後再試。");
     } finally {
-        if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.innerText = originalBtnText;
-        }
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.innerText = "確認修改"; }
     }
 }
 </script>
