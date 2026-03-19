@@ -376,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initUserInterface(user) {
-    ThemeEngine.apply(user.username); // 正確呼叫 ThemeEngine
+    ThemeEngine.apply(user.username);
 
     const nameEl = document.getElementById('sideUserName');
     const roleEl = document.getElementById('sideUserRole');
@@ -417,12 +417,13 @@ async function loadExamResult(user) {
 
         const lastResult = history[0]; 
         
-        // 🌟 防呆：確保提取題目
         allQuestionsData = lastResult.questions && lastResult.questions.length > 0 
             ? lastResult.questions 
             : (lastResult.wrongList || []);
 
         updateScoreBoard(lastResult);
+        updateCheatAnalysis(lastResult); // 🌟 呼叫行為分析渲染
+        
         if (typeof renderRadarChart === "function") {
             renderRadarChart(lastResult.score, lastResult.wrongList || []);
         }
@@ -440,6 +441,7 @@ async function loadExamResult(user) {
             const result = JSON.parse(localData);
             allQuestionsData = result.questions || result.wrongList || [];
             updateScoreBoard(result);
+            updateCheatAnalysis(result); // 🌟 本地備援也呼叫行為分析
             renderQuestionList(allQuestionsData);
             reportContent?.classList.remove('hidden');
             noDataMessage?.classList.add('hidden');
@@ -453,9 +455,8 @@ async function loadExamResult(user) {
 function updateScoreBoard(result) {
     document.getElementById('scoreDisplay').textContent = result.score || 0;
     
-    // 自動計算答對題數與總題數
     let total = result.totalCount || allQuestionsData.length;
-    let correct = result.correctCount || allQuestionsData.filter(q => q.answer === q.yourAns).length;
+    let correct = result.correctCount || allQuestionsData.filter(q => q.answer == q.yourAns).length;
     
     document.getElementById('correctCount').textContent = correct;
     document.getElementById('totalCount').textContent = total;
@@ -467,9 +468,46 @@ function updateScoreBoard(result) {
     if (el) el.textContent = `${subject} | ${date}`;
 }
 
+// 🌟 新增：渲染考試行為分析 (切換分頁與作答節奏)
+function updateCheatAnalysis(result) {
+    const section = document.getElementById('cheatAnalysisSection');
+    const timeBox = document.getElementById('timeCheatText');
+    const tabBox = document.getElementById('tabCheatText');
+    
+    // 檢查是否有相關數據，若無則隱藏區塊
+    if (result.tabSwitches === undefined && !result.cheat) {
+        section.classList.add('hidden');
+        return;
+    }
+
+    section.classList.remove('hidden');
+
+    // 1. 切換分頁分析
+    if (result.tabSwitches !== undefined) {
+        if (result.tabSwitches === 0) {
+            tabBox.innerHTML = '<span class="text-green-600 font-bold"><i class="fas fa-check-circle"></i> 專注度極高，未切換分頁</span>';
+        } else {
+            tabBox.innerHTML = `<span class="text-red-500 font-bold"><i class="fas fa-exclamation-triangle"></i> 測驗期間切換分頁 ${result.tabSwitches} 次</span>`;
+        }
+    } else {
+        tabBox.innerHTML = '<span class="text-gray-400">無數據</span>';
+    }
+
+    // 2. 作答節奏分析
+    if (result.cheat) {
+        if (result.cheat === true || String(result.cheat).includes("異常") || String(result.cheat).includes("過快")) {
+            timeBox.innerHTML = `<span class="text-red-500 font-bold"><i class="fas fa-bolt"></i> 偵測到作答節奏異常 (過快)</span>`;
+        } else {
+            timeBox.innerHTML = `<span class="text-orange-500 font-bold">${result.cheat}</span>`;
+        }
+    } else {
+        timeBox.innerHTML = '<span class="text-green-600 font-bold"><i class="fas fa-check-circle"></i> 作答節奏正常，無異常快轉</span>';
+    }
+}
+
 function updateFilterCounts() {
-    const correctCount = allQuestionsData.filter(q => q.answer === q.yourAns).length;
-    const wrongCount = allQuestionsData.filter(q => q.answer !== q.yourAns).length;
+    const correctCount = allQuestionsData.filter(q => q.answer == q.yourAns).length;
+    const wrongCount = allQuestionsData.filter(q => q.answer != q.yourAns).length;
     
     if(document.getElementById('countAll')) document.getElementById('countAll').innerText = allQuestionsData.length;
     if(document.getElementById('countCorrect')) document.getElementById('countCorrect').innerText = correctCount;
@@ -486,8 +524,8 @@ function changeFilter(type, btn) {
 
     let filteredData = [];
     if (type === 'all') filteredData = allQuestionsData;
-    else if (type === 'correct') filteredData = allQuestionsData.filter(q => q.answer === q.yourAns);
-    else if (type === 'wrong') filteredData = allQuestionsData.filter(q => q.answer !== q.yourAns);
+    else if (type === 'correct') filteredData = allQuestionsData.filter(q => q.answer == q.yourAns);
+    else if (type === 'wrong') filteredData = allQuestionsData.filter(q => q.answer != q.yourAns);
 
     renderQuestionList(filteredData);
 }
