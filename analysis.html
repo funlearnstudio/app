@@ -396,36 +396,52 @@ async function loadExamResult(user) {
     const reportContent = document.getElementById('reportContent');
     const noDataMessage = document.getElementById('noDataMessage');
 
+    // 🌟 關鍵修正 1：先抓取網頁本機「剛剛測驗完」的資料
+    const localDataStr = localStorage.getItem('examResult');
+    let localData = localDataStr ? JSON.parse(localDataStr) : null;
+
     try {
+        // 去雲端抓取歷史紀錄
         const response = await fetch(`${GAS_URL}?username=${encodeURIComponent(user.username)}&t=${Date.now()}`);
         if (!response.ok) throw new Error("網路請求失敗");
 
         const rawData = await response.json();
         
         let history = Array.isArray(rawData) ? rawData : [];
-        // 過濾遊戲與抽獎
         history = history.filter(item => {
             const t = String(item.title || "");
             return !t.includes("遊戲") && !t.includes("抽獎") && !t.includes("Game");
         });
 
-        if (history.length === 0) {
+        // 🌟 關鍵修正 2：決定要顯示哪一筆資料 (優先顯示剛考完還沒存檔的)
+        let targetData = null;
+        if (localData && !localData.isSaved) {
+            targetData = localData; // 優先：剛剛考完、還沒存檔的最新紀錄
+            console.log("讀取本地最新測驗資料");
+        } else if (history.length > 0) {
+            targetData = history[0]; // 次要：雲端最新的紀錄
+            console.log("讀取雲端最新測驗資料");
+        } else if (localData) {
+            targetData = localData; // 最後備援
+        }
+
+        // 如果真的完全沒有資料
+        if (!targetData) {
             reportContent?.classList.add('hidden');
             noDataMessage?.classList.remove('hidden');
             return;
         }
 
-        const lastResult = history[0]; 
-        
-        allQuestionsData = lastResult.questions && lastResult.questions.length > 0 
-            ? lastResult.questions 
-            : (lastResult.wrongList || []);
+        // 🌟 進行資料渲染
+        allQuestionsData = targetData.questions && targetData.questions.length > 0 
+            ? targetData.questions 
+            : (targetData.wrongList || []);
 
-        updateScoreBoard(lastResult);
-        updateCheatAnalysis(lastResult); // 🌟 呼叫行為分析渲染
+        updateScoreBoard(targetData);
+        updateCheatAnalysis(targetData); // 行為分析防弊
         
         if (typeof renderRadarChart === "function") {
-            renderRadarChart(lastResult.score, lastResult.wrongList || []);
+            renderRadarChart(targetData.score, targetData.wrongList || []);
         }
 
         updateFilterCounts();
@@ -434,21 +450,28 @@ async function loadExamResult(user) {
         reportContent?.classList.remove('hidden');
         noDataMessage?.classList.add('hidden');
 
+        // 如果目前顯示的是從雲端抓下來的歷史資料，把「儲存雲端」按鈕變成已儲存狀態
+        if (targetData === history[0] && history.length > 0) {
+            markButtonAsSaved();
+        }
+
     } catch (e) {
-        console.error("雲端載入失敗:", e);
-        const localData = localStorage.getItem('examResult');
+        console.error("雲端載入失敗，使用本地備援:", e);
+        
+        // 斷網備援機制
         if (localData) {
-            const result = JSON.parse(localData);
-            allQuestionsData = result.questions || result.wrongList || [];
-            updateScoreBoard(result);
-            updateCheatAnalysis(result); // 🌟 本地備援也呼叫行為分析
+            allQuestionsData = localData.questions || localData.wrongList || [];
+            updateScoreBoard(localData);
+            updateCheatAnalysis(localData);
             renderQuestionList(allQuestionsData);
             reportContent?.classList.remove('hidden');
             noDataMessage?.classList.add('hidden');
+        } else {
+            reportContent?.classList.add('hidden');
+            noDataMessage?.classList.remove('hidden');
         }
     }
 }
-
 // ==========================================
 // 3. UI 數據與圖表渲染
 // ==========================================
