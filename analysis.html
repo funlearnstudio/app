@@ -282,6 +282,7 @@
 // ==========================================
 // 1. 全域設定與工具
 // ==========================================
+    let allQuestionsData = [];
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
 const ThemeEngine = {
     apply: async function(username) {
@@ -399,6 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initUserInterface() {
     const user = Auth.getCurrentUser();
+        ThemeEngine.apply(user.username); // ✅ 放這裡
     if (user) {
         const nameEl = document.getElementById('sideUserName');
         const roleEl = document.getElementById('sideUserRole');
@@ -662,91 +664,68 @@ function renderRadarChart(baseScore = 0, wrongList = []) {
 // ==========================================
 // 5. 錯題列表渲染
 // ==========================================
-function renderQuestionList(inputData) {
-    const container = document.getElementById('questionListContainer');
-    if (!container) return;
-    
-    // 確保 inputData 存在且是陣elf
-    if (!inputData || !Array.isArray(inputData)) {
-        container.innerHTML = "<p class='text-center py-4'>無題目資料</p>";
-        return;
-    }
-        const listContainer = document.getElementById('wrongList');
-        if (listContainer) {
-            listContainer.innerHTML = `
-                <div class="py-16 text-center text-slate-400 bg-white rounded-2xl border border-dashed border-slate-300">
-                    <i class="fas fa-inbox text-4xl mb-3 block opacity-20"></i>
-                    <p class="font-bold">目前沒有題目資料</p>
-                </div>`;
-        }
-        return;
-    }
+function renderQuestionList(list) {
     const listContainer = document.getElementById('wrongList');
-   
+    if (!listContainer) return;
+
+    // 無資料
+    if (!list || !Array.isArray(list) || list.length === 0) {
+        listContainer.innerHTML = `
+            <div class="py-16 text-center text-slate-400 bg-white rounded-2xl border border-dashed border-slate-300">
+                <i class="fas fa-inbox text-4xl mb-3 block opacity-20"></i>
+                <p class="font-bold">目前沒有題目資料</p>
+            </div>`;
+        return;
+    }
+
     let fullHtml = '';
+
     list.forEach((q, idx) => {
         const isCorrect = (q.answer === q.yourAns); 
-        let explainText = q.explanation ? (Array.isArray(q.explanation) ? q.explanation.join('<br>') : q.explanation) : "暫無詳細解析";
+        let explainText = q.explanation 
+            ? (Array.isArray(q.explanation) ? q.explanation.join('<br>') : q.explanation) 
+            : "暫無詳細解析";
         
         let optionsHtml = '';
+
         if (q.options && Array.isArray(q.options)) {
             q.options.forEach((opt, optIdx) => {
                 let styleClass = "bg-white border-gray-200 text-gray-600"; 
-                let iconHtml = `<div class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center font-bold text-sm shrink-0 border border-gray-200">${String.fromCharCode(65+optIdx)}</div>`;
+                let iconHtml = `<div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">${String.fromCharCode(65+optIdx)}</div>`;
                 let statusHtml = "";
 
                 if (optIdx === q.answer) {
-                    styleClass = "bg-green-50 border-green-300 text-green-800 ring-1 ring-green-200";
-                    iconHtml = `<div class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm"><i class="fas fa-check"></i></div>`;
-                    statusHtml = `<div class="ml-auto text-green-600 text-xs font-bold bg-white px-2 py-1 rounded border border-green-100 shadow-sm">正確答案</div>`;
+                    styleClass = "bg-green-50 border-green-300 text-green-800";
+                    statusHtml = `<span class="text-green-600 text-xs">正確</span>`;
                 } else if (optIdx === q.yourAns && !isCorrect) {
-                    styleClass = "bg-red-50 border-red-300 text-red-800 ring-1 ring-red-200";
-                    iconHtml = `<div class="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm"><i class="fas fa-times"></i></div>`;
-                    statusHtml = `<div class="ml-auto text-red-500 text-xs font-bold bg-white px-2 py-1 rounded border border-red-100 shadow-sm">您的回答</div>`;
+                    styleClass = "bg-red-50 border-red-300 text-red-800";
+                    statusHtml = `<span class="text-red-500 text-xs">你的答案</span>`;
                 }
 
-                optionsHtml += `<div class="p-3 md:p-4 rounded-xl border flex items-center gap-3 transition mb-2 ${styleClass}">${iconHtml}<div class="flex-grow font-medium text-sm md:text-base">${opt}</div>${statusHtml}</div>`;
+                optionsHtml += `
+                    <div class="p-3 border rounded-lg ${styleClass}">
+                        ${iconHtml} ${opt} ${statusHtml}
+                    </div>`;
             });
         }
 
-        const badgeClass = isCorrect ? "bg-green-100 text-green-700 border-green-200" : "bg-red-50 text-red-600 border-red-100";
-        const badgeIcon = isCorrect ? "fa-check-circle" : "fa-times";
-        const borderColor = isCorrect ? "border-green-200" : "border-gray-200";
-
         fullHtml += `
-            <div class="bg-white rounded-2xl shadow-sm border ${borderColor} overflow-hidden transition hover:shadow-md">
-                <div class="p-5 md:p-8 border-b border-gray-100">
-                    <div class="flex flex-wrap items-center gap-2 mb-4">
-                        <span class="${badgeClass} text-xs font-bold px-3 py-1 rounded-full border flex items-center">
-                            <i class="fas ${badgeIcon} mr-1"></i> 第 ${idx+1} 題 (${isCorrect ? '答對' : '答錯'})
-                        </span>
-                        <span class="bg-blue-50 text-blue-600 text-xs font-bold px-3 py-1 rounded-full border border-blue-100">
-                            ${q.concept || '綜合題型'}
-                        </span>
-                    </div>
-                    <h3 class="text-lg font-bold text-gray-800 leading-relaxed mb-6">
-                        ${q.question ? q.question.replace(/\n/g, '<br>') : ''}
-                    </h3>
-                    <div class="space-y-1">${optionsHtml}</div>
+            <div class="bg-white p-6 rounded-xl shadow border">
+                <h3 class="font-bold mb-3">第 ${idx+1} 題 (${isCorrect ? '✔' : '✘'})</h3>
+                <div class="mb-3">${q.question || ''}</div>
+                <div class="space-y-2">${optionsHtml}</div>
+                <div class="mt-4 text-sm text-gray-600 bg-gray-50 p-3 rounded">
+                    ${explainText}
                 </div>
-                <div class="bg-slate-50 p-5 border-t border-slate-100">
-                    <div class="flex items-start gap-4">
-                        <div class="mt-1 w-8 h-8 bg-white text-yellow-500 rounded-full flex items-center justify-center shadow-sm border shrink-0">
-                            <i class="fas fa-lightbulb"></i>
-                        </div>
-                        <div class="flex-grow">
-                            <h4 class="font-bold text-slate-700 text-sm mb-2">解析重點</h4>
-                            <div class="text-sm text-slate-600 leading-relaxed bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                                ${explainText}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
+            </div>
+        `;
     });
 
     listContainer.innerHTML = fullHtml;
-    if (window.MathJax) MathJax.typesetPromise([listContainer]);
+
+    if (window.MathJax) {
+        MathJax.typesetPromise([listContainer]);
+    }
 }
 
 // ==========================================
