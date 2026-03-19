@@ -491,44 +491,37 @@ function updateScoreBoard(result) {
     if (el) el.textContent = `${subject} | ${date}`;
 }
 
-// 🌟 修正：渲染考試行為分析 (支援物件格式解析)
+// 🌟 強制顯示版面版本的行為分析
 function updateCheatAnalysis(result) {
     const section = document.getElementById('cheatAnalysisSection');
     const timeBox = document.getElementById('timeCheatText');
     const tabBox = document.getElementById('tabCheatText');
     
-    // 檢查是否有相關數據，若無則隱藏區塊
-    if (result.tabSwitches === undefined && !result.cheat) {
-        section.classList.add('hidden');
-        return;
-    }
-
+    // 🔥 強制移除 hidden，讓版面永遠顯示出來
     section.classList.remove('hidden');
 
     // 1. 切換分頁分析
-    if (result.tabSwitches !== undefined) {
+    if (result.tabSwitches !== undefined && result.tabSwitches !== null) {
         if (result.tabSwitches === 0) {
             tabBox.innerHTML = '<span class="text-green-600 font-bold"><i class="fas fa-check-circle"></i> 專注度極高，未切換分頁</span>';
         } else {
             tabBox.innerHTML = `<span class="text-red-500 font-bold"><i class="fas fa-exclamation-triangle"></i> 測驗期間切換分頁 ${result.tabSwitches} 次</span>`;
         }
     } else {
-        tabBox.innerHTML = '<span class="text-gray-400">無數據</span>';
+        tabBox.innerHTML = '<span class="text-gray-400">無法取得雲端分頁紀錄</span>';
     }
 
-    // 2. 作答節奏分析 (支援 JSON 物件格式)
+    // 2. 作答節奏分析
     if (result.cheat) {
         let isCheat = false;
         let cheatMsg = "";
 
-        // 當 cheat 是你提供的物件格式 {"cheatLevel": "HIGH", "fastCount": 10}
         if (typeof result.cheat === 'object') {
             if (result.cheat.cheatLevel === "HIGH" || result.cheat.fastCount > 0) {
                 isCheat = true;
                 cheatMsg = `偵測到異常快轉（共有 ${result.cheat.fastCount} 題作答過快）`;
             }
         } 
-        // 兼容舊版的字串或布林值格式
         else if (result.cheat === true || String(result.cheat).includes("異常") || String(result.cheat).includes("過快")) {
             isCheat = true;
             cheatMsg = "偵測到作答節奏異常 (過快)";
@@ -543,7 +536,8 @@ function updateCheatAnalysis(result) {
             timeBox.innerHTML = '<span class="text-green-600 font-bold"><i class="fas fa-check-circle"></i> 作答節奏正常，無異常快轉</span>';
         }
     } else {
-        timeBox.innerHTML = '<span class="text-green-600 font-bold"><i class="fas fa-check-circle"></i> 作答節奏正常，無異常快轉</span>';
+        // 如果雲端沒回傳 cheat 資料，顯示預設文字
+        timeBox.innerHTML = '<span class="text-gray-400">無法取得雲端節奏紀錄</span>';
     }
 }
 function updateFilterCounts() {
