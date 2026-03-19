@@ -497,9 +497,8 @@ function updateCheatAnalysis(result) {
     const timeBox = document.getElementById('timeCheatText');
     const tabBox = document.getElementById('tabCheatText');
     
-    // 🔥 強制移除 hidden，讓版面永遠顯示出來
-    section.classList.remove('hidden');
-
+   section.classList.remove('hidden');
+section.style.animationDuration = '0.2s'; // 🔥 強制把淡入時間縮短到 0.2 秒！
     // ==========================================
     // 1. 切換分頁分析 (沒有資料就當作 0 次)
     // ==========================================
