@@ -419,53 +419,98 @@ async function loadExamResult() {
     const reportContent = document.getElementById('reportContent');
     const noDataMessage = document.getElementById('noDataMessage');
     
-    // 獲取目前登入的用戶
-    const user = JSON.parse(localStorage.getItem('currentUser'));
-    if (!user) return;
+    // 1. 取得使用者資料
+    const user = (window.Auth && Auth.getCurrentUser()) || JSON.parse(localStorage.getItem('currentUser'));
+    if (!user || !user.username) {
+        console.error("未找到登入用戶");
+        return;
+    }
 
-    // 顯示載入中狀態 (選配)
     console.log("正在從雲端載入測驗紀錄...");
 
     try {
-        // 呼叫 GAS 的預設 GET (你後端最後那段 historyData 邏輯)
-        const response = await fetch(`${GAS_URL}?username=${user.username}`);
-        const history = await response.json();
+        // 🌟 加入 timestamp (t=...) 避免瀏覽器快取 CORS 錯誤回應
+        const fetchUrl = `${GAS_URL}?username=${encodeURIComponent(user.username)}&t=${Date.now()}`;
+        
+        // 使用 mode: 'cors' 是標準做法，但 GAS 主要靠後端 ContentService 處理
+        const response = await fetch(fetchUrl);
+        
+        if (!response.ok) throw new Error('網路回應不正確');
+        
+        const rawData = await response.json();
 
-        if (!history || history.length === 0) {
+        // 🌟 防呆：確保 data 是一個陣列，否則設為空陣列
+        let history = Array.isArray(rawData) ? rawData : [];
+
+        // 🌟 核心過濾：排除所有包含「遊戲」、「抽獎」或「Game」的紀錄
+        // 確保診斷分析只針對「正式測驗」
+        history = history.filter(item => {
+            const title = String(item.title || "");
+            return !title.includes("遊戲") && !title.includes("抽獎") && !title.includes("Game");
+        });
+
+        if (history.length === 0) {
             reportContent?.classList.add('hidden');
             noDataMessage?.classList.remove('hidden');
             return;
         }
 
-        // 取得最後一筆測驗紀錄 (最新的)
-        const lastResult = history[history.length - 1];
+        // 取得最後一筆正式測驗紀錄 (最新的)
+        // 注意：GAS 端如果用了 .reverse()，則最後一筆是 [0]
+        const lastResult = history[0]; 
         
-        // 渲染畫面
-        allQuestionsData = lastResult.questions || [];
+        // 2. 渲染畫面
+        // 檢查 lastResult 內是否有 detail 或 questions
+        let examData = [];
+        if (lastResult.questions) {
+            examData = lastResult.questions;
+        } else if (lastResult.wrongList) {
+            // 如果後端只傳了錯題，就用錯題
+            examData = lastResult.wrongList;
+        }
+
+        allQuestionsData = examData;
+        
+        // 更新分數板
         updateScoreBoard(lastResult);
+
         // 如果有雷達圖函數
         if (typeof renderRadarChart === "function") {
-            renderRadarChart(lastResult.score, lastResult.wrongList);
+            // 傳入分數與錯題進行分析
+            renderRadarChart(lastResult.score, lastResult.wrongList || []);
         }
         
-        updateFilterCounts();
+        if (typeof updateFilterCounts === "function") updateFilterCounts();
+        
+        // 渲染題目列表
         renderQuestionList(allQuestionsData);
         
-        // 同步主題
-        ThemeEngine.apply(user.username);
+        // 🌟 同步主題變色 (傳入最新 XP)
+        if (typeof ThemeEngine !== 'undefined') {
+            ThemeEngine.apply(user.xp || 0);
+        }
+
+        reportContent?.classList.remove('hidden');
+        noDataMessage?.classList.add('hidden');
 
     } catch (e) {
-        console.error("雲端載入失敗:", e);
-        // 如果雲端失敗，才看 localStorage 當作備份
+        console.error("雲端載入失敗，嘗試讀取本地備份:", e);
+        
+        // 3. 失敗備援機制 (Local Memory)
         const localData = localStorage.getItem('examResult');
         if (localData) {
             const result = JSON.parse(localData);
             updateScoreBoard(result);
-            renderQuestionList(result.questions);
+            renderQuestionList(result.questions || []);
+            reportContent?.classList.remove('hidden');
+            noDataMessage?.classList.add('hidden');
+        } else {
+            // 連本地都沒有資料
+            reportContent?.classList.add('hidden');
+            noDataMessage?.classList.remove('hidden');
         }
     }
 }
-
 function updateFilterCounts() {
     const correctCount = allQuestionsData.filter(q => q.answer === q.yourAns).length;
     const wrongCount = allQuestionsData.filter(q => q.answer !== q.yourAns).length;
@@ -650,6 +695,11 @@ function renderRadarChart(baseScore = 0, wrongList = []) {
 // 5. 錯題列表渲染
 // ==========================================
 function renderQuestionList(list) {
+    // 🌟 修正第 657 行的錯誤：先判斷 data 是否存在
+    if (!data || !Array.isArray(data) || data.length === 0) {
+        console.warn("沒有可顯示的題目列表");
+        return;
+    }
     const listContainer = document.getElementById('wrongList');
     if (!listContainer) return;
     listContainer.innerHTML = '';
