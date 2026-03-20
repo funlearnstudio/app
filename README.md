@@ -1,79 +1,69 @@
-# ☁️ 雲端學院 (Cloud Academy)
+# ☁️ 雲端學院 (E-Learn Studio)
 
-這是一個基於 HTML/JS/CSS 與 Google Apps Script (GAS) 開發的輕量化線上學習與測驗平台。透過無伺服器 (Serverless) 架構，將 Google Sheets 作為資料庫，提供學生測驗、學習診斷、遊戲化機制 (XP 與排行榜)、以及教師/家長管理功能。
+雲端學院是一個結合 **「RPG 遊戲化」** 與 **「大數據分析」** 的無伺服器 (Serverless) 線上學習平台。前端部署於 Vercel，後端與資料庫則由 Google Apps Script (GAS) 與 Google 試算表驅動。平台提供完整的測驗、防弊、錯題檢討以及隨等級變換的動態佈景主題。
 
-## ✨ 核心功能 (Features)
-
-### 🧑‍🎓 學生端 (Student)
-* **線上測驗與練習**：支援選擇題作答與即時對答。
-* **防弊機制 (Anti-Cheat)**：自動偵測測驗期間的「切換分頁次數」與「異常快轉 (作答過快)」行為。
-* **學習診斷分析**：透過 Chart.js 視覺化呈現學生的歷次成績、雷達圖與作答節奏。
-* **遊戲化學習 (Gamification)**：完成測驗可獲取 XP 經驗值並提升等級，支援全服排行榜。
-* **AI 助教功能**：整合 Google Gemini API，提供即時的題目解析與問答服務。
-* **討論區與求助中心**：可發布貼文與同學討論，或向教師發送專屬求助訊息。
-
-### 👨‍🏫 教師端 (Teacher)
-* **班級名冊與數據看板**：檢視全班學生的純淨平均分（排除遊戲/抽獎）、測驗次數與最後上線時間。
-* **任務派發系統**：可針對全班或特定學生派送測驗任務。
-* **自訂出題與題庫管理**：教師可新增自訂題目至雲端題庫。
-* **學生求助管理**：即時接收並回覆學生的求助訊息。
-
-### 👨‍👩‍👦 家長端 (Parent)
-* **專屬數據儀表板**：綁定學生帳號後，可檢視子弟的學習歷程與測驗表現。
+🔗 **Live Demo**: [https://efun.vercel.app/](https://efun.vercel.app/)
 
 ---
 
-## 🛠️ 技術棧 (Tech Stack)
+## ✨ 核心亮點功能 (Core Features)
+
+### 🎮 1. RPG 遊戲化等級與動態視覺 (ThemeEngine)
+* **經驗值與排位系統**：學生完成測驗可獲取 XP，從新手 (Novice) 一路升級至最高階的星耀/神話 (Celestial/Mythic) 級別。
+* **動態佈景主題**：系統內建 `ThemeEngine`，網頁 UI 顏色與風格會根據使用者的目前的排位（共 12 階）自動變換（例如：新手為藍色、傳奇為金色）。
+* **成就特效**：當 XP 達到 50,000 以上，背景會自動觸發流星雨動畫 (`shooting-star`) 增添成就感。
+
+### 📊 2. 智慧測驗與深度診斷 (Smart Analytics)
+* **五大能力雷達圖**：透過 `Chart.js`，將測驗結果拆解為「觀念理解、邏輯推演、運算能力、圖表分析、素養應用」，精準定位弱點。
+* **互動式錯題本**：支援一鍵切換「全部 / 答對 / 答錯」題目，並內建 `MathJax` 完美渲染複雜數學公式。
+* **跨學制課程總覽**：儀表板支援「國中 / 高中」一鍵切換，涵蓋國文、數學、英文、自然（理化/生物/地科）與社會等全科目。
+
+### 🛡️ 3. 雲端防護與防弊機制 (Security & Anti-Cheat)
+* **考試行為偵測**：自動紀錄測驗期間的「切換分頁次數」與「異常快轉 (作答過快)」並同步至雲端，提供教師防弊參考。
+* **防重複存檔防呆**：採用 LocalStorage 標記 (`isSaved`) 與狀態鎖定，防止網路延遲時學生重複點擊造成資料庫寫入異常。
+* **防竄改個人設定**：年級設定 (國七至高三) 採用「單次鎖定」機制，學生設定完成後即隱藏修改按鈕，確保測驗基準一致。
+
+### 🧭 4. 學習導航生態系 (Learning Ecosystem)
+* **榮譽榜 (Leaderboard)**：全服等級排行競爭。
+* **錯題補救 & 重點複習**：針對個人弱點自動彙整。
+* **解題論壇 & 聯絡老師**：提供學生發問與求救的管道。
+
+---
+
+## 🛠️ 技術架構 (Tech Stack)
 
 * **前端 (Frontend)**：HTML5, Vanilla JavaScript, CSS3
-* **UI 框架與套件**：Tailwind CSS, FontAwesome, Chart.js (數據視覺化), MathJax (數學公式渲染)
+* **UI 框架與套件**：
+  * [Tailwind CSS](https://tailwindcss.com/) (介面排版)
+  * [FontAwesome 6](https://fontawesome.com/) (向量圖示)
+  * [Chart.js](https://www.chartjs.org/) (雷達圖與數據視覺化)
+  * [MathJax](https://www.mathjax.org/) (數理化學公式渲染)
+* **部署平台 (Hosting)**：Vercel
 * **後端 / API (Backend)**：Google Apps Script (GAS)
 * **資料庫 (Database)**：Google Sheets (Google 試算表)
-* **AI 整合**：Google Gemini API
 
 ---
 
-## 📂 Google Sheets 資料表結構說明
+## 📂 系統運作與 API 串接邏輯
 
-系統會在首次運行對應功能時「自動建立」所需的工作表 (Sheet)，預設包含以下表單：
-* `users`：儲存使用者帳號、密碼、身分、XP 與等級。
-* `records`：儲存測驗歷程、分數、錯題與防弊數據 (JSON 格式)。
-* `HelpRequests`：儲存學生發送的求助訊息與教師回覆。
-* `Dispatches`：儲存教師派發的任務。
-* `questions`：儲存教師自訂的題庫。
-* `announcements`：儲存系統公告。
-* `forum_posts`：儲存討論區的貼文與回覆。
+本系統採純前端架構，透過 `fetch` 呼叫 GAS 進行 CRUD 操作。
 
----
-
-## 📝 API 請求格式 (前端呼叫參考)
-
-前端透過 `fetch` 對 GAS URL 發送 POST 或 GET 請求。
-所有 POST 請求必須包含 `action` 參數以判斷行為。
-
-**範例：儲存測驗紀錄 (POST)**
+### 關鍵資料傳遞結構 (以存檔為例)
+當學生按下「儲存雲端」時，系統會將以下結構的 JSON 封裝並 POST 至 GAS：
 ```javascript
-fetch(GAS_URL, {
-    method: 'POST',
-    body: JSON.stringify({
-        action: "save_record",
-        username: "student01",
-        activity: "國語第一單元",
-        score: 90,
-        detail: {
-            xpGained: 15,
-            cheat: { fastCount: 0 },
-            tabSwitches: 0,
-            questions: [...],
-            wrongList: [...]
-        }
-    })
-})
-```
-
----
-
-## 🤝 貢獻與維護 (Contributing)
-歡迎提出 Issue 或提交 Pull Request 來協助改善此專案。修改核心功能時，請確保前端的防呆機制與後端 GAS 的欄位對應正確。
-
-
+{
+  action: "save_record",
+  username: "student_id",
+  activity: "數學第一單元",
+  score: 85,
+  detail: {
+    grade: "國九",
+    correctCount: 8,
+    totalCount: 10,
+    questions: [ /* 完整題目與選項資料 */ ],
+    wrongList: [ /* 錯題陣列 */ ],
+    cheat: { cheatLevel: "NORMAL", fastCount: 0 }, // 快轉防弊數據
+    tabSwitches: 0,                                // 分頁防弊數據
+    syncTime: "2026-03-20T10:00:00.000Z"
+  }
+}
