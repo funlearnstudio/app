@@ -6,12 +6,16 @@
     <title>家長監護中心 | 學習進度即時看板</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
     <script src="mockdata/curriculum_integrated.js"></script>
     <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
 </head>
 <body class="bg-gray-50 min-h-screen text-slate-900">
-<nav class="bg-slate-900 text-white p-6 shadow-xl sticky top-0 z-50">
-        <div class="max-w-5xl mx-auto flex justify-between items-center">
+    <nav class="bg-slate-900 text-white p-6 shadow-xl sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center flex-wrap gap-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
                     <i class="fas fa-chart-line"></i>
@@ -23,255 +27,435 @@
             </div>
             
             <div class="flex items-center gap-4">
+                <select id="childSwitcher" onchange="switchChild(this.value)" class="bg-slate-800 text-white border border-slate-700 rounded-lg px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none hidden sm:block">
+                    <option value="" disabled selected>切換子女...</option>
+                    <option value="S12345">王小明 (S12345)</option>
+                    <option value="S67890">王小華 (S67890)</option>
+                </select>
+
                 <div class="text-right hidden sm:block">
                     <p class="text-sm font-bold" id="studentName">讀取中...</p>
                     <p class="text-[10px] text-blue-400 font-mono" id="studentIdDisplay">學號: ----</p>
                 </div>
                 
-                <button onclick="logout()" class="w-10 h-10 bg-slate-800 hover:bg-red-500 rounded-xl flex items-center justify-center transition-colors shadow-sm border border-slate-700 hover:border-red-400 group">
+                <button onclick="exportToPDF()" class="w-10 h-10 bg-blue-600 hover:bg-blue-500 rounded-xl flex items-center justify-center transition-colors shadow-sm group" title="下載成績單">
+                    <i class="fas fa-file-pdf text-blue-200 group-hover:text-white transition-colors"></i>
+                </button>
+
+                <button onclick="logout()" class="w-10 h-10 bg-slate-800 hover:bg-red-500 rounded-xl flex items-center justify-center transition-colors shadow-sm border border-slate-700 hover:border-red-400 group" title="登出">
                     <i class="fas fa-sign-out-alt text-slate-400 group-hover:text-white transition-colors"></i>
                 </button>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-5xl mx-auto p-4 md:p-8 space-y-8">
+    <main id="export-content" class="max-w-6xl mx-auto p-4 md:p-8 space-y-8">
         
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div class="md:col-span-3 bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
-                <h3 class="font-black text-slate-800 mb-6 flex items-center gap-2 uppercase tracking-tight">
-                    <span class="w-1.5 h-6 bg-blue-500 rounded-full"></span> 各科目精熟度分析
-                </h3>
-                <div id="subjectGrid" class="space-y-6">
-                    </div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-500 flex items-center justify-center text-xl"><i class="fas fa-tasks"></i></div>
+                <div>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">累積測驗數</p>
+                    <p class="text-2xl font-black text-slate-800" id="statCount">0</p>
+                </div>
             </div>
-            
-            <div class="bg-slate-900 rounded-[2rem] p-8 text-white flex flex-col justify-center items-center shadow-2xl relative overflow-hidden">
-                <div class="absolute top-0 right-0 p-4 opacity-10 text-6xl"><i class="fas fa-graduation-cap"></i></div>
-                <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">本月測驗</p>
-                <p class="text-7xl font-black my-4 text-blue-400" id="statCount">0</p>
-                <p class="text-[10px] bg-white/10 px-3 py-1 rounded-full font-bold">已完成測驗數</p>
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-green-100 text-green-500 flex items-center justify-center text-xl"><i class="fas fa-clock"></i></div>
+                <div>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">最後活動日期</p>
+                    <p class="text-sm font-black text-slate-800 mt-1" id="lastActiveDate">--</p>
+                </div>
+            </div>
+            <div class="bg-red-50 rounded-2xl p-6 shadow-sm border border-red-100 md:col-span-2 flex flex-col justify-center">
+                <h4 class="text-xs font-black text-red-600 uppercase mb-2"><i class="fas fa-exclamation-triangle mr-1"></i> 待加強單元 (低於60分)</h4>
+                <div id="weaknessArea" class="flex flex-wrap gap-2 text-sm">
+                    </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
-            <div class="p-8 border-b border-slate-50 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/30">
-                <div>
-                    <h3 class="font-black text-slate-800 uppercase italic">單元學習明細分析</h3>
-                    <p class="text-xs text-slate-400 mt-1">對照課程架構之各項學習重點掌握情況</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
+                <h3 class="font-black text-slate-800 mb-4 uppercase text-sm"><i class="fas fa-spider mr-2 text-blue-500"></i>各科綜合能力雷達圖</h3>
+                <div class="relative h-64 w-full">
+                    <canvas id="radarChart"></canvas>
                 </div>
-            <select id="subPicker" onchange="renderUnitDetails()" class="w-full md:w-auto bg-white border border-slate-200 rounded-2xl px-6 py-3 text-sm font-black text-slate-700 shadow-sm focus:ring-4 focus:ring-blue-500/10 outline-none transition-all">
-    <option value="chinese">國文</option>
-    <option value="math">數學</option>
-    <option value="english">英文</option>
-    <option value="biology">生物</option>
-    <option value="physics">理化(物理)</option>
-    <option value="chemistry">理化(化學)</option>
-    <option value="earth">地球科學</option> 
-    <option value="history">歷史</option>
-    <option value="geography">地理</option>
-    <option value="civics">公民</option>
-</select>
             </div>
-            
-            <div id="unitDetailList" class="divide-y divide-slate-50">
+            <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
+                <h3 class="font-black text-slate-800 mb-4 uppercase text-sm"><i class="fas fa-chart-area mr-2 text-green-500"></i>近期學習分數趨勢 (近10次)</h3>
+                <div class="relative h-64 w-full">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
+            <h3 class="font-black text-slate-800 mb-6 flex items-center gap-2 uppercase tracking-tight">
+                <span class="w-1.5 h-6 bg-blue-500 rounded-full"></span> 各科目精熟度概覽
+            </h3>
+            <div id="subjectGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6">
                 </div>
         </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden flex flex-col">
+                <div class="p-6 border-b border-slate-50 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/30">
+                    <div>
+                        <h3 class="font-black text-slate-800 uppercase italic">單元學習明細分析</h3>
+                    </div>
+                    <select id="subPicker" onchange="renderUnitDetails()" class="w-full md:w-auto bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-black text-slate-700 shadow-sm outline-none">
+                        <option value="chinese">國文</option>
+                        <option value="math">數學</option>
+                        <option value="english">英文</option>
+                        <option value="biology">生物</option>
+                        <option value="physics">理化(物理)</option>
+                        <option value="chemistry">理化(化學)</option>
+                        <option value="earth">地球科學</option> 
+                        <option value="history">歷史</option>
+                        <option value="geography">地理</option>
+                        <option value="civics">公民</option>
+                    </select>
+                </div>
+                <div id="unitDetailList" class="divide-y divide-slate-50 flex-1 overflow-y-auto max-h-[600px]">
+                </div>
+            </div>
+
+            <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden flex flex-col h-[680px]">
+                <div class="p-6 border-b border-slate-50 bg-slate-50/30">
+                    <h3 class="font-black text-slate-800 uppercase italic"><i class="fas fa-history mr-2 text-slate-400"></i>最新學習歷程</h3>
+                </div>
+                <div id="timelineList" class="p-6 space-y-6 overflow-y-auto flex-1">
+                    </div>
+            </div>
+        </div>
     </main>
+
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; // 💡 你的真實 GAS 網址
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
     let remoteData = { records: [] };
-    
-    // 🌟 強化版：多管齊下抓取綁定的小孩帳號
     let targetStudentId = localStorage.getItem('childUsername');
     
-    // 如果 childUsername 抓不到，嘗試從登入時整包的 currentUser 裡面抓
+    // 取得綁定帳號邏輯 (不變)
     if (!targetStudentId) {
         try {
             const userObj = JSON.parse(localStorage.getItem('currentUser') || '{}');
-            // 在你的設定中，家長綁定的學生帳號是存在 grade (年級或綁定帳號) 欄位裡
-            if (userObj.role === 'parent' && userObj.grade) {
-                targetStudentId = userObj.grade;
-            }
-        } catch(e) { 
-            console.warn("無法解析 currentUser"); 
-        }
+            if (userObj.role === 'parent' && userObj.grade) { targetStudentId = userObj.grade; }
+        } catch(e) { console.warn("無法解析 currentUser"); }
     }
-    
-    // 最終防呆：如果都沒抓到，才用備用帳號
-    if (!targetStudentId) {
-        console.error("⚠️ 找不到綁定的學生帳號，使用預設測試帳號 S12345");
-        targetStudentId = "S12345";
-    } else {
-        console.log("✅ 成功抓取綁定帳號：", targetStudentId);
+    if (!targetStudentId) { targetStudentId = "S12345"; }
+
+    // Chart 實例變數
+    let radarChartInstance = null;
+    let lineChartInstance = null;
+
+    // 🆕 建立全域的「單元對應科目」對照表
+    const unitToSubjectMap = {};
+    const normalizeText = (text) => (text || "").replace(/\s+/g, "").replace("：", ":").toLowerCase();
+
+    function initSubjectMap() {
+        const libData = window.CurriculumLibrary || {};
+        const baseData = libData.data || libData;
+        Object.keys(baseData).forEach(subId => {
+            if (Array.isArray(baseData[subId])) {
+                baseData[subId].forEach(book => {
+                    if (book.units) {
+                        book.units.forEach(u => {
+                            unitToSubjectMap[normalizeText(u.name)] = subId;
+                        });
+                    }
+                });
+            }
+        });
     }
 
     async function fetchDashboardData() {
         try {
+            document.getElementById('studentName').innerText = "資料讀取中...";
             const response = await fetch(GAS_URL, {
                 method: 'POST',
                 body: JSON.stringify({ action: "get_parent_dashboard", studentId: targetStudentId })
             });
             remoteData = await response.json();
             
-            // 更新基礎資訊
+            // 基礎資料更新
             document.getElementById('studentName').innerText = remoteData.studentName + " 同學";
             document.getElementById('studentIdDisplay').innerText = "學號: " + remoteData.studentId;
             document.getElementById('statCount').innerText = remoteData.records.length;
 
+            initSubjectMap(); // 初始化單元對照表
+            
+            // 執行各模組渲染
+            renderAlertsAndInsights();
+            renderCharts();
             renderSubjectProgress();
             renderUnitDetails();
+            renderTimeline();
+
         } catch (error) {
             console.error("Data fetch error:", error);
             alert("無法連線至雲端資料庫，請檢查網路設定。");
         }
     }
-  function renderSubjectProgress() {
-    const subjects = [
-        { id: 'chinese', name: '國文', color: 'bg-red-500' },
-        { id: 'math', name: '數學', color: 'bg-blue-500' },
-        { id: 'english', name: '英文', color: 'bg-orange-500' },
-        { id: 'biology', name: '生物', color: 'bg-green-500' },
-        { id: 'physics', name: '理化(物理)', color: 'bg-purple-500' },
-        { id: 'chemistry', name: '理化(化學)', color: 'bg-pink-500' },
-        { id: 'earth', name: '地球科學', color: 'bg-teal-500' },
-        { id: 'history', name: '歷史', color: 'bg-yellow-600' },
-        { id: 'geography', name: '地理', color: 'bg-emerald-500' },
-        { id: 'civics', name: '公民', color: 'bg-indigo-500' }
-    ];
 
-    // 💡 1. 加上無敵去空白工具
-    const normalizeText = (text) => (text || "").replace(/\s+/g, "").replace("：", ":").toLowerCase();
-
-    // 🌟 2. 建立「單元名稱 -> 科目」的絕對權威對照表
-    const unitToSubjectMap = {};
-    const libData = window.CurriculumLibrary || {};
-    const baseData = libData.data || libData;
-    
-    Object.keys(baseData).forEach(subId => {
-        if (Array.isArray(baseData[subId])) {
-            baseData[subId].forEach(book => {
-                if (book.units) {
-                    book.units.forEach(u => {
-                        // 存入對照表時，把名稱去空白
-                        unitToSubjectMap[normalizeText(u.name)] = subId;
-                    });
-                }
-            });
-        }
-    });
-
-    const html = subjects.map(s => {
-        const results = remoteData.records.filter(r => {
-            // 取得紀錄的單元名稱，並去空白
-            const recordTitle = normalizeText(r.activity || r.title || r.unitName);
-            
-            // 💡 3. 最關鍵的修改：【優先】相信名稱對照表！
-            // 只要名稱能對應到科目（例如發現它是整數的運算），就強制判定為那個科目！
-            // 這樣就算 GAS 裡存成 english，在這裡也會被強勢拉回 math。
-            if (unitToSubjectMap[recordTitle]) {
-                return unitToSubjectMap[recordTitle] === s.id;
-            }
-            
-            // 4. 退回機制：如果對照表真的找不到（例如自訂名稱的測驗），才相信資料庫存的 subject
-            return (r.subject || "").toLowerCase() === s.id.toLowerCase();
-        });
-
-        const avg = results.length ? Math.round(results.reduce((a, b) => a + Number(b.score), 0) / results.length) : 0;
-        
-        return `
-            <div class="group cursor-pointer hover:scale-105 transition-transform duration-300" 
-                 onclick="document.getElementById('subPicker').value='${s.id}'; renderUnitDetails(); document.getElementById('unitDetailList').scrollIntoView({behavior: 'smooth'});">
-                <div class="flex justify-between text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">
-                    <span>${s.name}平均精熟度</span>
-                    <span class="${avg >= 80 ? 'text-green-500' : 'text-slate-600'}">${avg}%</span>
-                </div>
-                <div class="w-full bg-slate-100 h-4 rounded-full p-1 border border-slate-50">
-                    <div class="${s.color} h-full rounded-full transition-all duration-1000 shadow-sm shadow-current" style="width: ${avg}%"></div>
-                </div>
-            </div>
-        `;
-    }).join('');
-    
-    document.getElementById('subjectGrid').innerHTML = html;
-}
-function renderUnitDetails() {
-    const selectedSub = document.getElementById('subPicker').value;
-    const listContainer = document.getElementById('unitDetailList');
-    
-    const libData = window.CurriculumLibrary || {};
-    const curriculumData = (libData.data ? libData.data[selectedSub] : libData[selectedSub]) || [];
-
-    if (curriculumData.length === 0) {
-        listContainer.innerHTML = '<div class="p-10 text-center text-slate-400 font-bold bg-slate-50 rounded-2xl border border-slate-100 m-4">此科目暫無單元資料</div>';
-        return;
+    // 🆕 切換子女功能
+    function switchChild(newId) {
+        if(!newId) return;
+        targetStudentId = newId;
+        fetchDashboardData();
     }
 
-    // 💡 建立一個「正規化」小工具：把所有空格去掉、全形冒號換半形
-    const normalizeText = (text) => (text || "").replace(/\s+/g, "").replace("：", ":").toLowerCase();
+    // 🆕 渲染智能預警區塊
+    function renderAlertsAndInsights() {
+        const records = remoteData.records;
+        if(records.length === 0) return;
 
-    const html = curriculumData.map(book => {
-        if (!book.units || book.units.length === 0) return '';
+        // 1. 最後活動日期
+        // 假設紀錄裡有 date 欄位，我們找出最晚的一天
+        const sortedByDate = [...records].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+        const lastDate = sortedByDate[0].date || '未知日期';
+        document.getElementById('lastActiveDate').innerText = lastDate;
 
-        const unitsHtml = book.units.map(unit => {
-            // 🌟 無敵比對：完全不看 subject，只看單元名稱，且去掉所有空格比對！
-            const matches = remoteData.records.filter(r => {
-                const recordName = normalizeText(r.unitName || r.activity || r.title);
-                const targetName = normalizeText(unit.name);
-                return recordName === targetName;
+        // 2. 待加強單元 (<60分)
+        const weaknesses = records.filter(r => Number(r.score) < 60);
+        const weaknessContainer = document.getElementById('weaknessArea');
+        
+        if (weaknesses.length === 0) {
+            weaknessContainer.innerHTML = `<span class="text-green-600 font-bold text-xs"><i class="fas fa-check-circle"></i> 太棒了！目前沒有低於 60 分的單元。</span>`;
+        } else {
+            // 取前 5 個弱點避免畫面太滿
+            const html = weaknesses.slice(0, 5).map(w => `
+                <span class="bg-red-100 text-red-700 px-2 py-1 rounded-md border border-red-200 text-xs font-bold">
+                    ${w.unitName || w.activity || w.title} (${w.score}分)
+                </span>
+            `).join('');
+            weaknessContainer.innerHTML = html;
+        }
+    }
+
+    // 🆕 渲染 Chart.js 圖表
+    function renderCharts() {
+        const subjects = [
+            { id: 'chinese', name: '國文' }, { id: 'math', name: '數學' }, { id: 'english', name: '英文' },
+            { id: 'biology', name: '生物' }, { id: 'physics', name: '物理' }, { id: 'chemistry', name: '化學' },
+            { id: 'earth', name: '地科' }, { id: 'history', name: '歷史' }, { id: 'geography', name: '地理' }, { id: 'civics', name: '公民' }
+        ];
+
+        // 整理雷達圖數據 (各科平均)
+        const subjectAverages = subjects.map(s => {
+            const results = remoteData.records.filter(r => {
+                const title = normalizeText(r.activity || r.title || r.unitName);
+                if (unitToSubjectMap[title]) return unitToSubjectMap[title] === s.id;
+                return (r.subject || "").toLowerCase() === s.id.toLowerCase();
             });
-            
-            const bestRecord = matches.length > 0 ? matches.sort((a, b) => b.score - a.score)[0] : null;
-            const score = bestRecord ? bestRecord.score : null;
-            const scoreColor = score === null ? 'text-slate-200' : (score >= 80 ? 'text-green-500' : (score >= 60 ? 'text-amber-500' : 'text-red-500'));
+            return results.length ? Math.round(results.reduce((a, b) => a + Number(b.score), 0) / results.length) : 0;
+        });
+
+        // 繪製雷達圖
+        const ctxRadar = document.getElementById('radarChart').getContext('2d');
+        if(radarChartInstance) radarChartInstance.destroy();
+        radarChartInstance = new Chart(ctxRadar, {
+            type: 'radar',
+            data: {
+                labels: subjects.map(s => s.name),
+                datasets: [{
+                    label: '各科平均精熟度',
+                    data: subjectAverages,
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)', // 藍色半透明
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { r: { min: 0, max: 100, ticks: { stepSize: 20 } } }
+            }
+        });
+
+        // 整理折線圖數據 (近10次測驗分數)
+        const recentRecords = [...remoteData.records]
+            .filter(r => r.date && r.score) // 確保有日期跟分數
+            .sort((a, b) => new Date(a.date) - new Date(b.date)) // 依時間升冪 (舊到新)
+            .slice(-10); // 取最後10筆
+
+        const labelsLine = recentRecords.map(r => (r.date).substring(5)); // 只顯示月-日
+        const dataLine = recentRecords.map(r => r.score);
+
+        // 繪製折線圖
+        const ctxLine = document.getElementById('lineChart').getContext('2d');
+        if(lineChartInstance) lineChartInstance.destroy();
+        lineChartInstance = new Chart(ctxLine, {
+            type: 'line',
+            data: {
+                labels: labelsLine.length ? labelsLine : ['尚無資料'],
+                datasets: [{
+                    label: '測驗分數',
+                    data: dataLine.length ? dataLine : [0],
+                    borderColor: 'rgba(16, 185, 129, 1)', // 綠色
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.3, // 曲線平滑度
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { y: { min: 0, max: 100 } }
+            }
+        });
+    }
+
+    // 🆕 渲染時間軸 Timeline
+    function renderTimeline() {
+        const timelineContainer = document.getElementById('timelineList');
+        // 按日期降冪 (最新在最上面)
+        const sortedRecords = [...remoteData.records].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+        if (sortedRecords.length === 0) {
+            timelineContainer.innerHTML = '<p class="text-slate-400 text-sm text-center mt-10">尚無測驗紀錄</p>';
+            return;
+        }
+
+        const html = sortedRecords.slice(0, 15).map(r => {
+            const score = Number(r.score);
+            let colorClass = 'bg-slate-200';
+            if(score >= 80) colorClass = 'bg-green-500';
+            else if(score >= 60) colorClass = 'bg-amber-500';
+            else colorClass = 'bg-red-500';
+
+            const name = r.unitName || r.activity || r.title || '未命名測驗';
 
             return `
-                <div class="p-6 flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-blue-50/30 transition-all group">
-                    <div class="space-y-2">
-                        <h4 class="text-md font-black text-slate-800 group-hover:text-blue-600 transition-colors">${unit.name}</h4>
-                        <div class="flex flex-wrap gap-2">
-                            ${(unit.topics || []).map(t => `<span class="px-2 py-1 bg-white text-slate-400 text-[10px] font-bold rounded-md border border-slate-200 uppercase tracking-tighter">${t}</span>`).join('')}
+                <div class="relative pl-6 pb-6 border-l-2 border-slate-100 last:border-0 last:pb-0">
+                    <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full ${colorClass} border-4 border-white shadow-sm"></div>
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-[10px] text-slate-400 font-bold mb-1">${r.date || '未知日期'}</p>
+                            <h4 class="text-sm font-black text-slate-700">${name}</h4>
                         </div>
-                    </div>
-                    <div class="mt-4 md:mt-0 text-right">
-                        <div class="text-3xl font-black ${scoreColor} tracking-tighter">
-                            ${score !== null ? score + '<span class="text-xs ml-1 font-bold text-slate-400">分</span>' : '<span class="text-lg">----</span>'}
+                        <div class="text-lg font-black ${score >= 60 ? 'text-slate-700' : 'text-red-500'}">
+                            ${score} <span class="text-[10px] text-slate-400">分</span>
                         </div>
-                        <p class="text-[10px] font-bold text-slate-400 mt-1">
-                            ${bestRecord ? '<i class="far fa-calendar-check mr-1"></i>' + (bestRecord.date || '已測驗') : '尚未測驗'}
-                        </p>
                     </div>
                 </div>
             `;
         }).join('');
 
-        return `
-            <div class="mb-6 bg-white border border-slate-100 rounded-[1.5rem] overflow-hidden shadow-sm">
-                <div class="bg-slate-50/80 border-b border-slate-100 px-6 py-4 flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-500 flex items-center justify-center shadow-inner">
-                        <i class="fas fa-book"></i>
-                    </div>
-                    <h3 class="text-sm font-black text-slate-700 tracking-widest">${book.name}</h3>
-                </div>
-                <div class="divide-y divide-slate-50">
-                    ${unitsHtml}
-                </div>
-            </div>
-        `;
-    }).join('');
+        timelineContainer.innerHTML = html;
+    }
 
-    listContainer.className = "p-6 bg-slate-50/50 rounded-b-[2rem]"; 
-    listContainer.innerHTML = html;
-}
-    // 🌟 登出功能
+    // 🆕 匯出 PDF 功能
+    function exportToPDF() {
+        const element = document.getElementById('export-content');
+        const opt = {
+            margin:       0.5,
+            filename:     `${document.getElementById('studentName').innerText.replace(' 同學','')}的學習報告.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+
+        // 加入簡單的防呆提示
+        alert("即將為您匯出 PDF，產生過程可能需要幾秒鐘，請稍候...");
+        html2pdf().set(opt).from(element).save();
+    }
+
+    // 原有的：各科精熟度渲染 (稍微精簡 HTML 結構以適應新排版)
+    function renderSubjectProgress() {
+        const subjects = [
+            { id: 'chinese', name: '國文', color: 'bg-red-500' }, { id: 'math', name: '數學', color: 'bg-blue-500' },
+            { id: 'english', name: '英文', color: 'bg-orange-500' }, { id: 'biology', name: '生物', color: 'bg-green-500' },
+            { id: 'physics', name: '物理', color: 'bg-purple-500' }, { id: 'chemistry', name: '化學', color: 'bg-pink-500' },
+            { id: 'earth', name: '地科', color: 'bg-teal-500' }, { id: 'history', name: '歷史', color: 'bg-yellow-600' },
+            { id: 'geography', name: '地理', color: 'bg-emerald-500' }, { id: 'civics', name: '公民', color: 'bg-indigo-500' }
+        ];
+
+        const html = subjects.map(s => {
+            const results = remoteData.records.filter(r => {
+                const title = normalizeText(r.activity || r.title || r.unitName);
+                if (unitToSubjectMap[title]) return unitToSubjectMap[title] === s.id;
+                return (r.subject || "").toLowerCase() === s.id.toLowerCase();
+            });
+
+            const avg = results.length ? Math.round(results.reduce((a, b) => a + Number(b.score), 0) / results.length) : 0;
+            
+            return `
+                <div class="group cursor-pointer hover:scale-105 transition-transform duration-300" 
+                     onclick="document.getElementById('subPicker').value='${s.id}'; renderUnitDetails(); document.getElementById('unitDetailList').scrollIntoView({behavior: 'smooth'});">
+                    <div class="flex justify-between text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">
+                        <span>${s.name}</span>
+                        <span class="${avg >= 80 ? 'text-green-500' : 'text-slate-600'}">${avg}%</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-2 rounded-full border border-slate-50 overflow-hidden">
+                        <div class="${s.color} h-full rounded-full transition-all duration-1000" style="width: ${avg}%"></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        document.getElementById('subjectGrid').innerHTML = html;
+    }
+
+    // 原有的：單元明細渲染 (不變，直接沿用)
+    function renderUnitDetails() {
+        const selectedSub = document.getElementById('subPicker').value;
+        const listContainer = document.getElementById('unitDetailList');
+        const libData = window.CurriculumLibrary || {};
+        const curriculumData = (libData.data ? libData.data[selectedSub] : libData[selectedSub]) || [];
+
+        if (curriculumData.length === 0) {
+            listContainer.innerHTML = '<div class="p-10 text-center text-slate-400 font-bold m-4">此科目暫無單元資料</div>';
+            return;
+        }
+
+        const html = curriculumData.map(book => {
+            if (!book.units || book.units.length === 0) return '';
+
+            const unitsHtml = book.units.map(unit => {
+                const matches = remoteData.records.filter(r => {
+                    const recordName = normalizeText(r.unitName || r.activity || r.title);
+                    return recordName === normalizeText(unit.name);
+                });
+                
+                const bestRecord = matches.length > 0 ? matches.sort((a, b) => b.score - a.score)[0] : null;
+                const score = bestRecord ? bestRecord.score : null;
+                const scoreColor = score === null ? 'text-slate-200' : (score >= 80 ? 'text-green-500' : (score >= 60 ? 'text-amber-500' : 'text-red-500'));
+
+                return `
+                    <div class="p-4 flex justify-between items-center hover:bg-blue-50/30 transition-all group">
+                        <div>
+                            <h4 class="text-sm font-black text-slate-800 group-hover:text-blue-600">${unit.name}</h4>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xl font-black ${scoreColor} tracking-tighter">
+                                ${score !== null ? score : '<span class="text-sm">--</span>'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="mb-4 bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm m-4">
+                    <div class="bg-slate-50 border-b border-slate-100 px-4 py-3">
+                        <h3 class="text-xs font-black text-slate-600">${book.name}</h3>
+                    </div>
+                    <div class="divide-y divide-slate-50">
+                        ${unitsHtml}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        listContainer.innerHTML = html;
+    }
+
     function logout() {
         if(confirm("確定要登出家長監護中心嗎？")) {
-            localStorage.clear(); // 清除本地紀錄的帳號資訊
-            window.location.href = "index.html"; // 跳轉回登入頁面
+            localStorage.clear();
+            window.location.href = "index.html";
         }
     }
 
-    // 啟動頁面
     window.onload = fetchDashboardData;
 </script>
 </body>
