@@ -261,7 +261,7 @@
 
 <script>
 // ==========================================
-// 1. 全域設定與 ThemeEngine
+// 1. 全域設定與 ThemeEngine (動態佈景主題)
 // ==========================================
 let allQuestionsData = [];
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
@@ -269,7 +269,6 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_O
 const ThemeEngine = {
     apply: async function(username) {
         console.log("🚀 [ThemeEngine] 啟動快照優先模式。用戶:", username);
-
         let userRaw = localStorage.getItem('currentUser');
         let userDataLocal = userRaw ? JSON.parse(userRaw) : { xp: 0 };
         let currentXP = Number(userDataLocal.xp) || 0;
@@ -279,10 +278,7 @@ const ThemeEngine = {
         try {
             const response = await fetch(`${GAS_URL}?action=get_leaderboard`);
             const leaderboard = await response.json();
-            
-            const cloudUser = leaderboard.find(u => 
-                String(u.username).trim().toLowerCase() === String(username).trim().toLowerCase()
-            );
+            const cloudUser = leaderboard.find(u => String(u.username).trim().toLowerCase() === String(username).trim().toLowerCase());
 
             if (cloudUser) {
                 const cloudXP = Number(cloudUser.xp);
@@ -326,12 +322,8 @@ const ThemeEngine = {
         body.classList.remove(...themes);
         body.classList.add(selected);
 
-        if (document.getElementById('userTitleDisplay')) {
-            document.getElementById('userTitleDisplay').innerText = title;
-        }
-        if (document.getElementById('headerLevel')) {
-            document.getElementById('headerLevel').innerText = `Lv.${level}`;
-        }
+        if (document.getElementById('userTitleDisplay')) document.getElementById('userTitleDisplay').innerText = title;
+        if (document.getElementById('headerLevel')) document.getElementById('headerLevel').innerText = `Lv.${level}`;
         
         if (xp >= 50000) this.createStars(xp >= 100000 ? 15 : 8);
     },
@@ -356,7 +348,7 @@ const ThemeEngine = {
 };
 
 // ==========================================
-// 2. 初始化與載入
+// 2. 系統初始化與測驗資料載入
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     try {
@@ -413,29 +405,22 @@ async function loadExamResult(user) {
         let targetData = null;
         if (localData && !localData.isSaved) {
             targetData = localData; 
-            console.log("讀取本地最新測驗資料");
         } else if (history.length > 0) {
             targetData = history[0]; 
-            console.log("讀取雲端最新測驗資料");
         } else if (localData) {
             targetData = localData; 
         }
 
-        if (!targetData) {
-            reportContent?.classList.add('hidden');
-            noDataMessage?.classList.remove('hidden');
-            return;
-        }
+        if (!targetData) throw new Error("無可用資料");
 
-        allQuestionsData = targetData.questions && targetData.questions.length > 0 
-            ? targetData.questions 
-            : (targetData.wrongList || []);
+        allQuestionsData = targetData.questions && targetData.questions.length > 0 ? targetData.questions : (targetData.wrongList || []);
 
-        // 🌟 新增：預處理題號，讓題組與單選題都能擁有絕對題號 (如 1, 2, 3...)
+        // 🌟 預處理絕對題號 (確保題組內的子題題號也是連續的)
         let globalIndex = 1;
         allQuestionsData.forEach(item => {
             const subQs = item.subQuestions || item.questions;
-            if ((item.article || item.type === 'group') && Array.isArray(subQs)) {
+            const isGroup = !!item.article || item.type === 'group' || (Array.isArray(subQs) && subQs.length > 0);
+            if (isGroup) {
                 subQs.forEach(sq => { sq.originalIndex = globalIndex++; });
             } else {
                 item.originalIndex = globalIndex++;
@@ -444,7 +429,6 @@ async function loadExamResult(user) {
 
         updateScoreBoard(targetData);
         updateCheatAnalysis(targetData); 
-        
         if (typeof renderRadarChart === "function") {
             renderRadarChart(targetData.score, targetData.wrongList || []);
         }
@@ -460,13 +444,13 @@ async function loadExamResult(user) {
         }
 
     } catch (e) {
-        console.error("雲端載入失敗，使用本地備援:", e);
+        console.warn("雲端載入失敗，使用本地備援:", e);
         if (localData) {
             allQuestionsData = localData.questions || localData.wrongList || [];
             let globalIndex = 1;
             allQuestionsData.forEach(item => {
                 const subQs = item.subQuestions || item.questions;
-                if ((item.article || item.type === 'group') && Array.isArray(subQs)) {
+                if ((!!item.article || item.type === 'group') && Array.isArray(subQs)) {
                     subQs.forEach(sq => { sq.originalIndex = globalIndex++; });
                 } else {
                     item.originalIndex = globalIndex++;
@@ -485,15 +469,16 @@ async function loadExamResult(user) {
 }
 
 // ==========================================
-// 3. UI 數據與圖表渲染 (🌟 題組核心強化區)
+// 3. UI 數據分析與畫面渲染核心
 // ==========================================
 
-// 輔助工具：將資料攤平成單純的題目陣列，用來準確計算答對數與總數
+// 輔助工具：將資料攤平，用於計算總答對數
 function getFlatQuestions(list) {
     let flatList = [];
     list.forEach(item => {
         const subQs = item.subQuestions || item.questions;
-        if ((item.article || item.type === 'group') && Array.isArray(subQs)) {
+        const isGroup = !!item.article || item.type === 'group' || (Array.isArray(subQs) && subQs.length > 0);
+        if (isGroup) {
             flatList = flatList.concat(subQs);
         } else {
             flatList.push(item);
@@ -502,12 +487,18 @@ function getFlatQuestions(list) {
     return flatList;
 }
 
+// 輔助工具：防呆判定是否答對
+function isAnsCorrect(q) {
+    const ans = q.answer !== undefined ? q.answer : q.a;
+    return ans == q.yourAns;
+}
+
 function updateScoreBoard(result) {
     document.getElementById('scoreDisplay').textContent = result.score || 0;
     
     const flatData = getFlatQuestions(allQuestionsData);
     let total = result.totalCount || flatData.length;
-    let correct = result.correctCount || flatData.filter(q => q.answer == q.yourAns).length;
+    let correct = result.correctCount || flatData.filter(isAnsCorrect).length;
     
     document.getElementById('correctCount').textContent = correct;
     document.getElementById('totalCount').textContent = total;
@@ -521,6 +512,7 @@ function updateScoreBoard(result) {
 
 function updateCheatAnalysis(result) {
     const section = document.getElementById('cheatAnalysisSection');
+    if (!section) return;
     const timeBox = document.getElementById('timeCheatText');
     const tabBox = document.getElementById('tabCheatText');
     
@@ -563,12 +555,9 @@ function updateCheatAnalysis(result) {
 
 function updateFilterCounts() {
     const flatData = getFlatQuestions(allQuestionsData);
-    const correctCount = flatData.filter(q => q.answer == q.yourAns).length;
-    const wrongCount = flatData.filter(q => q.answer != q.yourAns).length;
-    
     if(document.getElementById('countAll')) document.getElementById('countAll').innerText = flatData.length;
-    if(document.getElementById('countCorrect')) document.getElementById('countCorrect').innerText = correctCount;
-    if(document.getElementById('countWrong')) document.getElementById('countWrong').innerText = wrongCount;
+    if(document.getElementById('countCorrect')) document.getElementById('countCorrect').innerText = flatData.filter(isAnsCorrect).length;
+    if(document.getElementById('countWrong')) document.getElementById('countWrong').innerText = flatData.filter(q => !isAnsCorrect(q)).length;
 }
 
 function changeFilter(type, btn) {
@@ -583,13 +572,14 @@ function changeFilter(type, btn) {
     
     allQuestionsData.forEach(item => {
         const subQs = item.subQuestions || item.questions;
-        if ((item.article || item.type === 'group') && Array.isArray(subQs)) {
-            // 如果是題組，先過濾內部的子題
+        const isGroup = !!item.article || item.type === 'group' || (Array.isArray(subQs) && subQs.length > 0);
+
+        if (isGroup) {
             let matchedSubQs = subQs;
-            if (type === 'correct') matchedSubQs = subQs.filter(q => q.answer == q.yourAns);
-            else if (type === 'wrong') matchedSubQs = subQs.filter(q => q.answer != q.yourAns);
+            if (type === 'correct') matchedSubQs = subQs.filter(isAnsCorrect);
+            else if (type === 'wrong') matchedSubQs = subQs.filter(q => !isAnsCorrect(q));
             
-            // 只要題組內還有任何題目符合條件，就把整組連同文章加進去
+            // 只要題組內有子題符合條件，連同文章一起加入顯示清單
             if (matchedSubQs.length > 0) {
                 filteredData.push({
                     ...item,
@@ -598,16 +588,16 @@ function changeFilter(type, btn) {
                 });
             }
         } else {
-            // 單一題目正常過濾
             if (type === 'all') filteredData.push(item);
-            else if (type === 'correct' && item.answer == item.yourAns) filteredData.push(item);
-            else if (type === 'wrong' && item.answer != item.yourAns) filteredData.push(item);
+            else if (type === 'correct' && isAnsCorrect(item)) filteredData.push(item);
+            else if (type === 'wrong' && !isAnsCorrect(item)) filteredData.push(item);
         }
     });
 
     renderQuestionList(filteredData);
 }
 
+// 🌟 圖表渲染：真實計算弱點扣分邏輯
 function renderRadarChart(baseScore = 0, wrongList = []) {
     const canvas = document.getElementById('radarChart');
     if (!canvas) return;
@@ -616,13 +606,14 @@ function renderRadarChart(baseScore = 0, wrongList = []) {
 
     const ctx = canvas.getContext('2d');
     const labels = ["觀念理解", "邏輯推演", "運算能力", "圖表分析", "素養應用"];
+    // 以總分為基礎設定雷達圖起點
     let chartData = labels.map(() => Math.min(100, Math.max(40, baseScore + 20)));
 
     wrongList.forEach(q => {
-        const concept = q.concept || "";
+        const concept = q.concept || (q.tags ? q.tags[q.tags.length - 1] : "");
         labels.forEach((label, index) => {
-            if (concept.indexOf(label) > -1) {
-                chartData[index] = Math.max(20, chartData[index] - 15);
+            if (concept && concept.indexOf(label) > -1) {
+                chartData[index] = Math.max(20, chartData[index] - 15); // 扣除弱點項目的分數
             }
         });
     });
@@ -649,6 +640,7 @@ function renderRadarChart(baseScore = 0, wrongList = []) {
     });
 }
 
+// 🌟 最關鍵的渲染邏輯：完美防呆支援題組與各種命名
 function renderQuestionList(list) {
     const listContainer = document.getElementById('wrongList');
     if (!listContainer) return;
@@ -664,29 +656,33 @@ function renderQuestionList(list) {
 
     let fullHtml = '';
 
-    // 負責繪製單一題目的子函數
+    // 單一題目的繪製模板
     const renderSingleQuestion = (q) => {
-        const isCorrect = (q.answer == q.yourAns); 
-        let explainText = q.explanation ? (Array.isArray(q.explanation) ? q.explanation.join('<br>') : q.explanation) : "暫無詳細解析";
+        // 通吃各種欄位名稱
+        const qText = q.question || q.q || "（題目內容遺失）";
+        const optsArray = q.options || q.o || [];
+        const correctAns = q.answer !== undefined ? q.answer : q.a;
+        const isCorrect = (correctAns == q.yourAns); 
+        
+        let explainText = q.explanation || q.exp || "暫無詳細解析";
+        if (Array.isArray(explainText)) explainText = explainText.join('<br>');
+
         let optionsHtml = '';
+        optsArray.forEach((opt, optIdx) => {
+            let styleClass = "bg-white border-gray-200 text-gray-600"; 
+            let iconHtml = `<div class="w-8 h-8 rounded-full flex-shrink-0 bg-gray-100 flex items-center justify-center font-bold">${String.fromCharCode(65+optIdx)}</div>`;
+            let statusHtml = "";
 
-        if (q.options && Array.isArray(q.options)) {
-            q.options.forEach((opt, optIdx) => {
-                let styleClass = "bg-white border-gray-200 text-gray-600"; 
-                let iconHtml = `<div class="w-8 h-8 rounded-full flex-shrink-0 bg-gray-100 flex items-center justify-center font-bold">${String.fromCharCode(65+optIdx)}</div>`;
-                let statusHtml = "";
+            if (optIdx == correctAns) {
+                styleClass = "bg-green-50 border-green-300 text-green-800";
+                statusHtml = `<span class="text-green-600 text-xs font-bold ml-auto whitespace-nowrap bg-green-100 px-2 py-1 rounded">正確解答</span>`;
+            } else if (optIdx == q.yourAns && !isCorrect) {
+                styleClass = "bg-red-50 border-red-300 text-red-800";
+                statusHtml = `<span class="text-red-500 text-xs font-bold ml-auto whitespace-nowrap bg-red-100 px-2 py-1 rounded">你的答案</span>`;
+            }
 
-                if (optIdx == q.answer) {
-                    styleClass = "bg-green-50 border-green-300 text-green-800";
-                    statusHtml = `<span class="text-green-600 text-xs font-bold ml-auto whitespace-nowrap bg-green-100 px-2 py-1 rounded">正確解答</span>`;
-                } else if (optIdx == q.yourAns && !isCorrect) {
-                    styleClass = "bg-red-50 border-red-300 text-red-800";
-                    statusHtml = `<span class="text-red-500 text-xs font-bold ml-auto whitespace-nowrap bg-red-100 px-2 py-1 rounded">你的答案</span>`;
-                }
-
-                optionsHtml += `<div class="p-3 border rounded-lg flex items-center gap-3 ${styleClass}">${iconHtml} <span class="flex-grow">${opt}</span> ${statusHtml}</div>`;
-            });
-        }
+            optionsHtml += `<div class="p-3 border rounded-lg flex items-center gap-3 ${styleClass}">${iconHtml} <span class="flex-grow">${opt}</span> ${statusHtml}</div>`;
+        });
 
         return `
             <div class="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition mb-4">
@@ -694,7 +690,7 @@ function renderQuestionList(list) {
                     <span class="bg-gray-800 text-white w-auto px-3 h-7 flex items-center justify-center rounded-md text-sm whitespace-nowrap">第 ${q.originalIndex || '?'} 題</span>
                     ${isCorrect ? '<span class="text-green-500"><i class="fas fa-check-circle"></i> 答對</span>' : '<span class="text-red-500"><i class="fas fa-times-circle"></i> 答錯</span>'}
                 </h3>
-                <div class="mb-4 text-gray-800 leading-relaxed overflow-x-auto">${q.question || q.q || '（題目讀取失敗）'}</div>
+                <div class="mb-4 text-gray-800 leading-relaxed overflow-x-auto">${qText}</div>
                 <div class="space-y-2">${optionsHtml}</div>
                 <div class="mt-4 text-sm text-gray-600 bg-blue-50/50 p-4 rounded-lg border border-blue-100 border-l-4 border-l-blue-500">
                     <strong class="text-blue-700 block mb-1"><i class="fas fa-lightbulb"></i> 解析：</strong>
@@ -704,13 +700,15 @@ function renderQuestionList(list) {
         `;
     };
 
-    // 跑迴圈依序輸出所有題目與題組
+    // 依序渲染題目與題組
     list.forEach((item) => {
-        const subQs = item.subQuestions || item.questions;
-        const hasArticle = !!item.article || item.type === 'group';
+        const subQs = item.subQuestions || item.questions || [];
+        const isGroup = !!item.article || item.type === 'group' || (Array.isArray(subQs) && subQs.length > 0);
 
-        if (hasArticle && Array.isArray(subQs)) {
-            // 這裡渲染題組外框與文章
+        if (isGroup) {
+            // 通吃題組的文章屬性名稱
+            const articleText = item.article || item.context || item.q || item.question || item.text || "（閱讀文章內容遺失）";
+            
             let groupHtml = `
                 <div class="bg-slate-50/70 p-4 md:p-8 rounded-2xl shadow-sm border border-slate-300 mb-8 relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-1.5 h-full bg-indigo-500"></div>
@@ -718,12 +716,11 @@ function renderQuestionList(list) {
                         <i class="fas fa-book-open"></i> 閱讀題組
                     </h2>
                     <div class="mb-6 text-slate-700 leading-loose prose max-w-none border-b border-slate-200 pb-6 overflow-x-auto">
-                        ${item.article || item.text || "（文章內容）"}
+                        ${articleText}
                     </div>
                     <div class="pl-0 md:pl-4">
             `;
             
-            // 將題組內的子題一個個塞進去
             subQs.forEach((subQ) => {
                 groupHtml += renderSingleQuestion(subQ);
             });
@@ -732,17 +729,19 @@ function renderQuestionList(list) {
             fullHtml += groupHtml;
 
         } else {
-            // 單純的選擇題
             fullHtml += renderSingleQuestion(item);
         }
     });
 
     listContainer.innerHTML = fullHtml;
-    if (window.MathJax) MathJax.typesetPromise([listContainer]);
+    // 重繪數學公式
+    if (window.MathJax) {
+        MathJax.typesetPromise([listContainer]).catch((err) => console.log('MathJax error:', err));
+    }
 }
 
 // ==========================================
-// 4. 雲端同步與其他功能
+// 4. 雲端同步與帳號操作
 // ==========================================
 let isSyncing = false;
 let hasSaved = false; 
@@ -775,7 +774,7 @@ function saveToCloud() {
         detail: JSON.stringify({
             grade: user.grade, 
             totalCount: examResult.totalCount || getFlatQuestions(allQuestionsData).length,
-            correctCount: examResult.correctCount || getFlatQuestions(allQuestionsData).filter(q => q.answer == q.yourAns).length,
+            correctCount: examResult.correctCount || getFlatQuestions(allQuestionsData).filter(isAnsCorrect).length,
             wrongList: examResult.wrongList || [],
             questions: examResult.questions || allQuestionsData || [], 
             cheat: examResult.cheat,
@@ -809,7 +808,8 @@ function markButtonAsSaved() {
     if (btn) {
         btn.className = "flex items-center gap-2 text-white bg-green-600 font-bold px-3 py-2 rounded-lg cursor-default text-sm";
         btn.innerHTML = '<i class="fas fa-check-circle"></i> 紀錄已送出';
-        btn.onclick = null; btn.disabled = true; 
+        btn.onclick = null; 
+        btn.disabled = true; 
     }
 }
 
@@ -824,41 +824,59 @@ function openProfileModal() {
     const user = Auth.getCurrentUser();
     if (!user) return alert("請先登入！");
     if (localStorage.getItem(`hasUpdatedGrade_${user.username}`)) return alert("⚠️ 您已經修改過年級，系統限制只能存檔一次！");
+    
     const select = document.getElementById('editGradeSelect');
     if (user.grade) select.value = user.grade;
     document.getElementById('profileModal').classList.remove('hidden');
 }
 
-function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
+function closeProfileModal() { 
+    document.getElementById('profileModal').classList.add('hidden'); 
+}
 
+// 真實的儲存年級邏輯
 async function saveProfile() {
     const newGrade = document.getElementById('editGradeSelect').value;
     const user = Auth.getCurrentUser();
+    
     if (!user) return alert("請先登入！");
     if (localStorage.getItem(`hasUpdatedGrade_${user.username}`)) return closeProfileModal();
 
     const saveBtn = document.querySelector('#profileModal button[onclick="saveProfile()"]');
-    saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 儲存中...';
+    if (saveBtn) {
+        saveBtn.disabled = true; 
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 儲存中...';
+    }
 
     try {
         const response = await fetch(GAS_URL, {
-            method: 'POST', body: JSON.stringify({ action: "update_grade", account: user.username, newGrade: newGrade })
+            method: 'POST', 
+            body: JSON.stringify({ action: "update_grade", account: user.username, newGrade: newGrade })
         });
         const result = await response.json();
+        
         if (result.result === "success" || result.status === "success") {
             if (Auth.updateUser) Auth.updateUser('grade', newGrade);
             const roleEl = document.getElementById('sideUserRole');
             if (roleEl) roleEl.innerText = newGrade;
+            
             localStorage.setItem(`hasUpdatedGrade_${user.username}`, 'true');
             alert(`✅ 修改成功！目前年級已更新為：${newGrade}`);
             closeProfileModal();
+            
             const editBtn = document.querySelector('button[onclick="openProfileModal()"]');
             if (editBtn) editBtn.style.display = 'none';
-        } else alert("❌ 修改失敗：" + (result.message || "未知錯誤"));
+        } else {
+            alert("❌ 修改失敗：" + (result.message || "未知錯誤"));
+        }
     } catch (error) {
+        console.error(error);
         alert("網路連線異常，請稍後再試。");
     } finally {
-        if (saveBtn) { saveBtn.disabled = false; saveBtn.innerText = "確認修改"; }
+        if (saveBtn) { 
+            saveBtn.disabled = false; 
+            saveBtn.innerText = "確認修改"; 
+        }
     }
 }
 </script>
