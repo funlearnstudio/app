@@ -929,23 +929,23 @@ setTimeout(() => {
 
         // 👇👇👇 🌟 關鍵修復：將抽獎獲得的 XP 傳送給雲端 (Google Sheets) 👇👇👇
 
+       // 👇👇👇 🌟 關鍵修復：將抽獎獲得的 XP 傳送給雲端 (Google Sheets) 👇👇👇
+
         fetch(GAS_URL, {
             method: 'POST',
             body: JSON.stringify({
                 action: "save_record",
                 username: user.username,
-                activity: "幸運抽獎", // 把抽獎當成一種活動紀錄傳給雲端
-                score: 0,
-                xp: gainedXP,       // 告訴雲端要加多少經驗值
+                activity: "幸運抽獎", 
+                score: gainedXP,    // ✅ 改成這樣！讓 score 等於抽到的分數
+                xp: gainedXP,       
                 detail: JSON.stringify({ note: "抽獎機獲得" })
             })
         }).then(() => {
-            console.log(`✅ 抽獎獲得的 ${gainedXP} XP 已成功同步至雲端！`);
+            console.log(`✅ 抽獎獲得的 ${gainedXP} 分已成功同步至雲端！`);
         }).catch(e => {
-            console.error("❌ 抽獎 XP 雲端同步失敗", e);
+            console.error("❌ 抽獎分數雲端同步失敗", e);
         });
-        // 👆👆👆 關鍵修復結束 👆👆👆
-
     }, 2000);
 }
 
