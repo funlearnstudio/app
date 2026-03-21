@@ -326,7 +326,6 @@ const ThemeEngine = {
         body.classList.remove(...themes);
         body.classList.add(selected);
 
-        // 更新 UI 文字
         if (document.getElementById('userTitleDisplay')) {
             document.getElementById('userTitleDisplay').innerText = title;
         }
@@ -396,12 +395,10 @@ async function loadExamResult(user) {
     const reportContent = document.getElementById('reportContent');
     const noDataMessage = document.getElementById('noDataMessage');
 
-    // 🌟 關鍵修正 1：先抓取網頁本機「剛剛測驗完」的資料
     const localDataStr = localStorage.getItem('examResult');
     let localData = localDataStr ? JSON.parse(localDataStr) : null;
 
     try {
-        // 去雲端抓取歷史紀錄
         const response = await fetch(`${GAS_URL}?username=${encodeURIComponent(user.username)}&t=${Date.now()}`);
         if (!response.ok) throw new Error("網路請求失敗");
 
@@ -413,32 +410,40 @@ async function loadExamResult(user) {
             return !t.includes("遊戲") && !t.includes("抽獎") && !t.includes("Game");
         });
 
-        // 🌟 關鍵修正 2：決定要顯示哪一筆資料 (優先顯示剛考完還沒存檔的)
         let targetData = null;
         if (localData && !localData.isSaved) {
-            targetData = localData; // 優先：剛剛考完、還沒存檔的最新紀錄
+            targetData = localData; 
             console.log("讀取本地最新測驗資料");
         } else if (history.length > 0) {
-            targetData = history[0]; // 次要：雲端最新的紀錄
+            targetData = history[0]; 
             console.log("讀取雲端最新測驗資料");
         } else if (localData) {
-            targetData = localData; // 最後備援
+            targetData = localData; 
         }
 
-        // 如果真的完全沒有資料
         if (!targetData) {
             reportContent?.classList.add('hidden');
             noDataMessage?.classList.remove('hidden');
             return;
         }
 
-        // 🌟 進行資料渲染
         allQuestionsData = targetData.questions && targetData.questions.length > 0 
             ? targetData.questions 
             : (targetData.wrongList || []);
 
+        // 🌟 新增：預處理題號，讓題組與單選題都能擁有絕對題號 (如 1, 2, 3...)
+        let globalIndex = 1;
+        allQuestionsData.forEach(item => {
+            const subQs = item.subQuestions || item.questions;
+            if ((item.article || item.type === 'group') && Array.isArray(subQs)) {
+                subQs.forEach(sq => { sq.originalIndex = globalIndex++; });
+            } else {
+                item.originalIndex = globalIndex++;
+            }
+        });
+
         updateScoreBoard(targetData);
-        updateCheatAnalysis(targetData); // 行為分析防弊
+        updateCheatAnalysis(targetData); 
         
         if (typeof renderRadarChart === "function") {
             renderRadarChart(targetData.score, targetData.wrongList || []);
@@ -450,17 +455,23 @@ async function loadExamResult(user) {
         reportContent?.classList.remove('hidden');
         noDataMessage?.classList.add('hidden');
 
-        // 如果目前顯示的是從雲端抓下來的歷史資料，把「儲存雲端」按鈕變成已儲存狀態
         if (targetData === history[0] && history.length > 0) {
             markButtonAsSaved();
         }
 
     } catch (e) {
         console.error("雲端載入失敗，使用本地備援:", e);
-        
-        // 斷網備援機制
         if (localData) {
             allQuestionsData = localData.questions || localData.wrongList || [];
+            let globalIndex = 1;
+            allQuestionsData.forEach(item => {
+                const subQs = item.subQuestions || item.questions;
+                if ((item.article || item.type === 'group') && Array.isArray(subQs)) {
+                    subQs.forEach(sq => { sq.originalIndex = globalIndex++; });
+                } else {
+                    item.originalIndex = globalIndex++;
+                }
+            });
             updateScoreBoard(localData);
             updateCheatAnalysis(localData);
             renderQuestionList(allQuestionsData);
@@ -472,14 +483,31 @@ async function loadExamResult(user) {
         }
     }
 }
+
 // ==========================================
-// 3. UI 數據與圖表渲染
+// 3. UI 數據與圖表渲染 (🌟 題組核心強化區)
 // ==========================================
+
+// 輔助工具：將資料攤平成單純的題目陣列，用來準確計算答對數與總數
+function getFlatQuestions(list) {
+    let flatList = [];
+    list.forEach(item => {
+        const subQs = item.subQuestions || item.questions;
+        if ((item.article || item.type === 'group') && Array.isArray(subQs)) {
+            flatList = flatList.concat(subQs);
+        } else {
+            flatList.push(item);
+        }
+    });
+    return flatList;
+}
+
 function updateScoreBoard(result) {
     document.getElementById('scoreDisplay').textContent = result.score || 0;
     
-    let total = result.totalCount || allQuestionsData.length;
-    let correct = result.correctCount || allQuestionsData.filter(q => q.answer == q.yourAns).length;
+    const flatData = getFlatQuestions(allQuestionsData);
+    let total = result.totalCount || flatData.length;
+    let correct = result.correctCount || flatData.filter(q => q.answer == q.yourAns).length;
     
     document.getElementById('correctCount').textContent = correct;
     document.getElementById('totalCount').textContent = total;
@@ -491,17 +519,14 @@ function updateScoreBoard(result) {
     if (el) el.textContent = `${subject} | ${date}`;
 }
 
-// 🌟 強制顯示版面，且沒有資料時預設為 0 (表現良好)
 function updateCheatAnalysis(result) {
     const section = document.getElementById('cheatAnalysisSection');
     const timeBox = document.getElementById('timeCheatText');
     const tabBox = document.getElementById('tabCheatText');
     
-   section.classList.remove('hidden');
-section.style.animationDuration = '0.2s'; // 🔥 強制把淡入時間縮短到 0.2 秒！
-    // ==========================================
-    // 1. 切換分頁分析 (沒有資料就當作 0 次)
-    // ==========================================
+    section.classList.remove('hidden');
+    section.style.animationDuration = '0.2s'; 
+
     const switches = (result.tabSwitches !== undefined && result.tabSwitches !== null) ? result.tabSwitches : 0;
     
     if (switches === 0) {
@@ -510,9 +535,6 @@ section.style.animationDuration = '0.2s'; // 🔥 強制把淡入時間縮短到
         tabBox.innerHTML = `<span class="text-red-500 font-bold"><i class="fas fa-exclamation-triangle"></i> 測驗期間切換分頁 ${switches} 次</span>`;
     }
 
-    // ==========================================
-    // 2. 作答節奏分析 (沒有資料就當作正常 0 次快轉)
-    // ==========================================
     let isCheat = false;
     let cheatMsg = "";
 
@@ -533,18 +555,18 @@ section.style.animationDuration = '0.2s'; // 🔥 強制把淡入時間縮短到
     }
 
     if (isCheat) {
-        // 有作弊/快轉紀錄時顯示紅字
         timeBox.innerHTML = `<span class="text-red-500 font-bold"><i class="fas fa-bolt"></i> ${cheatMsg}</span>`;
     } else {
-        // 沒有資料、或是判斷為正常時，全部顯示綠字 (0 次異常)
         timeBox.innerHTML = '<span class="text-green-600 font-bold"><i class="fas fa-check-circle"></i> 作答節奏正常，無異常快轉</span>';
     }
 }
+
 function updateFilterCounts() {
-    const correctCount = allQuestionsData.filter(q => q.answer == q.yourAns).length;
-    const wrongCount = allQuestionsData.filter(q => q.answer != q.yourAns).length;
+    const flatData = getFlatQuestions(allQuestionsData);
+    const correctCount = flatData.filter(q => q.answer == q.yourAns).length;
+    const wrongCount = flatData.filter(q => q.answer != q.yourAns).length;
     
-    if(document.getElementById('countAll')) document.getElementById('countAll').innerText = allQuestionsData.length;
+    if(document.getElementById('countAll')) document.getElementById('countAll').innerText = flatData.length;
     if(document.getElementById('countCorrect')) document.getElementById('countCorrect').innerText = correctCount;
     if(document.getElementById('countWrong')) document.getElementById('countWrong').innerText = wrongCount;
 }
@@ -558,9 +580,30 @@ function changeFilter(type, btn) {
     btn.classList.remove('text-slate-500');
 
     let filteredData = [];
-    if (type === 'all') filteredData = allQuestionsData;
-    else if (type === 'correct') filteredData = allQuestionsData.filter(q => q.answer == q.yourAns);
-    else if (type === 'wrong') filteredData = allQuestionsData.filter(q => q.answer != q.yourAns);
+    
+    allQuestionsData.forEach(item => {
+        const subQs = item.subQuestions || item.questions;
+        if ((item.article || item.type === 'group') && Array.isArray(subQs)) {
+            // 如果是題組，先過濾內部的子題
+            let matchedSubQs = subQs;
+            if (type === 'correct') matchedSubQs = subQs.filter(q => q.answer == q.yourAns);
+            else if (type === 'wrong') matchedSubQs = subQs.filter(q => q.answer != q.yourAns);
+            
+            // 只要題組內還有任何題目符合條件，就把整組連同文章加進去
+            if (matchedSubQs.length > 0) {
+                filteredData.push({
+                    ...item,
+                    subQuestions: matchedSubQs,
+                    questions: matchedSubQs
+                });
+            }
+        } else {
+            // 單一題目正常過濾
+            if (type === 'all') filteredData.push(item);
+            else if (type === 'correct' && item.answer == item.yourAns) filteredData.push(item);
+            else if (type === 'wrong' && item.answer != item.yourAns) filteredData.push(item);
+        }
+    });
 
     renderQuestionList(filteredData);
 }
@@ -614,13 +657,15 @@ function renderQuestionList(list) {
         listContainer.innerHTML = `
             <div class="py-16 text-center text-slate-400 bg-white rounded-2xl border border-dashed border-slate-300">
                 <i class="fas fa-inbox text-4xl mb-3 block opacity-20"></i>
-                <p class="font-bold">目前沒有題目資料</p>
+                <p class="font-bold">目前沒有符合條件的題目資料</p>
             </div>`;
         return;
     }
 
     let fullHtml = '';
-    list.forEach((q, idx) => {
+
+    // 負責繪製單一題目的子函數
+    const renderSingleQuestion = (q) => {
         const isCorrect = (q.answer == q.yourAns); 
         let explainText = q.explanation ? (Array.isArray(q.explanation) ? q.explanation.join('<br>') : q.explanation) : "暫無詳細解析";
         let optionsHtml = '';
@@ -628,28 +673,28 @@ function renderQuestionList(list) {
         if (q.options && Array.isArray(q.options)) {
             q.options.forEach((opt, optIdx) => {
                 let styleClass = "bg-white border-gray-200 text-gray-600"; 
-                let iconHtml = `<div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">${String.fromCharCode(65+optIdx)}</div>`;
+                let iconHtml = `<div class="w-8 h-8 rounded-full flex-shrink-0 bg-gray-100 flex items-center justify-center font-bold">${String.fromCharCode(65+optIdx)}</div>`;
                 let statusHtml = "";
 
                 if (optIdx == q.answer) {
                     styleClass = "bg-green-50 border-green-300 text-green-800";
-                    statusHtml = `<span class="text-green-600 text-xs font-bold ml-2">正確解答</span>`;
+                    statusHtml = `<span class="text-green-600 text-xs font-bold ml-auto whitespace-nowrap bg-green-100 px-2 py-1 rounded">正確解答</span>`;
                 } else if (optIdx == q.yourAns && !isCorrect) {
                     styleClass = "bg-red-50 border-red-300 text-red-800";
-                    statusHtml = `<span class="text-red-500 text-xs font-bold ml-2">你的答案</span>`;
+                    statusHtml = `<span class="text-red-500 text-xs font-bold ml-auto whitespace-nowrap bg-red-100 px-2 py-1 rounded">你的答案</span>`;
                 }
 
-                optionsHtml += `<div class="p-3 border rounded-lg flex items-center gap-3 ${styleClass}">${iconHtml} <span>${opt}</span> ${statusHtml}</div>`;
+                optionsHtml += `<div class="p-3 border rounded-lg flex items-center gap-3 ${styleClass}">${iconHtml} <span class="flex-grow">${opt}</span> ${statusHtml}</div>`;
             });
         }
 
-        fullHtml += `
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition">
+        return `
+            <div class="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition mb-4">
                 <h3 class="font-bold mb-3 text-lg flex items-center gap-2">
-                    <span class="bg-gray-800 text-white w-7 h-7 flex items-center justify-center rounded-md text-sm">${idx+1}</span>
+                    <span class="bg-gray-800 text-white w-auto px-3 h-7 flex items-center justify-center rounded-md text-sm whitespace-nowrap">第 ${q.originalIndex || '?'} 題</span>
                     ${isCorrect ? '<span class="text-green-500"><i class="fas fa-check-circle"></i> 答對</span>' : '<span class="text-red-500"><i class="fas fa-times-circle"></i> 答錯</span>'}
                 </h3>
-                <div class="mb-4 text-gray-800 leading-relaxed">${q.question || q.q || '（題目讀取失敗）'}</div>
+                <div class="mb-4 text-gray-800 leading-relaxed overflow-x-auto">${q.question || q.q || '（題目讀取失敗）'}</div>
                 <div class="space-y-2">${optionsHtml}</div>
                 <div class="mt-4 text-sm text-gray-600 bg-blue-50/50 p-4 rounded-lg border border-blue-100 border-l-4 border-l-blue-500">
                     <strong class="text-blue-700 block mb-1"><i class="fas fa-lightbulb"></i> 解析：</strong>
@@ -657,6 +702,39 @@ function renderQuestionList(list) {
                 </div>
             </div>
         `;
+    };
+
+    // 跑迴圈依序輸出所有題目與題組
+    list.forEach((item) => {
+        const subQs = item.subQuestions || item.questions;
+        const hasArticle = !!item.article || item.type === 'group';
+
+        if (hasArticle && Array.isArray(subQs)) {
+            // 這裡渲染題組外框與文章
+            let groupHtml = `
+                <div class="bg-slate-50/70 p-4 md:p-8 rounded-2xl shadow-sm border border-slate-300 mb-8 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-1.5 h-full bg-indigo-500"></div>
+                    <h2 class="text-indigo-800 font-black text-lg mb-4 flex items-center gap-2">
+                        <i class="fas fa-book-open"></i> 閱讀題組
+                    </h2>
+                    <div class="mb-6 text-slate-700 leading-loose prose max-w-none border-b border-slate-200 pb-6 overflow-x-auto">
+                        ${item.article || item.text || "（文章內容）"}
+                    </div>
+                    <div class="pl-0 md:pl-4">
+            `;
+            
+            // 將題組內的子題一個個塞進去
+            subQs.forEach((subQ) => {
+                groupHtml += renderSingleQuestion(subQ);
+            });
+
+            groupHtml += `</div></div>`;
+            fullHtml += groupHtml;
+
+        } else {
+            // 單純的選擇題
+            fullHtml += renderSingleQuestion(item);
+        }
     });
 
     listContainer.innerHTML = fullHtml;
@@ -696,8 +774,8 @@ function saveToCloud() {
         score: examResult.score,
         detail: JSON.stringify({
             grade: user.grade, 
-            totalCount: examResult.totalCount || allQuestionsData.length,
-            correctCount: examResult.correctCount || allQuestionsData.filter(q => q.answer == q.yourAns).length,
+            totalCount: examResult.totalCount || getFlatQuestions(allQuestionsData).length,
+            correctCount: examResult.correctCount || getFlatQuestions(allQuestionsData).filter(q => q.answer == q.yourAns).length,
             wrongList: examResult.wrongList || [],
             questions: examResult.questions || allQuestionsData || [], 
             cheat: examResult.cheat,
