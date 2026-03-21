@@ -176,7 +176,7 @@ async function fetchDashboardData() {
             
             // 🛑 【升級版防護網：黑名單過濾機制】
             // 💡 將所有遊戲的名稱或關鍵字寫在這裡，只要包含這些字眼就會被踢除！
-            const blockedKeywords = ['遊戲', 'game', '勇者鬥惡龍',"極速挑戰賽","腦力配對" ,"拆彈專家","幸運轉盤",'RPG', '打字']; 
+            const blockedKeywords = ['遊戲', 'game', '勇者鬥惡龍',"極速挑戰賽","腦力配對" ,"拆彈專家","幸運轉盤",'RPG',"幸運抽獎" ,'打字']; 
             
             rawData.records = rawData.records.filter(r => {
                 const title = r.activity || r.title || r.unitName || "";
