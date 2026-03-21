@@ -165,7 +165,7 @@
         });
     }
 
-   async function fetchDashboardData() {
+async function fetchDashboardData() {
         try {
             document.getElementById('studentName').innerText = "資料讀取中...";
             const response = await fetch(GAS_URL, {
@@ -174,24 +174,28 @@
             });
             let rawData = await response.json();
             
-            // 🛑 【新增的防護網】：把遊戲成績徹底過濾掉！
+            // 🛑 【升級版防護網：黑名單過濾機制】
+            // 💡 將所有遊戲的名稱或關鍵字寫在這裡，只要包含這些字眼就會被踢除！
+            const blockedKeywords = ['遊戲', 'game', '勇者鬥惡龍',"極速挑戰賽","腦力配對" ,"拆彈專家","幸運轉盤",'RPG', '打字']; 
+            
             rawData.records = rawData.records.filter(r => {
                 const title = r.activity || r.title || r.unitName || "";
                 const subject = r.subject || "";
                 
-                // 判斷條件：如果名稱包含「遊戲」，或是科目被標記為 'game'，就判定為遊戲
-                const isGame = title.includes('遊戲') || subject.toLowerCase().includes('game');
+                // 檢查標題或科目是否踩中黑名單中的任何一個詞
+                const isGame = blockedKeywords.some(keyword => 
+                    title.includes(keyword) || subject.toLowerCase().includes(keyword.toLowerCase())
+                );
                 
-                // 只有「不是遊戲」的紀錄 (return true)，才可以進入我們的儀表板
-                return !isGame; 
+                return !isGame; // 只有沒踩中黑名單的「正規學科」才放行
             });
 
-            remoteData = rawData; // 把過濾完的乾淨資料交給全域變數
+            remoteData = rawData; // 把乾淨的資料交給全域變數
             
             // 基礎資料更新
             document.getElementById('studentName').innerText = remoteData.studentName + " 同學";
             document.getElementById('studentIdDisplay').innerText = "學號: " + remoteData.studentId;
-            document.getElementById('statCount').innerText = remoteData.records.length; // 這裡也會變成只算「正規測驗」的數量
+            document.getElementById('statCount').innerText = remoteData.records.length;
 
             initSubjectMap(); // 初始化單元對照表
             
@@ -207,7 +211,6 @@
             alert("無法連線至雲端資料庫，請檢查網路設定。");
         }
     }
-
     // 🆕 切換子女功能
     function switchChild(newId) {
         if(!newId) return;
