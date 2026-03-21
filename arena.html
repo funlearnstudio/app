@@ -809,7 +809,16 @@ const SoundEngine = {
         }
     }
 };
-
+// =========================================
+// 隱私保護：遮蔽名稱中間字元
+// =========================================
+function maskName(name) {
+    if (!name) return "未知";
+    let str = String(name).trim();
+    if (str.length <= 1) return str;
+    if (str.length === 2) return str.charAt(0) + '〇';
+    return str.charAt(0) + '〇'.repeat(str.length - 2) + str.charAt(str.length - 1);
+}
 // =========================================
 // 3. UI 操作與抽獎功能
 // =========================================
@@ -1004,10 +1013,10 @@ async function initProfile() {
         if (playerNameEl) playerNameEl.textContent = "訪客";
         return;
     }
-
-    document.getElementById('sideUserName').textContent = user.name || user.username;
-    document.getElementById('playerName').textContent = user.name || user.username;
-
+const displayName = maskName(user.name || user.username);
+    document.getElementById('sideUserName').textContent = displayName;
+    document.getElementById('playerName').textContent = displayName;
+    
     let currentXP = user.xp || 0; 
 
     try {
@@ -1072,8 +1081,9 @@ async function loadLeaderboard() {
                 <div class="flex items-center gap-4">
                     <div class="w-12 text-center">${rankDisplay}</div>
                     <div>
+                       <div>
                         <div class="font-extrabold text-lg flex items-center gap-2">
-                            ${player.name || player.username}
+                            ${maskName(player.name || player.username)}
                         </div>
                         <div class="text-[11px] font-black px-3 py-0.5 rounded-full inline-block mt-1 ${rank.badge}">
                             ${rank.title}
