@@ -29,8 +29,6 @@
             <div class="flex items-center gap-4">
                 <select id="childSwitcher" onchange="switchChild(this.value)" class="bg-slate-800 text-white border border-slate-700 rounded-lg px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none hidden sm:block">
                     <option value="" disabled selected>切換子女...</option>
-                    <option value="S12345">王小明 (S12345)</option>
-                    <option value="S67890">王小華 (S67890)</option>
                 </select>
 
                 <div class="text-right hidden sm:block">
@@ -167,19 +165,33 @@
         });
     }
 
-    async function fetchDashboardData() {
+   async function fetchDashboardData() {
         try {
             document.getElementById('studentName').innerText = "資料讀取中...";
             const response = await fetch(GAS_URL, {
                 method: 'POST',
                 body: JSON.stringify({ action: "get_parent_dashboard", studentId: targetStudentId })
             });
-            remoteData = await response.json();
+            let rawData = await response.json();
+            
+            // 🛑 【新增的防護網】：把遊戲成績徹底過濾掉！
+            rawData.records = rawData.records.filter(r => {
+                const title = r.activity || r.title || r.unitName || "";
+                const subject = r.subject || "";
+                
+                // 判斷條件：如果名稱包含「遊戲」，或是科目被標記為 'game'，就判定為遊戲
+                const isGame = title.includes('遊戲') || subject.toLowerCase().includes('game');
+                
+                // 只有「不是遊戲」的紀錄 (return true)，才可以進入我們的儀表板
+                return !isGame; 
+            });
+
+            remoteData = rawData; // 把過濾完的乾淨資料交給全域變數
             
             // 基礎資料更新
             document.getElementById('studentName').innerText = remoteData.studentName + " 同學";
             document.getElementById('studentIdDisplay').innerText = "學號: " + remoteData.studentId;
-            document.getElementById('statCount').innerText = remoteData.records.length;
+            document.getElementById('statCount').innerText = remoteData.records.length; // 這裡也會變成只算「正規測驗」的數量
 
             initSubjectMap(); // 初始化單元對照表
             
