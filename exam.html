@@ -1160,19 +1160,19 @@ const resultData = {
 async function uploadToCloud(username, activityName, score, fullData) {
     const urlParams = new URLSearchParams(window.location.search);
     const currentSubject = urlParams.get('subject') || "unknown";
-    
-    const detailToSave = {
+const detailToSave = {
         subject: currentSubject,           
         unitName: activityName,            
         grade: fullData.grade || "國九",
         totalCount: fullData.totalCount,
         correctCount: fullData.correctCount,
         wrongList: fullData.wrongList,
+        // 👇👇👇 🌟 關鍵修復：把整份考卷（包含題組、文章）完整上傳！ 👇👇👇
+        questions: fullData.questions, 
         cheat: fullData.cheat,
         tabSwitches: fullData.tabSwitches,
-        xpGained: fullData.xpGained // 🌟 終於把它送進去了
+        xpGained: fullData.xpGained 
     };
-
     const payload = {
         action: "save_record",
         username: username,
