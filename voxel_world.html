@@ -670,8 +670,6 @@ const ITEM_REGISTRY = {
         setupJoy('joystick-move', 'knob-move', moveInput);
         setupJoy('joystick-look', 'knob-look', lookInput);
 
-       const clock = new THREE.Clock(); // 確保這行在 updateGame 之外定義
-
         function updateGame() {
             requestAnimationFrame(updateGame);
             const delta = clock.getDelta();
