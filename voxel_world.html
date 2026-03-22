@@ -532,7 +532,72 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
+// ==========================================
+// ⛏️ Minecraft 模式：流暢移動控制系統
+// ==========================================
 
+// 記錄按鍵狀態 (支援長按流暢移動)
+const keysPressed = {};
+
+document.addEventListener('keydown', (e) => {
+    keysPressed[e.key.toLowerCase()] = true;
+    
+    // 空白鍵跳躍 (Space)
+    if (e.key === ' ' || e.code === 'Space') {
+        if (typeof playerJump === 'function') playerJump();
+        e.preventDefault(); // 防止網頁捲動
+    }
+});
+
+document.addEventListener('keyup', (e) => {
+    keysPressed[e.key.toLowerCase()] = false;
+});
+
+// 遊戲主迴圈 (每秒 60 次檢查按鍵狀態)
+function updateMovement() {
+    const activeGame = document.getElementById('game-minecraft'); // 確保 ID 正確
+    if (!activeGame || activeGame.classList.contains('hidden')) return;
+
+    // 這裡對應你 3D 引擎 (如 Three.js) 的移動邏輯
+    const speed = 0.1; 
+
+    if (keysPressed['w'] || keysPressed['arrowup']) {
+        // 向前走
+        moveForward(speed);
+    }
+    if (keysPressed['s'] || keysPressed['arrowdown']) {
+        // 向後走
+        moveBackward(speed);
+    }
+    if (keysPressed['a'] || keysPressed['arrowleft']) {
+        // 向左平移 (Strafe Left)
+        moveLeft(speed);
+    }
+    if (keysPressed['d'] || keysPressed['arrowright']) {
+        // 向右平移 (Strafe Right)
+        moveRight(speed);
+    }
+
+    // 每一幀都要執行
+    requestAnimationFrame(updateMovement);
+}
+
+// 啟動移動監聽
+requestAnimationFrame(updateMovement);
+
+// --- 輔助移動函數範例 (視你的 3D 引擎實作調整) ---
+function moveForward(s) { 
+    if (window.player) window.player.translateZ(-s); 
+}
+function moveBackward(s) { 
+    if (window.player) window.player.translateZ(s); 
+}
+function moveLeft(s) { 
+    if (window.player) window.player.translateX(-s); 
+}
+function moveRight(s) { 
+    if (window.player) window.player.translateX(s); 
+}
     </script>
 </body>
 </html>
