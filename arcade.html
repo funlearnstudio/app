@@ -225,8 +225,7 @@
         <i class="fas fa-play mr-2"></i> 啟動 3D 世界
     </button>
 </div>
-    <div id="voxelGameWindow" class="hidden w-full max-w-6xl mx-auto h-[75vh] min-h-[500px] rounded-3xl bg-black mb-12 relative shadow-2xl overflow-hidden border-4 border-slate-700 transition-all">
-        
+   <div id="game-voxel" class="hidden w-full max-w-6xl mx-auto h-[75vh] min-h-[500px] rounded-3xl bg-black mb-12 relative shadow-2xl overflow-hidden border-4 border-slate-700 transition-all">     
         <div id="vq-blocker" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-20 text-white cursor-pointer transition-opacity backdrop-blur-sm">
             <h2 class="text-5xl font-black mb-6 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">點擊畫面開始探索</h2>
             <div class="flex gap-6 text-lg text-slate-300 mb-8 bg-black/50 p-6 rounded-2xl border border-slate-600">
@@ -1360,7 +1359,7 @@ const BLOCK_TYPES = {
 // 3D 碰撞世界網格
 let worldGrid = {}; 
 let blockSize = 10;
-let worldSize = 40; // 40x40 網格生成區塊
+let worldSize = 120; // 40x40 網格生成區塊
 
 function setBlock(x, y, z, typeKey) {
     if(!worldGrid[x]) worldGrid[x] = {};
@@ -1396,20 +1395,33 @@ function initVoxel() {
 }
 
 // 攔截 startGame
+// 攔截 startGame (加入安全檢查)
 const originalStartGame = window.startGame;
 window.startGame = function(id) {
     if(id === 'voxel') {
-        document.getElementById('gameMenu').classList.add('hidden');
-        if(document.getElementById('voxelHeroBanner')) document.getElementById('voxelHeroBanner').classList.add('hidden');
+        // 1. 隱藏原選單 (如果有找到的話)
+        const gameMenu = document.getElementById('gameMenu');
+        if (gameMenu) gameMenu.classList.add('hidden');
+        
+        const banner = document.getElementById('voxelHeroBanner');
+        if (banner) banner.classList.add('hidden');
+        
         document.querySelectorAll('.game-section').forEach(el => el.classList.add('hidden'));
-        document.getElementById('game-voxel').classList.remove('hidden');
-        initVoxel();
+        
+        // 2. 顯示 3D 遊戲區塊
+        const voxelGame = document.getElementById('game-voxel');
+        if (voxelGame) {
+            voxelGame.classList.remove('hidden');
+            initVoxel();
+        } else {
+            alert("❌ 錯誤：找不到 3D 遊戲的顯示區塊！請確認 HTML 裡面有沒有 id='game-voxel' 的標籤。");
+        }
     } else {
-        if(document.getElementById('voxelHeroBanner')) document.getElementById('voxelHeroBanner').classList.add('hidden');
-        if(originalStartGame) originalStartGame(id);
+        const banner = document.getElementById('voxelHeroBanner');
+        if (banner) banner.classList.add('hidden');
+        if (originalStartGame) originalStartGame(id);
     }
 };
-
 function setupThreeJS() {
     const container = document.getElementById('vq-canvas-container');
     container.innerHTML = ''; 
