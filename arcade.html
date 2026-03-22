@@ -3550,1068 +3550,641 @@ window.animateVoxelWorld = function () {
 </script>
 
 <script>
-
 (() => {
-  if (window.__VQ_LITE_WORLD_V1__) return;
-  window.__VQ_LITE_WORLD_V1__ = true;
+  if (window.__VQ_WORLD_FUN_PATCH__) return;
+  window.__VQ_WORLD_FUN_PATCH__ = true;
 
-  const originalStartGame = window.startGame;
-  const originalBackToMenu = window.backToMenu;
-
-  const STYLE_ID = 'vq-lite-style';
-  if (!document.getElementById(STYLE_ID)) {
-    const style = document.createElement('style');
-    style.id = STYLE_ID;
-    style.textContent = `
-      #game-voxel { position: relative; }
-      #vq-minimap-wrap {
-        position: absolute;
-        right: 18px;
-        bottom: 18px;
-        width: 168px;
-        padding: 10px;
-        border-radius: 18px;
-        background: rgba(2, 6, 23, 0.60);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.10);
-        box-shadow: 0 20px 35px rgba(0,0,0,0.25);
-        z-index: 12;
-        pointer-events: none;
-      }
-      #vq-minimap-title { color: rgba(255,255,255,0.88); font-weight: 800; font-size: 12px; margin-bottom: 8px; display:flex; justify-content:space-between; gap:8px; }
-      #vq-minimap {
-        width: 100%;
-        height: 128px;
-        display: block;
-        border-radius: 12px;
-        background: linear-gradient(180deg, rgba(13,24,48,0.95), rgba(10,14,26,0.95));
-        image-rendering: pixelated;
-      }
-      #vq-minimap-foot {
-        margin-top: 8px;
-        font-size: 11px;
-        color: rgba(255,255,255,0.66);
-        display:flex;
-        justify-content:space-between;
-      }
-      .vq-target-glow {
-        filter: drop-shadow(0 0 12px rgba(253, 224, 71, 0.9));
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  const V = {
-    running: false,
-    initialized: false,
-    mode: 'menu',
-    frame: 0,
-    animationId: 0,
-    clockPrev: performance.now(),
-    scene: null,
-    camera: null,
-    renderer: null,
-    controls: null,
-    blocker: null,
-    hud: null,
-    crosshair: null,
-    overlay: null,
-    container: null,
-    daylight: 0.62,
-    timeOfDay: 0.25,
-    sunLight: null,
-    moonLight: null,
-    ambient: null,
-    hemi: null,
-    fogColors: {
-      day: new THREE.Color(0x86c7f3),
-      sunset: new THREE.Color(0xf4b27a),
-      night: new THREE.Color(0x1b2a3d)
-    },
-    chunkSize: 16,
-    blockSize: 8,
-    renderRadius: 2,
-    seaLevel: 2,
-    chunkQueue: [],
-    chunkBusy: false,
-    chunks: new Map(),
-    interactables: [],
-    monsters: [],
-    targets: [],
-    currentTarget: null,
-    currentMonster: null,
-    questionPool: [],
-    questionIndex: 0,
-    targetGoal: 5,
-    targetsFound: 0,
-    scoreXP: 0,
-    mapCanvas: null,
-    mapCtx: null,
-    mapLastDraw: 0,
-    worldSeed: 1337,
-    moveForward: false,
-    moveBackward: false,
-    moveLeft: false,
-    moveRight: false,
-    canJump: false,
-    velocity: new THREE.Vector3(),
-    raycaster: new THREE.Raycaster(),
-    tmpVec3: new THREE.Vector3(),
-    tmpVec2: new THREE.Vector2(),
-    tmpColor: new THREE.Color(),
-    skyColor: new THREE.Color(),
-    pausedForQuiz: false
+  const original = {
+    initVoxel: window.initVoxel,
+    backToMenu: window.backToMenu,
+    interact: window.vqInteractWithCrosshair,
+    attackMonster: window.vqAttackMonsterNearCrosshair,
+    updateAnimals: window.vqUpdateAnimals,
+    updateMonsters: window.vqUpdateMonsters,
+    updateTimeOfDay: window.vqUpdateTimeOfDay,
+    ensureChunks: window.vqEnsureChunksAroundPlayer,
+    spawnTargetCubes: window.spawnTargetCubes
   };
 
-  function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
-  function lerp(a, b, t) { return a + (b - a) * t; }
-  function hash2(x, z, seed = 0) {
-    const n = Math.sin(x * 127.1 + z * 311.7 + seed * 74.7) * 43758.5453123;
+  const state = {
+    clock: 0,
+    arrowCooldown: 0,
+    minimapTimer: null,
+    lastSpawnTick: 0
+  };
+
+  const tmpColor = new THREE.Color();
+  const tmpVec2 = new THREE.Vector2();
+  const tmpVec3 = new THREE.Vector3();
+
+  function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+  }
+
+  function hash2D(x, z, seed = 0) {
+    const n = Math.sin(x * 12.9898 + z * 78.233 + seed * 37.719) * 43758.5453123;
     return n - Math.floor(n);
   }
-  function smoothNoise(x, z, seed = 0) {
-    const xi = Math.floor(x), zi = Math.floor(z);
-    const xf = x - xi, zf = z - zi;
-    const a = hash2(xi, zi, seed);
-    const b = hash2(xi + 1, zi, seed);
-    const c = hash2(xi, zi + 1, seed);
-    const d = hash2(xi + 1, zi + 1, seed);
-    const u = xf * xf * (3 - 2 * xf);
-    const v = zf * zf * (3 - 2 * zf);
-    return lerp(lerp(a, b, u), lerp(c, d, u), v);
-  }
-  function biomeAt(wx, wz) {
-    const scale = 1 / 72;
-    const moisture = smoothNoise(wx * scale, wz * scale, 11);
-    const temperature = smoothNoise(wx * scale, wz * scale, 29);
-    const altitude = smoothNoise(wx * scale * 0.65, wz * scale * 0.65, 47);
-    if (altitude > 0.72) return 'mountain';
-    if (temperature < 0.28) return 'snow';
-    if (moisture < 0.23) return 'desert';
-    if (moisture > 0.64) return 'forest';
-    if (altitude < 0.28) return 'river';
-    return 'plains';
-  }
-  function terrainHeight(wx, wz) {
-    const base = Math.sin(wx * 0.045) * 1.9 + Math.cos(wz * 0.042) * 1.7;
-    const hills = Math.sin((wx + wz) * 0.028) * 1.6 + Math.cos((wx - wz) * 0.031) * 1.5;
-    const detail = (smoothNoise(wx * 0.18, wz * 0.18, 3) - 0.5) * 4.5;
-    const ridge = Math.abs(Math.sin(wx * 0.018) + Math.cos(wz * 0.018)) * 0.9;
-    const riverCut = biomeAt(wx, wz) === 'river' ? -2.2 : 0;
-    return clamp(Math.round(4 + base + hills + detail + ridge + riverCut), 1, 12);
-  }
-  function worldToBlockCoord(x) { return Math.round(x / V.blockSize); }
-  function blockToWorldCoord(b) { return b * V.blockSize; }
-  function chunkCoord(b) { return Math.floor(b / V.chunkSize); }
-  function chunkKey(cx, cz) { return `${cx},${cz}`; }
-  function getBlockColor(type) {
-    if (window.BLOCK_TYPES && typeof BLOCK_TYPES[type] === 'number') return BLOCK_TYPES[type];
-    const fallback = {
-      grass: 0x5fbf5f,
-      dirt: 0x8b6a45,
-      stone: 0x8a8f9b,
-      sand: 0xd8c58a,
-      snow: 0xf4f7fb,
-      water: 0x4da3ff,
-      wood_plank: 0x8d6e63,
-      leaves: 0x2f8f4e,
-      trunk: 0x6d4c41,
-      target: 0xfde047,
-      mushroom: 0xd34b4b
-    };
-    return fallback[type] || 0xffffff;
+
+  function playerMesh() {
+    return window.vqControls && window.vqControls.getObject ? window.vqControls.getObject() : null;
   }
 
-  function safeQuestions(count) {
-    let questions = [];
-    if (typeof generateGameQuestions === 'function') {
-      try {
-        questions = generateGameQuestions(currentSubject || 'math', count) || [];
-      } catch (e) {
-        questions = [];
+  function playerPos() {
+    const p = playerMesh();
+    return p ? p.position : null;
+  }
+
+  function isNight() {
+    return Math.sin(state.clock) < -0.20;
+  }
+
+  // --------------------------------------------------
+  // 世界地形 / 生物群系
+  // --------------------------------------------------
+  window.vqTerrainHeight = function (wx, wz) {
+    const ridge = Math.sin(wx * 0.045) * 3.5 + Math.cos(wz * 0.052) * 2.8;
+    const hill = Math.sin((wx + wz) * 0.018) * 4.5 + Math.cos((wx - wz) * 0.022) * 2.2;
+    const noise = (hash2D(wx, wz, 11) - 0.5) * 7 + (hash2D(wx * 2, wz * 2, 19) - 0.5) * 4;
+    const riverBand = Math.abs(Math.sin(wx * 0.01 + hash2D(wx, wz, 29) * Math.PI));
+    let h = 8 + ridge + hill + noise;
+    if (riverBand < 0.07) h -= 5;
+    if (hash2D(wx, wz, 7) > 0.96) h += 8;
+    return Math.floor(clamp(h, 1, 30));
+  };
+
+  window.vqBiome = function (wx, wz) {
+    const wet = hash2D(wx, wz, 202);
+    const hot = hash2D(wx, wz, 303);
+    const height = window.vqTerrainHeight(wx, wz);
+
+    if (height > 22) return 'mountain';
+    if (height <= 4 && wet > 0.45) return 'swamp';
+    if (wet < 0.12) return 'desert';
+    if (wet < 0.26) return 'plain';
+    if (wet < 0.42) return hot > 0.5 ? 'forest' : 'plain';
+    if (wet < 0.60) return 'forest';
+    if (wet < 0.75) return 'river';
+    if (wet < 0.90) return 'snow';
+    return 'meadow';
+  };
+
+  window.vqGenerateVoxelTree = function (chunk, wx, wz) {
+    const biome = window.vqBiome(wx, wz);
+    if (biome === 'desert' || biome === 'river' || biome === 'swamp') return;
+
+    // 樹不要太多
+    if (hash2D(wx, wz, 55) < 0.86) return;
+
+    const variant = biome === 'snow' ? 'pine' : biome === 'forest' ? (hash2D(wx, wz, 77) > 0.82 ? 'birch' : 'oak') : 'oak';
+    const logType = variant === 'birch' ? 'birch_log' : variant === 'pine' ? 'pine_log' : 'oak_log';
+    const leafType = variant === 'birch' ? 'birch_leaves' : variant === 'pine' ? 'pine_leaves' : 'oak_leaves';
+    const baseY = window.vqTerrainHeight(wx, wz) + 1;
+    const height = 4 + Math.floor(hash2D(wx, wz, 91) * 3);
+
+    for (let i = 0; i < height; i++) {
+      if (typeof vqAddBlockToChunk === 'function') vqAddBlockToChunk(chunk, wx, baseY + i, wz, logType);
+    }
+
+    for (let lx = -2; lx <= 2; lx++) {
+      for (let lz = -2; lz <= 2; lz++) {
+        for (let ly = height - 2; ly <= height + 1; ly++) {
+          if (Math.abs(lx) === 2 && Math.abs(lz) === 2 && ly === height + 1) continue;
+          if (!chunk.baseLookup || !chunk.baseLookup.has(vqKey(wx + lx, baseY + ly, wz + lz))) {
+            if (typeof vqAddBlockToChunk === 'function') vqAddBlockToChunk(chunk, wx + lx, baseY + ly, wz + lz, leafType);
+          }
+        }
       }
     }
-    if (!Array.isArray(questions) || questions.length === 0) {
-      questions = [
-        { question: '10 + 5 = ?', answer: '15', options: ['10', '12', '15', '20'] },
-        { question: '8 × 4 = ?', answer: '32', options: ['24', '32', '36', '40'] },
-        { question: '12 - 7 = ?', answer: '5', options: ['4', '5', '6', '7'] },
-        { question: '9 + 9 = ?', answer: '18', options: ['16', '17', '18', '20'] }
-      ];
+  };
+
+  // --------------------------------------------------
+  // 小地圖
+  // --------------------------------------------------
+  function ensureMinimap() {
+    if (document.getElementById('vq-minimap-wrap')) return;
+    const host = document.getElementById('game-voxel') || document.getElementById('vq-canvas-container');
+    if (!host) return;
+
+    const wrap = document.createElement('div');
+    wrap.id = 'vq-minimap-wrap';
+    wrap.style.cssText = 'position:absolute;right:14px;bottom:14px;width:168px;height:168px;z-index:24;pointer-events:none;border-radius:20px;background:rgba(15,23,42,.62);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.12);box-shadow:0 12px 30px rgba(0,0,0,.25);overflow:hidden;';
+    wrap.innerHTML = '<canvas id="vq-minimap" width="168" height="168" style="width:100%;height:100%;display:block"></canvas>' +
+      '<div style="position:absolute;left:10px;top:8px;color:#fff;font-size:11px;font-weight:800;letter-spacing:.08em;opacity:.92">MINIMAP</div>';
+    host.appendChild(wrap);
+  }
+
+  function biomeColor(biome) {
+    switch (biome) {
+      case 'desert': return '#d8c27c';
+      case 'forest': return '#2f855a';
+      case 'plain': return '#5fa85d';
+      case 'river': return '#3b82f6';
+      case 'swamp': return '#4d7c0f';
+      case 'snow': return '#e2e8f0';
+      case 'mountain': return '#64748b';
+      case 'meadow': return '#7dd36f';
+      default: return '#4caf50';
     }
-    return questions.map(q => {
-      const out = { ...q };
-      if (!Array.isArray(out.options) || out.options.length === 0) {
-        out.options = [String(out.answer ?? 'A')];
+  }
+
+  function drawMinimap() {
+    const canvas = document.getElementById('vq-minimap');
+    const p = playerPos();
+    if (!canvas || !p || !window.vqTerrainHeight) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const radiusBlocks = 42;
+    const sampleStep = 6;
+    const samples = Math.floor((radiusBlocks * 2) / sampleStep) + 1;
+    const cell = w / samples;
+
+    for (let gz = -radiusBlocks; gz <= radiusBlocks; gz += sampleStep) {
+      for (let gx = -radiusBlocks; gx <= radiusBlocks; gx += sampleStep) {
+        const wx = Math.round(p.x / blockSize) + gx;
+        const wz = Math.round(p.z / blockSize) + gz;
+        ctx.fillStyle = biomeColor(window.vqBiome(wx, wz));
+        ctx.fillRect((gx + radiusBlocks) / sampleStep * cell, (gz + radiusBlocks) / sampleStep * cell, cell + 1, cell + 1);
       }
-      if (typeof out.answer === 'undefined') out.answer = out.options[0];
-      return out;
-    });
-  }
-
-  function ensureHudWidgets() {
-    const game = document.getElementById('game-voxel');
-    if (!game) return;
-    let wrap = document.getElementById('vq-minimap-wrap');
-    if (!wrap) {
-      wrap = document.createElement('div');
-      wrap.id = 'vq-minimap-wrap';
-      wrap.innerHTML = `
-        <div id="vq-minimap-title">
-          <span>Mini Map</span>
-          <span id="vq-world-time-label">Day</span>
-        </div>
-        <canvas id="vq-minimap" width="128" height="128"></canvas>
-        <div id="vq-minimap-foot">
-          <span id="vq-biome-label">plains</span>
-          <span id="vq-entity-label">0 mobs</span>
-        </div>
-      `;
-      game.appendChild(wrap);
     }
-    V.mapCanvas = document.getElementById('vq-minimap');
-    V.mapCtx = V.mapCanvas ? V.mapCanvas.getContext('2d') : null;
+
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.beginPath();
+    ctx.arc(w / 2, h / 2, 4.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    const player = playerPos();
+    function dot(list, color, size) {
+      if (!Array.isArray(list)) return;
+      ctx.fillStyle = color;
+      for (const item of list) {
+        if (!item || !item.mesh || !item.alive) continue;
+        const pos = item.mesh.position || item.mesh;
+        const dx = (pos.x - player.x) / blockSize;
+        const dz = (pos.z - player.z) / blockSize;
+        if (Math.abs(dx) > radiusBlocks || Math.abs(dz) > radiusBlocks) continue;
+        ctx.fillRect(w / 2 + dx * (cell / sampleStep) - size / 2, h / 2 + dz * (cell / sampleStep) - size / 2, size, size);
+      }
+    }
+
+    dot(window.vqInf && window.vqInf.animals, '#fde68a', 3);
+    dot(window.vqInf && window.vqInf.monsters, '#ef4444', 3);
+    if (Array.isArray(window.vqTargetCubes)) dot(window.vqTargetCubes.map(c => ({ mesh: c, alive: true })), '#facc15', 4);
   }
 
-  function ensureScene() {
-    V.container = document.getElementById('vq-canvas-container');
-    V.blocker = document.getElementById('vq-blocker');
-    V.hud = document.getElementById('vq-hud');
-    V.crosshair = document.getElementById('vq-crosshair');
-    V.overlay = document.getElementById('vq-quiz-overlay');
-    if (!V.container) return false;
+  // --------------------------------------------------
+  // 生物與怪物：更像真實世界，不會一直追著玩家
+  // --------------------------------------------------
+  function cleanupFarEntities(type, maxCount, keepRadius) {
+    const p = playerPos();
+    const list = window.vqInf && Array.isArray(window.vqInf[type]) ? window.vqInf[type] : null;
+    if (!p || !list) return;
 
-    V.container.innerHTML = '';
-    V.scene = new THREE.Scene();
-    V.scene.background = new THREE.Color(0x86c7f3);
-    V.scene.fog = new THREE.FogExp2(0x86c7f3, 0.0016);
+    // 移除太遠或死亡的實體
+    for (let i = list.length - 1; i >= 0; i--) {
+      const ent = list[i];
+      if (!ent || !ent.mesh) { list.splice(i, 1); continue; }
+      const pos = ent.mesh.position;
+      const dist = pos.distanceTo(p);
+      if (!ent.alive || dist > keepRadius) {
+        if (ent.mesh.parent) ent.mesh.parent.remove(ent.mesh);
+        list.splice(i, 1);
+      }
+    }
 
-    V.camera = new THREE.PerspectiveCamera(75, V.container.clientWidth / V.container.clientHeight, 0.1, 1200);
-    V.renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, powerPreference: 'low-power' });
-    V.renderer.setPixelRatio(1);
-    V.renderer.setSize(V.container.clientWidth, V.container.clientHeight);
-    V.renderer.shadowMap.enabled = false;
-    V.container.appendChild(V.renderer.domElement);
+    // 控制總量
+    while (list.length > maxCount) {
+      const ent = list.shift();
+      if (ent && ent.mesh && ent.mesh.parent) ent.mesh.parent.remove(ent.mesh);
+    }
+  }
 
-    V.ambient = new THREE.AmbientLight(0xffffff, 0.55);
-    V.hemi = new THREE.HemisphereLight(0xbfe4ff, 0x39411e, 0.65);
-    V.sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
-    V.moonLight = new THREE.DirectionalLight(0x9fc2ff, 0.15);
-    V.sunLight.position.set(80, 120, 40);
-    V.moonLight.position.set(-60, 90, -40);
+  function spawnAmbientAnimal() {
+    if (!window.vqInf || !window.vqControls || typeof window.vqSpawnAnimal !== 'function') return;
+    const p = playerPos();
+    if (!p) return;
 
-    V.scene.add(V.ambient);
-    V.scene.add(V.hemi);
-    V.scene.add(V.sunLight);
-    V.scene.add(V.moonLight);
+    const chunkRadius = 1 + Math.floor(hash2D(Math.floor(p.x / blockSize), Math.floor(p.z / blockSize), 13) * 2);
+    const wx = Math.floor(p.x / blockSize) + Math.floor((Math.random() * 2 - 1) * (18 + chunkRadius * 8));
+    const wz = Math.floor(p.z / blockSize) + Math.floor((Math.random() * 2 - 1) * (18 + chunkRadius * 8));
+    const wy = window.vqTerrainHeight(wx, wz) + 1;
+    const biome = window.vqBiome(wx, wz);
+    const pool = biome === 'snow' ? ['sheep', 'deer'] : biome === 'desert' ? ['deer'] : biome === 'forest' ? ['cow', 'sheep', 'deer'] : ['pig', 'cow', 'sheep'];
+    const kind = pool[Math.floor(Math.random() * pool.length)];
 
-    V.controls = new THREE.PointerLockControls(V.camera, document.body);
-    V.scene.add(V.controls.getObject());
-    V.controls.getObject().position.set(0, (terrainHeight(0, 0) + 3) * V.blockSize, 0);
+    const chunk = window.vqGetChunkByWorld ? window.vqGetChunkByWorld(wx, wz) : null;
+    if (!chunk) return;
+    window.vqSpawnAnimal(chunk, wx, wy, wz, kind);
+  }
 
-    if (V.blocker) {
-      V.blocker.style.display = 'flex';
-      V.blocker.onclick = () => {
-        if (V.pausedForQuiz) return;
-        V.controls.lock();
+  function spawnAmbientMonster(forceNight = false) {
+    if (!window.vqInf || !window.vqControls || typeof window.vqSpawnMonster !== 'function') return;
+    const p = playerPos();
+    if (!p) return;
+
+    const nightNow = isNight();
+    if (!forceNight && !nightNow && Math.random() < 0.55) return;
+
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 18 + Math.floor(Math.random() * 14);
+    const wx = Math.floor(p.x / blockSize + Math.cos(angle) * dist);
+    const wz = Math.floor(p.z / blockSize + Math.sin(angle) * dist);
+    const wy = window.vqTerrainHeight(wx, wz) + 1;
+    const chunk = window.vqGetChunkByWorld ? window.vqGetChunkByWorld(wx, wz) : null;
+    if (!chunk) return;
+    window.vqSpawnMonster(chunk, wx, wy, wz, nightNow && Math.random() < 0.08);
+  }
+
+  function updateAnimalBrain(animal, delta) {
+    if (!animal || !animal.mesh || !animal.alive) return;
+    const p = playerPos();
+    if (!p) return;
+
+    const pos = animal.mesh.position;
+    const wx = Math.round(pos.x / blockSize);
+    const wz = Math.round(pos.z / blockSize);
+    const ground = (window.vqTerrainHeight ? window.vqTerrainHeight(wx, wz) : 0) * blockSize + 2;
+    pos.y = ground;
+
+    if (!animal.ai) {
+      animal.ai = {
+        state: 'wander',
+        timer: 60 + Math.random() * 120,
+        targetX: pos.x + (Math.random() - 0.5) * 60,
+        targetZ: pos.z + (Math.random() - 0.5) * 60,
+        facing: Math.random() * Math.PI * 2
       };
     }
 
-    V.controls.addEventListener('lock', () => {
-      if (V.blocker) V.blocker.style.display = 'none';
-      if (V.hud) V.hud.classList.remove('hidden');
-      if (V.crosshair) V.crosshair.classList.remove('hidden');
-    });
-    V.controls.addEventListener('unlock', () => {
-      if (V.pausedForQuiz) return;
-      if (V.blocker) V.blocker.style.display = 'flex';
-      if (V.crosshair) V.crosshair.classList.add('hidden');
-    });
+    const dx = p.x - pos.x;
+    const dz = p.z - pos.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
 
-    if (!window.__VQ_LITE_INPUT_BOUND__) {
-      window.__VQ_LITE_INPUT_BOUND__ = true;
-      document.addEventListener('keydown', (e) => {
-        if (e.code === 'KeyW' || e.code === 'ArrowUp') V.moveForward = true;
-        if (e.code === 'KeyS' || e.code === 'ArrowDown') V.moveBackward = true;
-        if (e.code === 'KeyA' || e.code === 'ArrowLeft') V.moveLeft = true;
-        if (e.code === 'KeyD' || e.code === 'ArrowRight') V.moveRight = true;
-        if (e.code === 'Space' && V.canJump) {
-          V.velocity.y = 8.5;
-          V.canJump = false;
-        }
-      });
-      document.addEventListener('keyup', (e) => {
-        if (e.code === 'KeyW' || e.code === 'ArrowUp') V.moveForward = false;
-        if (e.code === 'KeyS' || e.code === 'ArrowDown') V.moveBackward = false;
-        if (e.code === 'KeyA' || e.code === 'ArrowLeft') V.moveLeft = false;
-        if (e.code === 'KeyD' || e.code === 'ArrowRight') V.moveRight = false;
-      });
-      document.addEventListener('mousedown', (e) => {
-        if (!V.running || e.button !== 0 || !V.controls || !V.controls.isLocked || V.pausedForQuiz) return;
-        handleCrosshairInteraction();
-      });
-      window.addEventListener('resize', () => {
-        if (!V.camera || !V.renderer || !V.container) return;
-        V.camera.aspect = V.container.clientWidth / V.container.clientHeight;
-        V.camera.updateProjectionMatrix();
-        V.renderer.setSize(V.container.clientWidth, V.container.clientHeight);
-      });
+    if (dist < 14) {
+      animal.ai.state = 'flee';
+      animal.ai.timer = 35;
+      animal.ai.targetX = pos.x - dx * 1.7;
+      animal.ai.targetZ = pos.z - dz * 1.7;
+    } else if (animal.ai.timer <= 0) {
+      animal.ai.state = Math.random() < 0.8 ? 'wander' : 'graze';
+      animal.ai.timer = 50 + Math.random() * 110;
+      animal.ai.targetX = pos.x + (Math.random() - 0.5) * 48;
+      animal.ai.targetZ = pos.z + (Math.random() - 0.5) * 48;
+      animal.ai.facing = Math.random() * Math.PI * 2;
     }
 
-    ensureHudWidgets();
+    animal.ai.timer -= Math.max(1, delta * 20);
+
+    const speed = animal.ai.state === 'flee' ? 0.42 : animal.ai.state === 'graze' ? 0.08 : 0.18;
+    const tx = animal.ai.targetX - pos.x;
+    const tz = animal.ai.targetZ - pos.z;
+    const len = Math.sqrt(tx * tx + tz * tz) || 1;
+
+    if (len > 0.75) {
+      pos.x += (tx / len) * speed;
+      pos.z += (tz / len) * speed;
+      animal.mesh.rotation.y = Math.atan2(tx, tz);
+    }
+  }
+
+  function updateMonsterBrain(monster, delta) {
+    if (!monster || !monster.mesh || !monster.alive) return;
+    const p = playerPos();
+    if (!p) return;
+
+    if (!monster.ai) {
+      monster.ai = {
+        state: 'wander',
+        timer: 40 + Math.random() * 80,
+        targetX: monster.mesh.position.x + (Math.random() - 0.5) * 70,
+        targetZ: monster.mesh.position.z + (Math.random() - 0.5) * 70,
+        cooldown: 0,
+        lookAway: 0,
+        facing: Math.random() * Math.PI * 2
+      };
+    }
+
+    const pos = monster.mesh.position;
+    const wx = Math.round(pos.x / blockSize);
+    const wz = Math.round(pos.z / blockSize);
+    pos.y = (window.vqTerrainHeight ? window.vqTerrainHeight(wx, wz) : 0) * blockSize + (monster.kind === 'boss' ? 9 : 4);
+
+    const dx = p.x - pos.x;
+    const dz = p.z - pos.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+    const night = isNight();
+    const detect = night ? 120 : 82;
+
+    monster.ai.timer -= Math.max(1, delta * 18);
+    monster.ai.cooldown = Math.max(0, monster.ai.cooldown - delta);
+    monster.ai.lookAway = Math.max(0, monster.ai.lookAway - delta);
+
+    const toPlayerX = dx / (dist || 1);
+    const toPlayerZ = dz / (dist || 1);
+    const faceX = Math.sin(monster.mesh.rotation.y || 0);
+    const faceZ = Math.cos(monster.mesh.rotation.y || 0);
+    const facingDot = faceX * toPlayerX + faceZ * toPlayerZ;
+
+    const seesPlayer = dist < detect && (facingDot > 0.18 || dist < 24);
+
+    if (seesPlayer && monster.ai.cooldown <= 0) {
+      if (dist < 12 && Math.random() < (night ? 0.7 : 0.35)) {
+        monster.ai.state = 'retreat';
+        monster.ai.timer = 18 + Math.random() * 18;
+        monster.ai.targetX = pos.x - dx * 1.2;
+        monster.ai.targetZ = pos.z - dz * 1.2;
+        if (typeof window.vqInf.hp === 'number') {
+          window.vqInf.hp = clamp(window.vqInf.hp - (night ? 10 : 6), 0, 100);
+          if (typeof updateVoxelSurvivalHUD === 'function') updateVoxelSurvivalHUD();
+        }
+      } else {
+        monster.ai.state = night ? 'hunt' : 'stalk';
+        monster.ai.targetX = p.x;
+        monster.ai.targetZ = p.z;
+      }
+    }
+
+    if (monster.ai.timer <= 0) {
+      monster.ai.state = Math.random() < 0.55 ? 'wander' : 'observe';
+      monster.ai.timer = 40 + Math.random() * 90;
+      monster.ai.targetX = pos.x + (Math.random() - 0.5) * 64;
+      monster.ai.targetZ = pos.z + (Math.random() - 0.5) * 64;
+      if (Math.random() < 0.25) monster.ai.lookAway = 1.2 + Math.random() * 1.2;
+    }
+
+    let speed = monster.kind === 'boss' ? 0.17 : 0.25;
+    if (monster.ai.state === 'retreat') speed *= 1.15;
+    if (monster.ai.state === 'observe') speed = 0;
+    if (!night && monster.ai.state === 'stalk') speed *= 0.65;
+    if (night && monster.ai.state === 'hunt') speed *= 1.35;
+
+    const tx = monster.ai.targetX - pos.x;
+    const tz = monster.ai.targetZ - pos.z;
+    const len = Math.sqrt(tx * tx + tz * tz) || 1;
+    if (len > 0.6 && speed > 0) {
+      pos.x += (tx / len) * speed;
+      pos.z += (tz / len) * speed;
+      monster.mesh.rotation.y = Math.atan2(tx, tz);
+    } else if (monster.ai.lookAway > 0) {
+      monster.mesh.rotation.y += 0.015 * (monster.kind === 'boss' ? 0.5 : 1);
+    }
+
+    if (dist < 8 && monster.ai.cooldown <= 0 && seesPlayer) {
+      monster.ai.cooldown = night ? 1.8 : 2.8;
+      monster.ai.state = 'retreat';
+      monster.ai.targetX = pos.x - dx * 1.5;
+      monster.ai.targetZ = pos.z - dz * 1.5;
+      if (typeof window.vqInf.hp === 'number') {
+        window.vqInf.hp = clamp(window.vqInf.hp - (monster.kind === 'boss' ? 14 : night ? 9 : 5), 0, 100);
+        if (typeof updateVoxelSurvivalHUD === 'function') updateVoxelSurvivalHUD();
+      }
+    }
+  }
+
+  window.vqUpdateAnimals = function (delta) {
+    cleanupFarEntities('animals', isNight() ? 10 : 14, 240 * blockSize);
+    for (const animal of (window.vqInf && window.vqInf.animals) || []) updateAnimalBrain(animal, delta || 0.016);
+    if (window.vqInf && window.vqInf.animals.length < (isNight() ? 7 : 11) && Math.random() < 0.65) spawnAmbientAnimal();
+  };
+
+  window.vqUpdateMonsters = function (delta) {
+    cleanupFarEntities('monsters', isNight() ? 8 : 4, 250 * blockSize);
+    for (const monster of (window.vqInf && window.vqInf.monsters) || []) updateMonsterBrain(monster, delta || 0.016);
+    if (window.vqInf && window.vqInf.monsters.length < (isNight() ? 6 : 3) && Math.random() < (isNight() ? 0.75 : 0.12)) spawnAmbientMonster(isNight());
+  };
+
+  window.vqSpawnMonsterNearPlayer = function () {
+    if (!window.vqInf || !window.vqControls) return;
+    // 不要每次都一直黏著玩家，改成有機率才生成
+    const near = playerPos();
+    if (!near) return;
+    const limit = isNight() ? 7 : 3;
+    if (window.vqInf.monsters.length >= limit) return;
+    if (Math.random() < (isNight() ? 0.65 : 0.14)) spawnAmbientMonster(isNight());
+  };
+
+  // --------------------------------------------------
+  // 時間系統：夜晚不會全黑，但會更有氣氛
+  // --------------------------------------------------
+  window.vqUpdateTimeOfDay = function () {
+    state.clock += 0.0009;
+    if (state.clock > Math.PI * 2) state.clock -= Math.PI * 2;
+
+    const day = (Math.sin(state.clock) + 1) / 2;
+    const sky = new THREE.Color();
+    const dayColor = new THREE.Color(0x8ecdf0);
+    const nightColor = new THREE.Color(0x162238);
+    sky.copy(nightColor).lerp(dayColor, Math.pow(day, 0.85));
+
+    if (window.vqScene) {
+      window.vqScene.background = sky;
+      if (window.vqScene.fog) {
+        window.vqScene.fog.color = sky;
+        window.vqScene.fog.density = 0.0008 + (1 - day) * 0.0013;
+      }
+    }
+
+    if (window.vqSunLight) {
+      window.vqSunLight.position.set(Math.cos(state.clock) * 180, Math.sin(state.clock) * 120 + 40, 70);
+      window.vqSunLight.intensity = 0.22 + day * 1.15;
+    }
+    if (window.vqAmbientLight) {
+      window.vqAmbientLight.intensity = 0.18 + day * 0.48;
+    }
+
+    drawMinimap();
+  };
+
+  // --------------------------------------------------
+  // 射箭 / 準星互動：射中才觸發題目
+  // --------------------------------------------------
+  function showArrowTrail(from, to) {
+    if (!window.vqScene) return;
+    const geom = new THREE.BufferGeometry().setFromPoints([from, to]);
+    const mat = new THREE.LineBasicMaterial({ color: 0xfff7d0, transparent: true, opacity: 0.95 });
+    const line = new THREE.Line(geom, mat);
+    window.vqScene.add(line);
+    setTimeout(() => {
+      if (line.parent) line.parent.remove(line);
+      geom.dispose();
+      mat.dispose();
+    }, 120);
+  }
+
+  function monsterFromMesh(mesh) {
+    const list = (window.vqInf && window.vqInf.monsters) || [];
+    return list.find(m => m && m.mesh && (m.mesh === mesh || m.mesh === mesh.parent || m.mesh.getObjectById(mesh.id) || (m.mesh.children && m.mesh.children.includes(mesh))));
+  }
+
+  function targetFromMesh(mesh) {
+    const list = window.vqTargetCubes || [];
+    return list.find(c => c === mesh || (c && c.children && c.children.includes(mesh)) || (c && c.getObjectById && c.getObjectById(mesh.id)));
+  }
+
+  function removeTargetCube(target) {
+    const list = window.vqTargetCubes || [];
+    const idx = list.indexOf(target);
+    if (idx >= 0) list.splice(idx, 1);
+    if (target && target.parent) target.parent.remove(target);
+  }
+
+  function damageMonster(monster, amount) {
+    if (!monster || !monster.alive) return false;
+    monster.hp = (monster.hp || 60) - amount;
+    monster.ai = monster.ai || {};
+    monster.ai.state = 'retreat';
+    monster.ai.timer = 20;
+    monster.ai.cooldown = 1.4;
+    if (monster.hp > 0) {
+      monster.mesh.scale.setScalar(monster.kind === 'boss' ? 1.02 : 1.0);
+      return true;
+    }
+
+    monster.alive = false;
+    if (monster.mesh && monster.mesh.parent) monster.mesh.parent.remove(monster.mesh);
+    if (typeof awardXPAndSync === 'function') awardXPAndSync(monster.kind === 'boss' ? 120 : 30, '野外狩獵', monster.kind === 'boss' ? 200 : 50);
+    if (window.vqInf && typeof window.vqInf.hp === 'number') {
+      window.vqInf.hp = clamp(window.vqInf.hp + 4, 0, 100);
+      if (typeof updateVoxelSurvivalHUD === 'function') updateVoxelSurvivalHUD();
+    }
     return true;
   }
 
-  function disposeObject3D(obj) {
-    if (!obj) return;
-    obj.traverse?.((n) => {
-      if (n.geometry) n.geometry.dispose?.();
-      if (n.material) {
-        if (Array.isArray(n.material)) n.material.forEach(m => m.dispose?.());
-        else n.material.dispose?.();
-      }
-    });
-    if (obj.parent) obj.parent.remove(obj);
-  }
+  function shootArrow() {
+    const cam = window.vqCamera;
+    const scene = window.vqScene;
+    if (!cam || !scene || !window.vqControls || !window.vqControls.isLocked) return false;
 
-  function clearWorld() {
-    for (const chunk of V.chunks.values()) disposeObject3D(chunk.group);
-    V.chunks.clear();
-    for (const m of V.monsters) disposeObject3D(m.mesh);
-    V.monsters.length = 0;
-    for (const t of V.targets) disposeObject3D(t.mesh);
-    V.targets.length = 0;
-    V.interactables.length = 0;
-  }
+    if (state.arrowCooldown > 0) return false;
+    state.arrowCooldown = 9;
 
-  function createBlockInstanced(type, positions, colorOverride) {
-    const geo = new THREE.BoxGeometry(V.blockSize, V.blockSize, V.blockSize);
-    const mat = new THREE.MeshLambertMaterial({ color: colorOverride || getBlockColor(type) });
-    const mesh = new THREE.InstancedMesh(geo, mat, positions.length);
-    const dummy = new THREE.Object3D();
-    positions.forEach((p, i) => {
-      dummy.position.set(p.x, p.y, p.z);
-      dummy.scale.set(p.sx || 1, p.sy || 1, p.sz || 1);
-      dummy.updateMatrix();
-      mesh.setMatrixAt(i, dummy.matrix);
-    });
-    mesh.instanceMatrix.needsUpdate = true;
-    return mesh;
-  }
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(tmpVec2.set(0, 0), cam);
+    const monsters = (window.vqInf && window.vqInf.monsters) ? window.vqInf.monsters.map(m => m.mesh).filter(Boolean) : [];
+    const targets = (window.vqTargetCubes || []).concat(monsters);
+    const hits = ray.intersectObjects(targets, true);
 
-  function treeAt(wx, wy, wz) {
-    const group = new THREE.Group();
-    const trunkH = 2 + Math.floor(hash2(wx, wz, 91) * 3);
-    const trunkMat = new THREE.MeshLambertMaterial({ color: getBlockColor('trunk') });
-    const leafMat = new THREE.MeshLambertMaterial({ color: getBlockColor('leaves') });
-    const trunk = new THREE.Mesh(new THREE.BoxGeometry(V.blockSize * 0.55, V.blockSize * trunkH, V.blockSize * 0.55), trunkMat);
-    trunk.position.set(wx, wy + (V.blockSize * trunkH) / 2, wz);
-    group.add(trunk);
-    const crownHeight = wy + V.blockSize * trunkH + V.blockSize * 0.3;
-    const leafOffsets = [
-      [0, 0, 0], [V.blockSize * 0.8, 0, 0], [-V.blockSize * 0.8, 0, 0], [0, 0, V.blockSize * 0.8], [0, 0, -V.blockSize * 0.8],
-      [0, V.blockSize * 0.7, 0]
-    ];
-    leafOffsets.forEach(([dx, dy, dz]) => {
-      const leaf = new THREE.Mesh(new THREE.BoxGeometry(V.blockSize * 1.05, V.blockSize * 1.05, V.blockSize * 1.05), leafMat);
-      leaf.position.set(wx + dx, crownHeight + dy, wz + dz);
-      group.add(leaf);
-    });
-    return group;
-  }
+    const from = cam.position.clone();
+    let to = from.clone().add(ray.ray.direction.clone().multiplyScalar(90));
 
-  function terrainSample(wx, wz) {
-    const biome = biomeAt(wx, wz);
-    const h = terrainHeight(wx, wz);
-    return { biome, h };
-  }
+    if (hits.length) {
+      to = hits[0].point.clone();
+      const mesh = hits[0].object;
+      const target = targetFromMesh(mesh);
+      const monster = monsterFromMesh(mesh);
 
-  function buildChunk(cx, cz) {
-    const key = chunkKey(cx, cz);
-    if (V.chunks.has(key)) return V.chunks.get(key);
-
-    const group = new THREE.Group();
-    group.userData.chunk = { cx, cz };
-    group.position.set(cx * V.chunkSize * V.blockSize, 0, cz * V.chunkSize * V.blockSize);
-
-    const blockBuckets = new Map();
-    const addBlock = (type, x, y, z, sx = 1, sy = 1, sz = 1) => {
-      if (!blockBuckets.has(type)) blockBuckets.set(type, []);
-      blockBuckets.get(type).push({ x, y, z, sx, sy, sz });
-    };
-
-    const chunkSurface = [];
-    const trees = [];
-
-    for (let lx = 0; lx < V.chunkSize; lx++) {
-      for (let lz = 0; lz < V.chunkSize; lz++) {
-        const wx = cx * V.chunkSize + lx;
-        const wz = cz * V.chunkSize + lz;
-        const { biome, h } = terrainSample(wx, wz);
-        const surfaceY = h * V.blockSize;
-        chunkSurface.push({ wx, wz, h, biome });
-
-        let top = 'grass';
-        if (biome === 'desert' || biome === 'river') top = 'sand';
-        else if (biome === 'snow') top = 'snow';
-        else if (biome === 'mountain' && h > 8) top = 'snow';
-        else if (biome === 'mountain') top = 'stone';
-        else if (biome === 'forest') top = 'grass';
-
-        const depth = h >= 8 ? 3 : h >= 5 ? 2 : 1;
-        addBlock(top, wx * V.blockSize, surfaceY, wz * V.blockSize);
-        for (let d = 1; d <= depth; d++) {
-          const type = d === depth && h >= 7 ? 'stone' : 'dirt';
-          addBlock(type, wx * V.blockSize, (h - d) * V.blockSize, wz * V.blockSize);
+      if (target) {
+        window.currentHitCube = target;
+        showArrowTrail(from, to);
+        removeTargetCube(target);
+        if (typeof triggerVoxelQuiz === 'function') {
+          setTimeout(() => triggerVoxelQuiz(), 70);
         }
+        return true;
+      }
 
-        if (h <= V.seaLevel) {
-          for (let y = h + 1; y <= V.seaLevel; y++) {
-            addBlock('water', wx * V.blockSize, y * V.blockSize, wz * V.blockSize, 1, 0.98, 1);
-          }
-        }
-
-        const treeChance = biome === 'forest' ? 0.20 : biome === 'plains' ? 0.08 : biome === 'river' ? 0.03 : 0.02;
-        const hasTree = h > V.seaLevel + 1 && hash2(wx, wz, 9) < treeChance;
-        if (hasTree) trees.push({ x: wx * V.blockSize, y: surfaceY, z: wz * V.blockSize });
+      if (monster) {
+        showArrowTrail(from, to);
+        damageMonster(monster, monster.kind === 'boss' ? 28 : 18);
+        return true;
       }
     }
 
-    for (const [type, positions] of blockBuckets.entries()) {
-      const mesh = createBlockInstanced(type, positions);
-      group.add(mesh);
+    showArrowTrail(from, to);
+    return true;
+  }
+
+  window.vqInteractWithCrosshair = function () {
+    if (window.vqInf && window.vqInf.buildMode && typeof window.vqPlaceTargetBlock === 'function') {
+      return window.vqPlaceTargetBlock();
     }
+    return shootArrow();
+  };
 
-    for (const t of trees) group.add(treeAt(t.x, t.y, t.z));
+  window.vqAttackMonsterNearCrosshair = function () {
+    return shootArrow();
+  };
 
-    const targetCount = hash2(cx, cz, 51) < 0.75 ? 1 : 0;
-    for (let i = 0; i < targetCount; i++) {
-      const localX = Math.floor(2 + hash2(cx + i, cz + i * 2, 14) * 11);
-      const localZ = Math.floor(2 + hash2(cx + i * 3, cz + i * 5, 15) * 11);
-      const wx = cx * V.chunkSize + localX;
-      const wz = cz * V.chunkSize + localZ;
-      const h = terrainHeight(wx, wz);
-      const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(V.blockSize * 0.85, V.blockSize * 0.85, V.blockSize * 0.85),
-        new THREE.MeshStandardMaterial({ color: getBlockColor('target'), emissive: 0x553300, roughness: 0.35, metalness: 0.08 })
-      );
-      mesh.position.set(wx * V.blockSize, (h + 1.3) * V.blockSize, wz * V.blockSize);
-      mesh.userData = { kind: 'target', wx, wz, chunkKey: key };
-      mesh.castShadow = false;
-      mesh.receiveShadow = false;
-      V.interactables.push(mesh);
-      V.targets.push({ mesh, wx, wz, chunkKey: key, alive: true, pulse: Math.random() * Math.PI * 2 });
-      group.add(mesh);
-    }
+  window.spawnTargetCubes = function (count) {
+    if (!window.vqScene) return;
+    if (!Array.isArray(window.vqTargetCubes)) window.vqTargetCubes = [];
+    window.vqTargetCubes.forEach(cube => cube && cube.parent && cube.parent.remove(cube));
+    window.vqTargetCubes = [];
 
-    const chunk = { key, cx, cz, group, surface: chunkSurface, trees, generatedAt: performance.now() };
-    V.chunks.set(key, chunk);
-    V.scene.add(group);
-    spawnMobsForChunk(chunk);
-    return chunk;
-  }
+    const qGeo = new THREE.BoxGeometry(8, 8, 8);
+    const qMat = new THREE.MeshPhongMaterial({ color: 0xFFD700, emissive: 0xFF8C00, shininess: 100 });
+    const p = playerPos();
+    const baseX = p ? Math.round(p.x / blockSize) : 0;
+    const baseZ = p ? Math.round(p.z / blockSize) : 0;
 
-  function unloadChunk(cx, cz) {
-    const key = chunkKey(cx, cz);
-    const chunk = V.chunks.get(key);
-    if (!chunk) return;
-    V.targets = V.targets.filter(t => {
-      if (t.chunkKey === key) {
-        V.interactables = V.interactables.filter(m => m !== t.mesh);
-        disposeObject3D(t.mesh);
-        return false;
-      }
-      return true;
-    });
-    V.monsters = V.monsters.filter(m => {
-      if (m.homeChunk === key) {
-        disposeObject3D(m.mesh);
-        return false;
-      }
-      return true;
-    });
-    disposeObject3D(chunk.group);
-    V.chunks.delete(key);
-  }
-
-  function ensureChunksAroundPlayer() {
-    if (!V.controls) return;
-    const pos = V.controls.getObject().position;
-    const pcx = chunkCoord(worldToBlockCoord(pos.x));
-    const pcz = chunkCoord(worldToBlockCoord(pos.z));
-
-    for (let cx = pcx - V.renderRadius; cx <= pcx + V.renderRadius; cx++) {
-      for (let cz = pcz - V.renderRadius; cz <= pcz + V.renderRadius; cz++) {
-        const key = chunkKey(cx, cz);
-        if (!V.chunks.has(key) && !V.chunkQueue.includes(key)) V.chunkQueue.push(key);
-      }
-    }
-
-    for (const key of [...V.chunks.keys()]) {
-      const [cx, cz] = key.split(',').map(Number);
-      if (Math.abs(cx - pcx) > V.renderRadius + 1 || Math.abs(cz - pcz) > V.renderRadius + 1) {
-        unloadChunk(cx, cz);
-      }
-    }
-  }
-
-  function processChunkQueue() {
-    if (V.chunkBusy || V.chunkQueue.length === 0) return;
-    V.chunkBusy = true;
-    const key = V.chunkQueue.shift();
-    const [cx, cz] = key.split(',').map(Number);
-    buildChunk(cx, cz);
-    V.chunkBusy = false;
-  }
-
-  function spawnMobMesh(kind) {
-    const group = new THREE.Group();
-    let color = 0x6b7280;
-    let bodyH = 2.8;
-    let bodyW = 2.2;
-    if (kind === 'deer') { color = 0xc9b39d; bodyH = 2.1; bodyW = 2.0; }
-    if (kind === 'pig') { color = 0xf48fb1; bodyH = 1.8; bodyW = 2.0; }
-    if (kind === 'zombie') { color = 0x4caf50; bodyH = 2.6; bodyW = 2.1; }
-    if (kind === 'creeper') { color = 0x81c784; bodyH = 2.4; bodyW = 1.9; }
-    const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.95, metalness: 0.02 });
-    const body = new THREE.Mesh(new THREE.BoxGeometry(V.blockSize * bodyW, V.blockSize * bodyH, V.blockSize * bodyW), mat);
-    body.position.y = V.blockSize * bodyH / 2;
-    group.add(body);
-    const head = new THREE.Mesh(new THREE.BoxGeometry(V.blockSize * 1.1, V.blockSize * 1.1, V.blockSize * 1.1), mat);
-    head.position.y = V.blockSize * (bodyH + 0.35);
-    group.add(head);
-    return group;
-  }
-
-  function spawnMob(kind, x, y, z, homeChunkKey) {
-    const mesh = spawnMobMesh(kind);
-    mesh.position.set(x, y, z);
-    mesh.userData = { kind, hp: kind === 'creeper' ? 2 : 3, state: 'wander' };
-    V.scene.add(mesh);
-    const mob = {
-      mesh,
-      kind,
-      hp: kind === 'creeper' ? 2 : 3,
-      state: 'wander',
-      stateTimer: 2 + Math.random() * 3,
-      targetX: x,
-      targetZ: z,
-      homeChunk: homeChunkKey,
-      speed: kind === 'zombie' ? 3.0 : kind === 'creeper' ? 2.5 : 2.2,
-      afraid: 0,
-      lastThink: 0
-    };
-    V.monsters.push(mob);
-    return mob;
-  }
-
-  function spawnMobsForChunk(chunk) {
-    const density = biomeAt(chunk.cx * 16, chunk.cz * 16) === 'forest' ? 0.45 : 0.22;
-    if (hash2(chunk.cx, chunk.cz, 77) > density) return;
-    const count = hash2(chunk.cx + 1, chunk.cz + 2, 99) > 0.75 ? 2 : 1;
     for (let i = 0; i < count; i++) {
-      const sx = (hash2(chunk.cx, chunk.cz, 31 + i) - 0.5) * V.chunkSize * V.blockSize * 0.7;
-      const sz = (hash2(chunk.cx, chunk.cz, 41 + i) - 0.5) * V.chunkSize * V.blockSize * 0.7;
-      const wx = chunk.cx * V.chunkSize * V.blockSize + sx;
-      const wz = chunk.cz * V.chunkSize * V.blockSize + sz;
-      const blockX = worldToBlockCoord(wx);
-      const blockZ = worldToBlockCoord(wz);
-      const h = terrainHeight(blockX, blockZ);
-      const y = (h + 0.4) * V.blockSize;
-      const kinds = ['deer', 'pig', 'zombie', 'creeper'];
-      const kind = kinds[Math.floor(hash2(chunk.cx + i * 2, chunk.cz + i * 3, 12) * kinds.length)];
-      spawnMob(kind, wx, y, wz, chunk.key);
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 10 + Math.floor(Math.random() * 16);
+      const wx = baseX + Math.floor(Math.cos(angle) * dist);
+      const wz = baseZ + Math.floor(Math.sin(angle) * dist);
+      const wy = (window.vqTerrainHeight ? window.vqTerrainHeight(wx, wz) : 0) + 4 + Math.floor(Math.random() * 4);
+      const cube = new THREE.Mesh(qGeo, qMat);
+      cube.position.set(wx * blockSize, wy * blockSize, wz * blockSize);
+      cube.userData.vqTarget = true;
+      window.vqScene.add(cube);
+      window.vqTargetCubes.push(cube);
     }
-  }
-
-  function updateDayNight(delta) {
-    V.timeOfDay += delta * 0.015;
-    if (V.timeOfDay > Math.PI * 2) V.timeOfDay -= Math.PI * 2;
-
-    const day01 = (Math.sin(V.timeOfDay) + 1) / 2;
-    const twilight = 1 - Math.abs(day01 * 2 - 1);
-    const dayFactor = clamp(day01, 0, 1);
-
-    const sunY = Math.sin(V.timeOfDay) * 130 + 55;
-    const sunX = Math.cos(V.timeOfDay) * 140;
-    V.sunLight.position.set(sunX, sunY, 60);
-    V.moonLight.position.set(-sunX, -sunY * 0.65, -60);
-
-    V.sunLight.intensity = 0.18 + dayFactor * 1.05;
-    V.moonLight.intensity = 0.05 + (1 - dayFactor) * 0.42;
-    V.ambient.intensity = 0.18 + dayFactor * 0.48;
-    V.hemi.intensity = 0.22 + dayFactor * 0.28;
-
-    const sky = new THREE.Color().copy(V.fogColors.night).lerp(V.fogColors.day, dayFactor * 0.95);
-    sky.lerp(V.fogColors.sunset, twilight * 0.22);
-    V.scene.background.copy(sky);
-    V.scene.fog.color.copy(sky);
-
-    const label = document.getElementById('vq-world-time-label');
-    if (label) {
-      label.textContent = dayFactor > 0.67 ? 'Day' : dayFactor < 0.33 ? 'Night' : 'Dusk';
-    }
-  }
-
-  function updatePlayerMovement(delta) {
-    if (!V.controls) return;
-    const obj = V.controls.getObject();
-    const speed = 28;
-    V.velocity.x -= V.velocity.x * 8.0 * delta;
-    V.velocity.z -= V.velocity.z * 8.0 * delta;
-    V.velocity.y -= 18 * delta;
-
-    const dirZ = (V.moveForward ? 1 : 0) - (V.moveBackward ? 1 : 0);
-    const dirX = (V.moveRight ? 1 : 0) - (V.moveLeft ? 1 : 0);
-
-    if (V.moveForward || V.moveBackward) V.velocity.z -= dirZ * speed * delta;
-    if (V.moveLeft || V.moveRight) V.velocity.x -= dirX * speed * delta;
-
-    obj.translateX(V.velocity.x * delta);
-    obj.translateZ(V.velocity.z * delta);
-    obj.position.y += V.velocity.y * delta;
-
-    const groundY = terrainHeight(worldToBlockCoord(obj.position.x), worldToBlockCoord(obj.position.z)) * V.blockSize + V.blockSize * 1.65;
-    if (obj.position.y < groundY) {
-      V.velocity.y = 0;
-      obj.position.y = groundY;
-      V.canJump = true;
-    }
-
-    const limit = V.blockSize * V.chunkSize * (V.renderRadius + 2);
-    obj.position.x = clamp(obj.position.x, -limit, limit);
-    obj.position.z = clamp(obj.position.z, -limit, limit);
-  }
-
-  function maybeRetargetMonster(mob, playerPos) {
-    const dx = playerPos.x - mob.mesh.position.x;
-    const dz = playerPos.z - mob.mesh.position.z;
-    const dist = Math.hypot(dx, dz);
-
-    if (dist < V.blockSize * 5) {
-      mob.state = 'retreat';
-      mob.stateTimer = 1.4 + Math.random() * 1.2;
-      mob.targetX = mob.mesh.position.x - dx * 1.7;
-      mob.targetZ = mob.mesh.position.z - dz * 1.7;
-      return;
-    }
-
-    if (mob.afraid > 0) {
-      mob.afraid -= 1;
-      mob.state = 'retreat';
-      return;
-    }
-
-    if (mob.stateTimer > 0) return;
-
-    const roll = Math.random();
-    if (mob.kind === 'deer' || mob.kind === 'pig') {
-      if (roll < 0.50) mob.state = 'wander';
-      else if (roll < 0.75) mob.state = 'look';
-      else mob.state = 'retreat';
-    } else if (mob.kind === 'zombie') {
-      if (roll < 0.35) mob.state = 'wander';
-      else if (roll < 0.70) mob.state = 'approach';
-      else if (roll < 0.88) mob.state = 'look';
-      else mob.state = 'retreat';
-    } else {
-      if (roll < 0.42) mob.state = 'wander';
-      else if (roll < 0.68) mob.state = 'approach';
-      else if (roll < 0.88) mob.state = 'look';
-      else mob.state = 'retreat';
-    }
-
-    mob.stateTimer = 1.8 + Math.random() * 3.5;
-    const wobble = V.blockSize * (5 + Math.random() * 10);
-    if (mob.state === 'wander') {
-      mob.targetX = mob.mesh.position.x + (Math.random() - 0.5) * wobble;
-      mob.targetZ = mob.mesh.position.z + (Math.random() - 0.5) * wobble;
-    } else if (mob.state === 'approach') {
-      mob.targetX = playerPos.x + (Math.random() - 0.5) * V.blockSize * 8;
-      mob.targetZ = playerPos.z + (Math.random() - 0.5) * V.blockSize * 8;
-    } else if (mob.state === 'retreat') {
-      mob.targetX = mob.mesh.position.x - dx * 1.3;
-      mob.targetZ = mob.mesh.position.z - dz * 1.3;
-    } else {
-      mob.targetX = mob.mesh.position.x + (Math.random() - 0.5) * V.blockSize * 3;
-      mob.targetZ = mob.mesh.position.z + (Math.random() - 0.5) * V.blockSize * 3;
-    }
-  }
-
-  function updateMonsters(delta) {
-    if (!V.controls) return;
-    const playerPos = V.controls.getObject().position;
-
-    for (const mob of V.monsters) {
-      if (!mob.mesh) continue;
-      mob.stateTimer -= delta;
-      maybeRetargetMonster(mob, playerPos);
-
-      const pos = mob.mesh.position;
-      const ground = terrainHeight(worldToBlockCoord(pos.x), worldToBlockCoord(pos.z)) * V.blockSize + V.blockSize * 0.4;
-      const dirX = mob.targetX - pos.x;
-      const dirZ = mob.targetZ - pos.z;
-      const len = Math.hypot(dirX, dirZ) || 1;
-
-      let moveSpeed = mob.speed;
-      if (mob.state === 'look') moveSpeed = 0.4;
-      if (mob.state === 'retreat') moveSpeed *= 1.8;
-      if (mob.state === 'approach') moveSpeed *= 1.1;
-      if (mob.state === 'wander') moveSpeed *= 0.8;
-
-      if (len > 1.2) {
-        pos.x += (dirX / len) * moveSpeed * delta * V.blockSize;
-        pos.z += (dirZ / len) * moveSpeed * delta * V.blockSize;
-        mob.mesh.rotation.y = Math.atan2(dirX, dirZ);
-      } else if (mob.state !== 'look') {
-        mob.stateTimer = 0;
-      }
-
-      pos.y = lerp(pos.y, ground, 0.12);
-
-      const dist = mob.mesh.position.distanceTo(playerPos);
-      if (dist < V.blockSize * 1.1 && mob.kind !== 'deer' && mob.kind !== 'pig') {
-        V.ambient.intensity = Math.max(V.ambient.intensity, 0.22);
-      }
-
-      const unloadLimit = V.blockSize * V.chunkSize * (V.renderRadius + 4);
-      if (Math.abs(pos.x - playerPos.x) > unloadLimit || Math.abs(pos.z - playerPos.z) > unloadLimit) {
-        mob.mesh.visible = false;
-      } else {
-        mob.mesh.visible = true;
-      }
-    }
-
-    V.monsters = V.monsters.filter(m => {
-      if (!m.mesh.visible && m.mesh.position.distanceTo(V.controls.getObject().position) > V.blockSize * V.chunkSize * (V.renderRadius + 4)) {
-        disposeObject3D(m.mesh);
-        return false;
-      }
-      return true;
-    });
-  }
-
-  function updateTargets(delta) {
-    for (const target of V.targets) {
-      if (!target.alive || !target.mesh) continue;
-      target.pulse += delta * 4;
-      target.mesh.rotation.y += delta * 0.6;
-      target.mesh.position.y += Math.sin(target.pulse) * 0.01;
-    }
-  }
-
-  function drawMiniMap() {
-    if (!V.mapCtx || !V.mapCanvas || !V.controls) return;
-    const now = performance.now();
-    if (now - V.mapLastDraw < 220) return;
-    V.mapLastDraw = now;
-
-    const ctx = V.mapCtx;
-    const w = V.mapCanvas.width, h = V.mapCanvas.height;
-    ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = 'rgba(3, 7, 18, 0.95)';
-    ctx.fillRect(0, 0, w, h);
-
-    const pos = V.controls.getObject().position;
-    const px = worldToBlockCoord(pos.x);
-    const pz = worldToBlockCoord(pos.z);
-    const radius = 16;
-    const cell = Math.max(1, Math.floor(w / (radius * 2 + 2)));
-
-    for (let dz = -radius; dz <= radius; dz++) {
-      for (let dx = -radius; dx <= radius; dx++) {
-        const wx = px + dx;
-        const wz = pz + dz;
-        const { biome, h: height } = terrainSample(wx, wz);
-        let color = '#3b82f6';
-        if (height <= V.seaLevel) color = '#2563eb';
-        else if (biome === 'desert') color = '#d8c58a';
-        else if (biome === 'forest') color = '#2f855a';
-        else if (biome === 'snow') color = '#e5eef8';
-        else if (biome === 'mountain') color = '#9ca3af';
-        else color = '#60a94d';
-
-        const alpha = clamp(0.35 + height / 18, 0.35, 0.95);
-        ctx.fillStyle = color;
-        ctx.globalAlpha = alpha;
-        ctx.fillRect((dx + radius + 1) * cell, (dz + radius + 1) * cell, cell, cell);
-      }
-    }
-    ctx.globalAlpha = 1;
-
-    for (const t of V.targets) {
-      if (!t.alive) continue;
-      const tx = worldToBlockCoord(t.mesh.position.x);
-      const tz = worldToBlockCoord(t.mesh.position.z);
-      const dx = tx - px;
-      const dz = tz - pz;
-      if (Math.abs(dx) <= radius && Math.abs(dz) <= radius) {
-        ctx.fillStyle = '#fde047';
-        ctx.fillRect((dx + radius + 1) * cell, (dz + radius + 1) * cell, cell * 1.5, cell * 1.5);
-      }
-    }
-
-    for (const m of V.monsters) {
-      const mx = worldToBlockCoord(m.mesh.position.x);
-      const mz = worldToBlockCoord(m.mesh.position.z);
-      const dx = mx - px;
-      const dz = mz - pz;
-      if (Math.abs(dx) <= radius && Math.abs(dz) <= radius) {
-        ctx.fillStyle = m.kind === 'deer' || m.kind === 'pig' ? '#fca5a5' : '#ef4444';
-        ctx.fillRect((dx + radius + 1) * cell, (dz + radius + 1) * cell, cell, cell);
-      }
-    }
-
-    const center = (radius + 1) * cell;
-    ctx.save();
-    ctx.translate(center, center);
-    ctx.rotate(-V.controls.getObject().rotation.y);
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.moveTo(0, -6);
-    ctx.lineTo(4, 5);
-    ctx.lineTo(-4, 5);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-    ctx.strokeRect(0, 0, w, h);
-
-    const biomeLabel = document.getElementById('vq-biome-label');
-    const entityLabel = document.getElementById('vq-entity-label');
-    const centerBiome = biomeAt(px, pz);
-    if (biomeLabel) biomeLabel.textContent = centerBiome;
-    if (entityLabel) entityLabel.textContent = `${V.monsters.length} mobs`;
-  }
-
-  function updateWorldLabels() {
-    const timeLabel = document.getElementById('vq-world-time-label');
-    const stage = document.getElementById('vq-stage');
-    const score = document.getElementById('vq-score');
-    if (stage) stage.textContent = `收集進度: ${V.targetsFound} / ${V.targetGoal}`;
-    if (score) score.textContent = String(V.scoreXP);
-    if (timeLabel) {
-      const day01 = (Math.sin(V.timeOfDay) + 1) / 2;
-      timeLabel.textContent = day01 > 0.67 ? 'Day' : day01 < 0.33 ? 'Night' : 'Dusk';
-    }
-  }
-
-  function openQuiz(target) {
-    if (!V.overlay || !V.controls) return;
-    V.pausedForQuiz = true;
-    V.currentTarget = target;
-    V.currentMonster = target?.kind === 'monster' ? target.monster : null;
-    V.controls.unlock();
-
-    const q = V.questionPool[V.questionIndex % V.questionPool.length];
-    V.questionIndex++;
-
-    const qEl = document.getElementById('vq-question');
-    const optEl = document.getElementById('vq-options');
-    const stageEl = document.getElementById('vq-quiz-stage');
-    if (stageEl) stageEl.textContent = target?.kind === 'monster' ? '怪物挑戰' : '地圖探索';
-    if (qEl) qEl.innerHTML = (q?.question || '題目載入中...').replace(/\n/g, '<br>');
-    if (optEl) {
-      optEl.innerHTML = '';
-      (q?.options || []).forEach((opt, idx) => {
-        const btn = document.createElement('button');
-        btn.className = 'bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded-2xl p-4 text-left font-bold text-slate-700 transition';
-        btn.innerHTML = `<span class="inline-flex w-8 h-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 mr-3">${String.fromCharCode(65 + idx)}</span>${opt}`;
-        btn.onclick = () => {
-          const correct = typeof q.answer === 'number' ? idx === q.answer : String(opt).trim() === String(q.answer).trim();
-          resolveQuiz(correct);
-        };
-        optEl.appendChild(btn);
-      });
-    }
-    if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise().catch(() => {});
-    V.overlay.classList.remove('hidden');
-  }
-
-  function resolveQuiz(correct) {
-    const overlay = document.getElementById('vq-quiz-overlay');
-    if (overlay) overlay.classList.add('hidden');
-
-    if (correct) {
-      if (V.currentTarget?.kind === 'target' && V.currentTarget?.mesh) {
-        V.currentTarget.alive = false;
-        V.targetsFound++;
-        V.scoreXP += 40;
-        V.currentTarget.mesh.visible = false;
-        V.interactables = V.interactables.filter(o => o !== V.currentTarget.mesh);
-        if (typeof awardXPAndSync === 'function') {
-          awardXPAndSync(40, '3D方塊收集', 40);
-        }
-      } else if (V.currentTarget?.kind === 'monster' && V.currentMonster) {
-        V.currentMonster.hp -= 1;
-        V.scoreXP += 60;
-        if (V.currentMonster.hp <= 0) {
-          disposeObject3D(V.currentMonster.mesh);
-          V.monsters = V.monsters.filter(m => m !== V.currentMonster);
-        } else {
-          V.currentMonster.afraid = 90;
-        }
-        if (typeof awardXPAndSync === 'function') {
-          awardXPAndSync(60, '怪物擊退', 60);
-        }
-      }
-    } else {
-      if (V.currentMonster) V.currentMonster.afraid = 180;
-      if (V.currentTarget?.mesh) {
-        const pos = V.currentTarget.mesh.position;
-        pos.y += V.blockSize * 2.2;
-        pos.x += (Math.random() - 0.5) * V.blockSize * 5;
-        pos.z += (Math.random() - 0.5) * V.blockSize * 5;
-      }
-    }
-
-    V.currentTarget = null;
-    V.currentMonster = null;
-    V.pausedForQuiz = false;
-    updateWorldLabels();
-    if (V.controls) V.controls.lock();
-  }
-
-  function handleCrosshairInteraction() {
-    if (!V.camera || !V.scene || !V.controls) return;
-    V.raycaster.setFromCamera(V.tmpVec2.set(0, 0), V.camera);
-
-    const targets = [];
-    for (const t of V.targets) if (t.alive && t.mesh) targets.push(t.mesh);
-    for (const m of V.monsters) if (m.mesh) targets.push(m.mesh);
-    const hits = V.raycaster.intersectObjects(targets, true);
-    if (!hits.length) return;
-
-    let hit = hits[0].object;
-    let targetMesh = hit;
-    while (targetMesh && !targetMesh.userData?.kind && targetMesh.parent) targetMesh = targetMesh.parent;
-
-    if (targetMesh?.userData?.kind === 'target') {
-      openQuiz({ kind: 'target', mesh: targetMesh, data: targetMesh.userData });
-      return;
-    }
-
-    const mob = V.monsters.find(m => m.mesh === targetMesh || m.mesh.children.includes(targetMesh) || m.mesh.getObjectById?.(targetMesh.id));
-    if (mob) {
-      openQuiz({ kind: 'monster', monster: mob, mesh: mob.mesh });
-    }
-  }
-
-  function startVoxelLite() {
-    if (!ensureScene()) return;
-    V.questionPool = safeQuestions(18);
-    V.questionIndex = 0;
-    V.targetsFound = 0;
-    V.scoreXP = 0;
-    V.running = true;
-    V.mode = 'voxel';
-    V.clockPrev = performance.now();
-    V.frame = 0;
-    V.pausedForQuiz = false;
-    if (V.container) V.container.innerHTML = '';
-    V.container.appendChild(V.renderer.domElement);
-
-    clearWorld();
-    ensureHudWidgets();
-    V.targets = [];
-    V.monsters = [];
-    V.interactables = [];
-
-    // prebuild around spawn
-    const pos = V.controls.getObject().position;
-    pos.set(0, (terrainHeight(0, 0) + 4) * V.blockSize, 0);
-    ensureChunksAroundPlayer();
-    for (let i = 0; i < 6; i++) processChunkQueue();
-
-    if (V.blocker) V.blocker.style.display = 'flex';
-    if (V.hud) V.hud.classList.add('hidden');
-    if (V.crosshair) V.crosshair.classList.add('hidden');
-
-    updateWorldLabels();
-    if (V.animationId) cancelAnimationFrame(V.animationId);
-    animate();
-    if (V.controls) V.controls.lock();
-  }
-
-  function animate() {
-    if (!V.running) return;
-    V.animationId = requestAnimationFrame(animate);
-    const now = performance.now();
-    const delta = Math.min((now - V.clockPrev) / 1000, 0.05);
-    V.clockPrev = now;
-    V.frame++;
-
-    if (V.controls && V.controls.isLocked && !V.pausedForQuiz) {
-      updatePlayerMovement(delta);
-      if (V.frame % 2 === 0) updateTargets(delta * 2);
-      if (V.frame % 3 === 0) {
-        updateDayNight(delta * 3);
-        ensureChunksAroundPlayer();
-        processChunkQueue();
-      }
-      if (V.frame % 4 === 0) updateMonsters(delta * 4);
-      drawMiniMap();
-      updateWorldLabels();
-    }
-
-    if (V.renderer && V.scene && V.camera) V.renderer.render(V.scene, V.camera);
-  }
-
-  function stopVoxelLite() {
-    V.running = false;
-    V.pausedForQuiz = false;
-    if (V.animationId) cancelAnimationFrame(V.animationId);
-    if (V.controls) {
-      try { V.controls.unlock(); } catch (e) {}
-    }
-    if (V.blocker) V.blocker.style.display = 'flex';
-    if (V.crosshair) V.crosshair.classList.add('hidden');
-    if (V.hud) V.hud.classList.add('hidden');
-  }
-
-  window.startGame = function(id) {
-    if (id === 'voxel') return startVoxelLite();
-    if (typeof originalStartGame === 'function') return originalStartGame.call(window, id);
   };
 
-  window.backToMenu = function() {
-    if (V.running) stopVoxelLite();
-    if (typeof originalBackToMenu === 'function') return originalBackToMenu.call(window);
-    const gameMenu = document.getElementById('gameMenu');
-    const voxelGame = document.getElementById('game-voxel');
-    const banner = document.getElementById('voxelHeroBanner');
-    if (voxelGame) voxelGame.classList.add('hidden');
-    if (gameMenu) gameMenu.classList.remove('hidden');
-    if (banner) banner.classList.remove('hidden');
+  // --------------------------------------------------
+  // 讓世界更像「真實世界」：更新 chunk 邏輯時順手補地圖生命
+  // --------------------------------------------------
+  window.vqEnsureChunksAroundPlayer = function () {
+    if (original.ensureChunks) original.ensureChunks();
+    if (window.vqControls && window.vqScene) {
+      ensureMinimap();
+      drawMinimap();
+    }
   };
 
-  window.triggerVoxelQuiz = function(target) {
-    if (!target) return;
-    openQuiz(target);
+  // --------------------------------------------------
+  // 啟動 / 返回時清理
+  // --------------------------------------------------
+  window.initVoxel = function () {
+    const result = original.initVoxel ? original.initVoxel.apply(this, arguments) : undefined;
+    setTimeout(() => {
+      ensureMinimap();
+      if (window.vqTargetCubes && window.vqTargetCubes.length === 0) {
+        if (typeof window.spawnTargetCubes === 'function') window.spawnTargetCubes(6);
+      }
+      if (!state.minimapTimer) {
+        state.minimapTimer = setInterval(() => {
+          state.arrowCooldown = Math.max(0, state.arrowCooldown - 1);
+          drawMinimap();
+        }, 260);
+      }
+    }, 120);
+    return result;
   };
 
-  if (window.ThemeEngine && typeof window.ThemeEngine.updateThemeUI === 'function') {
-    const themeApply = window.ThemeEngine.apply?.bind(window.ThemeEngine);
-    window.ThemeEngine.apply = async function(input) {
-      const user = (() => {
-        try { return JSON.parse(localStorage.getItem('currentUser') || '{}'); } catch (e) { return {}; }
-      })();
-      const username = typeof input === 'string' && isNaN(Number(input)) ? input : (user.username || user.name || '');
-      const xp = typeof input === 'number' ? input : Number(user.xp) || 0;
-      try { this.updateThemeUI(xp); } catch (e) {}
-      if (!username || !themeApply) return;
-      try { return await themeApply(username); } catch (e) { return; }
-    };
+  window.backToMenu = function () {
+    if (state.minimapTimer) {
+      clearInterval(state.minimapTimer);
+      state.minimapTimer = null;
+    }
+    if (original.backToMenu) original.backToMenu();
+    const minimap = document.getElementById('vq-minimap-wrap');
+    if (minimap && minimap.parentNode) minimap.parentNode.removeChild(minimap);
+  };
+
+  // 初始繪製一次，避免剛進入時空白
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    ensureMinimap();
+  } else {
+    document.addEventListener('DOMContentLoaded', ensureMinimap);
   }
-
-  window.__VQ_LITE_API__ = {
-    start: startVoxelLite,
-    stop: stopVoxelLite,
-    get state() { return V; }
-  };
 })();
-
 </script>
+
 </body>
 </html>
