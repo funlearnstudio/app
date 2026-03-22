@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+
+    <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -10,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/gh/josephg/noisejs/perlin.js"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-     <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
+    
     <script src="mockdata/users.js"></script>
     <script src="assets/js/auth.js"></script>
     <script src="assets/js/generator_engine.js"></script>
@@ -294,7 +295,7 @@ function openBossQuiz() {
             const cloudQ = window.generatePaper({ 
                 subject: randomSubject, 
                 total: 1, 
-                tags: [] // 如果要全科隨機抽，這裡就不要鎖定 tag；或者你可以加入 ['大魔王']
+                tags: [] 
             });
             
             if(cloudQ && cloudQ.length > 0) {
@@ -404,6 +405,11 @@ function spawnAnimal(type, pos) {
     entities.push({ group, velocity: new THREE.Vector3(0, 0, 0), nextStateTime: 0, state: 'idle' });
 }
 
+function spawnTree(x, z, h) {
+    for(let y=h+1; y<=h+3; y++) addBlock(x, y, z, 'wood'); 
+    for(let ox=-1; ox<=1; ox++) for(let oz=-1; oz<=1; oz++) addBlock(x+ox, h+4, z+oz, 'leaves'); 
+}
+
 let lastChunkX = -999, lastChunkZ = -999;
 function updateInfiniteTerrain() {
     const pX = Math.floor(camera.position.x);
@@ -419,7 +425,12 @@ function updateInfiniteTerrain() {
         for (let z = pZ - range; z < pZ + range; z++) {
             const key = getBlockKey(x, 0, z);
             if (!blocks.has(key)) {
+                // 生成草地
                 addBlock(x, 0, z, 'grass');
+                
+                // 🌳 加入生成樹木 (2% 機率)
+                if (Math.random() < 0.02) spawnTree(x, z, 0); 
+                
                 if (Math.random() < 0.002) spawnBoss(x, 1, z); 
                 if (Math.random() < 0.02) {
                     const plants = ['apple', 'banana', 'carrot', 'tomato', 'grass_bush'];
@@ -505,7 +516,8 @@ document.getElementById('btn-break').onclick = () => {
     raycaster.setFromCamera(center, camera);
     const intersects = raycaster.intersectObjects(scene.children, true);
 
-    if (intersects.length > 0 && intersects[0].distance < 5) {
+    // ⚔️ 已修正：將 distance 改為 8，確保打得到動物
+    if (intersects.length > 0 && intersects[0].distance < 8) {
         const target = intersects[0].object;
         let animalGroup = target;
         while(animalGroup && !animalGroup.userData.type) animalGroup = animalGroup.parent;
@@ -552,7 +564,7 @@ document.getElementById('btn-place').onclick = () => {
     if (!currentItem || ITEM_REGISTRY[currentItem].type !== 'block' || inventory[currentItem] <= 0) return;
     raycaster.setFromCamera(center, camera);
     const intersects = raycaster.intersectObjects(scene.children).filter(i => i.object.geometry.type === 'BoxGeometry');
-    if (intersects.length > 0 && intersects[0].distance < 5) {
+    if (intersects.length > 0 && intersects[0].distance < 8) {
         swingHand();
         const normal = intersects[0].face.normal;
         const pos = intersects[0].object.position.clone().add(normal);
@@ -563,6 +575,7 @@ document.getElementById('btn-place').onclick = () => {
     }
 };
 
+// 鍵盤移動與數字鍵
 document.addEventListener('keydown', e => {
     keysPressed[e.key.toLowerCase()] = true;
     if(['1','2','3','4','5','6','7','8'].includes(e.key)) {
@@ -573,6 +586,24 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('keyup', e => keysPressed[e.key.toLowerCase()] = false);
 
+// 🖱️ 已新增：綁定電腦滑鼠點擊 (左鍵攻擊/挖礦，右鍵放置方塊)
+document.addEventListener('mousedown', (e) => {
+    // 防止點擊到 UI 時誤觸動作
+    if (e.target.tagName === 'BUTTON' || 
+        e.target.closest('.status-ui') || 
+        e.target.closest('#hotbar-outer') || 
+        e.target.closest('#sidebar') || 
+        e.target.closest('.overlay-box')) return;
+    
+    if (e.button === 0) { 
+        document.getElementById('btn-break').click();
+    } else if (e.button === 2) { 
+        document.getElementById('btn-place').click();
+    }
+});
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+// 搖桿設置
 function setupJoy(id, knobId, outObj) {
     const zone = document.getElementById(id), knob = document.getElementById(knobId);
     let activeId = null; let centerX, centerY;
