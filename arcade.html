@@ -1373,24 +1373,27 @@ function getBlock(x, y, z) {
     if(worldGrid[x] && worldGrid[x][y]) return worldGrid[x][y][z];
     return undefined;
 }
+
+
 // ==========================================
-// 🛡️ 終極碰撞偵測 (強制綁定在 window 上，保證絕對找得到！)
+// 🛡️ 真實地形碰撞偵測 (真正踩在方塊上！)
 // ==========================================
 window.vqCheckCollision = function(x, y, z) {
-    // 絕對防護網：如果你掉到 -50，直接強制判定為踩到地板托住你
-    if (y < -50) return true;
+    // 終極安全網：萬一真的掉出世界邊緣 (Y < -100)，才強制把你托住
+    if (y < -100) return true;
 
     let currentBlockSize = window.blockSize || 10;
+    // 將玩家的 3D 空間座標轉換為「方塊網格座標」
     let bx = Math.round(x / currentBlockSize);
-    let by = Math.round((y - 5) / currentBlockSize); // 玩家腳底的格子
+    let by = Math.round((y - 5) / currentBlockSize); // 玩家腳底所在的方塊
     let bz = Math.round(z / currentBlockSize);
 
-    // 檢查某個網格座標是否有實體方塊
+    // 檢查某個網格有沒有「實體方塊」
     function checkSolid(wx, wy, wz) {
-        // 1. 檢查舊版手動物件 (例如 5 顆題目方塊)
+        // 1. 檢查 5 顆題目方塊
         if (typeof window.getBlock === 'function' && window.getBlock(wx, wy, wz)) return true;
         
-        // 2. 檢查新版無限生態區塊
+        // 2. 檢查大自然生態系 (高山、泥土、草地)
         const VQ_CHUNK_SIZE = 16; 
         const cx = Math.floor(wx / VQ_CHUNK_SIZE);
         const cz = Math.floor(wz / VQ_CHUNK_SIZE);
@@ -1398,8 +1401,9 @@ window.vqCheckCollision = function(x, y, z) {
         if (typeof window.vqInf !== 'undefined' && window.vqInf.chunks) {
             const chunk = window.vqInf.chunks.get(`${cx},${cz}`); 
             if (chunk && chunk.baseLookup) {
+                // 根據座標去查那一格是不是有方塊
                 const blockType = chunk.baseLookup.get(`${wx}|${wy}|${wz}`);
-                // 只要不是水或可穿透的植物，就是撞到牆或踩到地板
+                // 如果有方塊，而且「不是」水、草、花 (因為這些可以直接走過去)
                 if (blockType && blockType !== 'water' && blockType !== 'tall_grass' && 
                     blockType !== 'red_flower' && blockType !== 'yellow_flower') {
                     return true;
@@ -1409,11 +1413,10 @@ window.vqCheckCollision = function(x, y, z) {
         return false;
     }
 
-    // 檢查腳底 (by)、身體 (by+1) 甚至稍微往下探一點 (by-1)，確保萬無一失
+    // 同時檢查腳底下 (by)、下半身 (by+1) 和腳趾頭 (by-1) 是否撞到方塊
     return checkSolid(bx, by, bz) || checkSolid(bx, by + 1, bz) || checkSolid(bx, by - 1, bz);
 };
 
-// 買個雙重保險，不管遊戲是用哪個名字呼叫，都指派給這個函數
 window.checkCollision = window.vqCheckCollision;
 // ==========================================
 // 🌱 安全降落島 (保證一出生絕對有地板可以踩)
@@ -1540,20 +1543,7 @@ function vqGenerateSafeFloor() {
     }
 }
 
-// 🛡️ 最霸道的碰撞偵測：不查方塊了，只要高度低於 15，一律視為踩到地板！
-window.vqCheckCollision = function(x, y, z) {
-    if (y <= 15) return true; // 絕對不可能再掉下去了！
-    
-    // 讓你依然可以跳到題目方塊上
-    let bx = Math.round(x / 10);
-    let by = Math.round((y - 5) / 10);
-    let bz = Math.round(z / 10);
-    if (typeof getBlock === 'function') {
-        if (getBlock(bx, by, bz) || getBlock(bx, by + 1, bz)) return true;
-    }
-    return false;
-};
-window.checkCollision = window.vqCheckCollision;
+
 function initVoxel() {
     // --- 第一部分：遊戲邏輯與題庫檢查 ---
     if(!currentSubject) { 
@@ -1574,7 +1564,7 @@ function initVoxel() {
     if(document.getElementById('vq-stage')) document.getElementById('vq-stage').textContent = `收集進度: ${cubesFound} / ${TARGET_COUNT}`;
     if(document.getElementById('vq-score')) document.getElementById('vq-score').textContent = vqTotalXP;
 // 👇 加上這一行！強制生成實體草地！
-    vqGenerateSafeFloor();
+  //  vqGenerateSafeFloor();
     // --- 第二部分：建立 3D 世界 ---
     const container = document.getElementById('vq-canvas-container');
     if (!container) return;
