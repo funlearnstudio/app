@@ -719,33 +719,48 @@ const ITEM_REGISTRY = {
         // 初始化
         window.onload = () => { renderUI(); updateStats(0,0); updateGame(); };
         window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
-// 確保場景渲染的迴圈
+// 1. 真正的啟動引擎 (每秒執行 60 次)
 function animate() {
     requestAnimationFrame(animate);
     
-    // 讓魔王方塊(閻羅王)有脈動效果 (理化能量感)
+    // 讓閻羅王(Boss)旋轉並發光，證明程式有在跑
     if (bossEntity) {
-        const s = 1 + Math.sin(Date.now() * 0.005) * 0.1;
-        bossEntity.scale.set(s, s, s);
+        bossEntity.rotation.y += 0.01;
+        const pulse = 1 + Math.sin(Date.now() * 0.005) * 0.2;
+        bossEntity.scale.set(pulse, pulse, pulse);
     }
+
+    // 更新無限地形 (當玩家移動時)
+    updateInfiniteTerrain();
     
-    updateCrosshairSystem(); // 每幀更新準心
-    updateInfiniteTerrain(); // 無限地形延伸
-    
+    // 更新準心偵測
+    updateCrosshairSystem();
+
+    // 渲染畫面
     renderer.render(scene, camera);
 }
 
-// 修正玩家出生點，避免黑屏 (埋在土裡)
-function init() {
-    camera.position.set(0, 10, 10); // 抬高相機
-    camera.lookAt(0, 5, 0);
-    spawnBoss();      // 召喚閻羅王
-    spawnAnimal('pig'); // 召喚豬
-    spawnAnimal('cow'); // 召喚牛
-    animate();        // 開始渲染
+// 2. 初始化世界
+function initGame() {
+    console.log("🚀 正在啟動理化生存世界...");
+    
+    // 確保相機不要在 0,0,0 (會黑屏)
+    camera.position.set(0, 5, 10);
+    camera.lookAt(0, 0, 0);
+
+    // 產生初始地形
+    updateInfiniteTerrain();
+    
+    // 產生 Boss 與 UI
+    spawnBoss();
+    renderUI();
+    
+    // 正式開始動畫迴圈
+    animate();
 }
 
-init();
+// 執行！
+initGame();
     </script>
 </body>
 </html>
