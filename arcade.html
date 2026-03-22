@@ -1415,7 +1415,42 @@ window.vqCheckCollision = function(x, y, z) {
 
 // 買個雙重保險，不管遊戲是用哪個名字呼叫，都指派給這個函數
 window.checkCollision = window.vqCheckCollision;
-
+// ==========================================
+// 🌱 安全降落島 (保證一出生絕對有地板可以踩)
+// ==========================================
+window.generateFastVoxelFloor = function() {
+    const size = 60; // 生成 60x60 的安全區
+    let currentBlockSize = window.blockSize || 10;
+    const geo = new THREE.BoxGeometry(currentBlockSize, currentBlockSize, currentBlockSize);
+    const mat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+    const instanced = new THREE.InstancedMesh(geo, mat, size * size);
+    
+    let dummy = new THREE.Object3D();
+    
+    // 確保有抓到草地顏色，否則用預設的綠色
+    let grassColor = 0x4CAF50; 
+    if (typeof BLOCK_TYPES !== 'undefined' && BLOCK_TYPES['grass']) {
+        grassColor = BLOCK_TYPES['grass'];
+    }
+    let colorObj = new THREE.Color(grassColor); 
+    let index = 0;
+    
+    for(let x = -size/2; x < size/2; x++) {
+        for(let z = -size/2; z < size/2; z++) {
+            // 在系統裡註冊這塊地板，讓碰撞偵測能認得它
+            if (typeof setBlock === 'function') setBlock(x, 0, z, 'grass'); 
+            
+            dummy.position.set(x * currentBlockSize, 0, z * currentBlockSize);
+            dummy.updateMatrix();
+            instanced.setMatrixAt(index, dummy.matrix);
+            instanced.setColorAt(index, colorObj);
+            index++;
+        }
+    }
+    instanced.instanceMatrix.needsUpdate = true;
+    instanced.instanceColor.needsUpdate = true;
+    if (window.vqScene) window.vqScene.add(instanced);
+};
 // ==========================================
 // 🌱 2. 超輕量級平坦地板 (生成綠色草地)
 // ==========================================
@@ -1591,7 +1626,8 @@ function initVoxel() {
     // 🌟 生成草地與目標方塊！
     if (typeof spawnTargetCubes === 'function') spawnTargetCubes(TARGET_COUNT || 5); 
  
-
+// 👇 加回這一行！保證有地板！
+    if (typeof window.generateFastVoxelFloor === 'function') window.generateFastVoxelFloor();
     vqControls.getObject().position.set(0, 80, 0); // 玩家降落！
 
     vqRenderer = new THREE.WebGLRenderer({ antialias: false });
