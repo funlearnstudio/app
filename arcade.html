@@ -1399,31 +1399,48 @@ function initVoxel() {
     setupThreeJS();
 }
 // ==========================================
-// ✅ 安全接管 startGame
+// ✅ 安全接管 startGame（唯一版本）
 // ==========================================
 
+// 保證 startGame 存在
 if (typeof window.startGame !== "function") {
     window.startGame = function(id) {
         console.warn("⚠️ startGame 尚未定義:", id);
     };
 }
 
+// 保存舊的
 const originalStartGame = window.startGame;
 
+// 接管
 window.startGame = function(id) {
+    console.log("🎮 startGame:", id);
+
     if(id === 'voxel') {
-        document.getElementById('gameMenu').classList.add('hidden');
-        document.getElementById('voxelHeroBanner').classList.add('hidden');
+
+        const gameMenu = document.getElementById('gameMenu');
+        if (gameMenu) gameMenu.classList.add('hidden');
+
+        const banner = document.getElementById('voxelHeroBanner');
+        if (banner) banner.classList.add('hidden');
+
         document.querySelectorAll('.game-section').forEach(el => el.classList.add('hidden'));
-        document.getElementById('game-voxel').classList.remove('hidden');
-        initVoxel();
+
+        const voxelGame = document.getElementById('game-voxel');
+        if (voxelGame) {
+            voxelGame.classList.remove('hidden');
+            initVoxel();
+        } else {
+            alert("❌ 找不到 #game-voxel");
+        }
+
     } else {
-        document.getElementById('voxelHeroBanner').classList.add('hidden');
+        const banner = document.getElementById('voxelHeroBanner');
+        if (banner) banner.classList.add('hidden');
+
         if (originalStartGame) originalStartGame(id);
     }
 };
-// 攔截 startGame
-// 攔截 startGame (加入安全檢查)
 const originalStartGame = window.startGame;
 window.startGame = function(id) {
     if(id === 'voxel') {
