@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D 生存學習世界 - 雲端學院</title>
+    <title>3D 生存學習世界 - 物理重力修復版</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -15,21 +15,7 @@
     <script src="assets/js/auth.js"></script>
     <script src="assets/js/generator_engine.js"></script>
     <script src="mockdata/generator_engine_polyfill.js"></script>
-    <script src="mockdata/AutoTemplateFissionFactory.js"></script>
-    <script src="mockdata/auto_fission_bootstrap.js"></script>
     <script src="mockdata/paper_generator.js"></script>
-    <script src="mockdata/curriculum_integrated.js"></script>
-    
-    <script src="mockdata/templates_math_algebra_geometry.js"></script>
-    <script src="mockdata/templates_physics_multistep.js"></script>
-    <script src="mockdata/templates_chemistry_core.js"></script>
-    <script src="mockdata/templates_biology_core.js"></script>
-    <script src="mockdata/templates_earth_science_core.js"></script>
-    <script src="mockdata/templates_english_core.js"></script>
-    <script src="mockdata/templates_chinese_core.js"></script>
-    <script src="mockdata/templates_history_core.js"></script>
-    <script src="mockdata/templates_geography_core.js"></script>
-    <script src="mockdata/templates_civics_core.js"></script>
 
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Noto Sans TC', sans-serif; touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -175,36 +161,50 @@
         }
 
         // ==========================================
-        // 2. 遊戲資料與介面初始化
+        // 2. 遊戲資料與合成表
         // ==========================================
         const ITEM_REGISTRY = {}; const RECIPES = []; let playerInventory = {};
         
-        // 擴增基礎材料
         const baseMats = [
             { id: 'wood', n: '木頭', i: '🪵', isBlock: true, bType: 4 }, 
             { id: 'stone', n: '石頭', i: '🪨', isBlock: true, bType: 3 },
             { id: 'dirt', n: '泥土', i: '🟤', isBlock: true, bType: 2 },
             { id: 'iron_ore', n: '鐵礦石', i: '🪨' }, { id: 'diamond_ore', n: '鑽石礦', i: '💎' }, 
-            { id: 'coal', n: '煤炭', i: '⚫' }, { id: 'wool', n: '羊毛', i: '🧶' }, { id: 'leather', n: '皮革', i: '🐄' }
+            { id: 'iron_ingot', n: '鐵錠', i: '⚪' }, { id: 'diamond', n: '鑽石', i: '💎' }, 
+            { id: 'coal', n: '煤炭', i: '⚫' }, { id: 'stick', n: '木棍', i: '🦯' }, { id: 'slime', n: '粘液', i: '💧' },
+            { id: 'wool', n: '羊毛', i: '🧶' }
         ];
-        // 擴增食物
         const foodMats = [
             { id: 'apple', n: '蘋果', i: '🍎', r: 10, h: 10 }, 
-            { id: 'meat', n: '豬肉', i: '🥩', r: 5 },
-            { id: 'beef', n: '生牛肉', i: '🥩', r: 5 },
-            { id: 'chicken_meat', n: '生雞肉', i: '🍗', r: 5 },
-            { id: 'egg', n: '雞蛋', i: '🥚', r: 2 },
-            { id: 'cooked_meat', n: '烤肉', i: '🍖', r: 30, h: 25 },
-            { id: 'cooked_beef', n: '牛排', i: '🥩', r: 40, h: 30 },
+            { id: 'meat', n: '豬肉', i: '🥩', r: 5 }, { id: 'beef', n: '生牛肉', i: '🥩', r: 5 },
+            { id: 'chicken_meat', n: '生雞肉', i: '🍗', r: 5 }, { id: 'egg', n: '雞蛋', i: '🥚', r: 2 },
+            { id: 'cooked_meat', n: '烤肉', i: '🍖', r: 30, h: 25 }, { id: 'cooked_beef', n: '牛排', i: '🥩', r: 40, h: 30 },
             { id: 'cooked_chicken', n: '烤雞', i: '🍗', r: 25, h: 20 }
         ];
 
         [...baseMats, ...foodMats].forEach(m => ITEM_REGISTRY[m.id] = { name: m.n, icon: m.i, type: m.r !== undefined ? 'food' : 'mat', restore: m.r, heal: m.h||0, isBlock: m.isBlock, bType: m.bType });
         
-        RECIPES.push({ id: 'cooked_meat', name: '烤肉', icon: '🍖', req: [{id:'meat', count:1}, {id:'coal', count:1}], count: 1 });
+        const tiers = [{id:'wood', n:'木', mat:'wood'}, {id:'stone', n:'石', mat:'stone'}, {id:'iron', n:'鐵', mat:'iron_ingot'}, {id:'diamond', n:'鑽石', mat:'diamond'}];
+        const tools = [{id:'pickaxe', n:'鎬', i:'⛏️', q:3}, {id:'axe', n:'斧', i:'🪓', q:3}, {id:'sword', n:'劍', i:'🗡️', q:2}];
+        tiers.forEach(t => {
+            tools.forEach(tool => {
+                ITEM_REGISTRY[`${t.id}_${tool.id}`] = { name: `${t.n}${tool.n}`, icon: tool.i, type: 'tool' };
+                RECIPES.push({ id: `${t.id}_${tool.id}`, name: `${t.n}${tool.n}`, icon: tool.i, req: [{ id: t.mat, count: tool.q }, { id: 'stick', count: 2 }], count: 1 });
+            });
+        });
+
+        RECIPES.push({ id: 'stick', name: '木棍 x4', icon: '🦯', req: [{id:'wood', count:2}], count: 4 });
+        RECIPES.push({ id: 'torch', name: '火把 x4', icon: '🔥', req: [{id:'stick', count:1}, {id:'coal', count:1}], count: 4 });
+        ITEM_REGISTRY['torch'] = { name: '火把', icon: '🔥', type: 'block' };
+
+        RECIPES.push({ id: 'iron_ingot', name: '熔煉鐵錠', icon: '⚪', req: [{id:'iron_ore', count:1}, {id:'coal', count:1}], count: 1 });
+        RECIPES.push({ id: 'cooked_meat', name: '烤豬肉', icon: '🍖', req: [{id:'meat', count:1}, {id:'coal', count:1}], count: 1 });
         RECIPES.push({ id: 'cooked_beef', name: '牛排', icon: '🥩', req: [{id:'beef', count:1}, {id:'coal', count:1}], count: 1 });
         RECIPES.push({ id: 'cooked_chicken', name: '烤雞', icon: '🍗', req: [{id:'chicken_meat', count:1}, {id:'coal', count:1}], count: 1 });
 
+        // ==========================================
+        // 音效、介面與玩家狀態
+        // ==========================================
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSnd(t) {
             if(audioCtx.state === 'suspended') audioCtx.resume();
@@ -223,7 +223,7 @@
 
         let currentUser = { username: "guest", xp: 0 };
         let hp = 100, energy = 100, selectedSlot = 0;
-        playerInventory['wood'] = 20; playerInventory['dirt'] = 20; playerInventory['apple'] = 5;
+        playerInventory['wood'] = 20; playerInventory['stone'] = 10; playerInventory['apple'] = 5;
 
         window.onload = () => {
             try { if (typeof Auth !== 'undefined' && Auth.getCurrentUser()) currentUser = Auth.getCurrentUser(); } catch(e) {}
@@ -246,7 +246,8 @@
 
         function die() {
             showMsg("💀 你死亡了！", '#ef4444');
-            camera.position.set(0, startH + 10, 0); hp = 100; energy = 50; 
+            camera.position.set(0, 100, 0); // 隨便設個高點，後面會自動吸附地面
+            hp = 100; energy = 50; 
             modifyStat('hp', 0); modifyStat('energy', 0);
         }
 
@@ -289,10 +290,10 @@
         }
 
         // ==========================================
-        // 3. Three.js: 藍天、地形、茂密樹林與動物
+        // 3. Three.js: 藍天、地形、動物與粒子
         // ==========================================
         const scene = new THREE.Scene(); 
-        scene.background = new THREE.Color(0x87CEEB); // 🌤️ 修復天空變成死黑的問題！
+        scene.background = new THREE.Color(0x87CEEB); 
         scene.fog = new THREE.Fog(0x87CEEB, 2, 40);
         
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 100);
@@ -336,7 +337,7 @@
         function getH(x, z) { return Math.floor(Math.pow((noise.perlin2(x/40, z/40)+1.5)/2, 2) * 12) + 1; }
         
         const startH = getH(0, 0); 
-        camera.position.set(0, startH + 5, 0); // 防活埋出生點
+        camera.position.set(0, startH + 5, 0); 
 
         function genChunk(cx, cz) {
             const key = `${cx},${cz}`; if(chunks.has(key)) return chunks.get(key);
@@ -345,19 +346,16 @@
             for(let x=0; x<16; x++) for(let z=0; z<16; z++) {
                 const wx=cx*16+x, wz=cz*16+z; const h = getH(wx, wz);
                 
-                // 地面
                 for(let y=0; y<=h; y++) { let t = (y === h) ? (h < 4 ? BLOCK.DIRT : BLOCK.GRASS) : (y > h-3 ? BLOCK.DIRT : BLOCK.STONE); poses.push({x:wx, y, z:wz, t}); counts[t]++; }
                 
-                // 🌳 茂密的森林 (機率提升並增加樹冠)
-                if(h >= 4 && Math.random() < 0.08) { 
-                    for(let ty=1; ty<=4; ty++) { poses.push({x:wx, y:h+ty, z:wz, t:BLOCK.WOOD}); counts[BLOCK.WOOD]++; } // 樹幹
-                    poses.push({x:wx, y:h+5, z:wz, t:BLOCK.LEAVES}); counts[BLOCK.LEAVES]++; // 頂端樹葉
-                    poses.push({x:wx+1, y:h+4, z:wz, t:BLOCK.LEAVES}); counts[BLOCK.LEAVES]++; // 四周樹葉
+                if(h >= 4 && Math.random() < 0.05) { 
+                    for(let ty=1; ty<=4; ty++) { poses.push({x:wx, y:h+ty, z:wz, t:BLOCK.WOOD}); counts[BLOCK.WOOD]++; }
+                    poses.push({x:wx, y:h+5, z:wz, t:BLOCK.LEAVES}); counts[BLOCK.LEAVES]++; 
+                    poses.push({x:wx+1, y:h+4, z:wz, t:BLOCK.LEAVES}); counts[BLOCK.LEAVES]++; 
                     poses.push({x:wx-1, y:h+4, z:wz, t:BLOCK.LEAVES}); counts[BLOCK.LEAVES]++;
                     poses.push({x:wx, y:h+4, z:wz+1, t:BLOCK.LEAVES}); counts[BLOCK.LEAVES]++;
                     poses.push({x:wx, y:h+4, z:wz-1, t:BLOCK.LEAVES}); counts[BLOCK.LEAVES]++;
                 } 
-                // 題目方塊
                 else if(h >= 4 && Math.random() < 0.005) { 
                     const q = new THREE.Mesh(box, MATS[BLOCK.QUESTION]); q.position.set(wx, h+1, wz); q.userData = { isQ:true, wy:h+1 }; scene.add(q); interactables.push(q);
                 }
@@ -371,48 +369,32 @@
             scene.add(group); chunks.set(key, {group, active:true}); return chunks.get(key);
         }
 
-        // ==========================================
-        // 🐄 豐富的動物系統 (豬、牛、羊、雞會生蛋)
-        // ==========================================
         const ANIMALS = [
-            { type: 'pig', icon: '🐷', hp: 2, drop: 'meat' },
-            { type: 'cow', icon: '🐮', hp: 3, drop: 'beef' },
-            { type: 'sheep', icon: '🐑', hp: 2, drop: 'wool' },
-            { type: 'chicken', icon: '🐔', hp: 1, drop: 'chicken_meat' }
+            { type: 'pig', icon: '🐷', drop: 'meat' }, { type: 'cow', icon: '🐮', drop: 'beef' },
+            { type: 'sheep', icon: '🐑', drop: 'wool' }, { type: 'chicken', icon: '🐔', drop: 'chicken_meat' }
         ];
         const animalMats = {};
         ANIMALS.forEach(a => animalMats[a.type] = gTex('#ffffff', '#eeeeee', a.icon));
 
         function spawnAnimal() {
             let a = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
-            let px = camera.position.x + (Math.random()-0.5)*40;
-            let pz = camera.position.z + (Math.random()-0.5)*40;
-            let h = getH(px, pz);
-            let mesh = new THREE.Mesh(box, animalMats[a.type]);
-            mesh.scale.set(0.8, 0.8, 0.8);
-            mesh.position.set(px, h+1, pz);
-            mesh.userData = { isMob:true, type: a.type, drop: a.drop, hp: a.hp, lastEgg: Date.now() };
+            let px = camera.position.x + (Math.random()-0.5)*30, pz = camera.position.z + (Math.random()-0.5)*30;
+            let mesh = new THREE.Mesh(box, animalMats[a.type]); mesh.scale.set(0.8, 0.8, 0.8); mesh.position.set(px, getH(px,pz)+1, pz);
+            mesh.userData = { isMob:true, type: a.type, drop: a.drop, lastEgg: Date.now() };
             scene.add(mesh); interactables.push(mesh);
         }
 
-        // 維持場上一直有很多動物
         setInterval(() => {
-            let animalCount = interactables.filter(i => i.userData.isMob && ANIMALS.find(at=>at.type===i.userData.type)).length;
-            if(animalCount < 15) spawnAnimal(); 
-        }, 3000);
-
-        // 巨魔 Boss (低機率)
-        const bossMat = gTex('#991b1b', '#7f1d1d', '👹');
-        setInterval(() => {
-            if(Math.random() < 0.1) {
+            if(interactables.filter(i => i.userData.isMob && ANIMALS.find(at=>at.type===i.userData.type)).length < 15) spawnAnimal(); 
+            if(Math.random() < 0.05) {
                 let px = camera.position.x+(Math.random()-0.5)*40, pz = camera.position.z+(Math.random()-0.5)*40;
-                let b = new THREE.Mesh(box, bossMat); b.scale.set(2,2,2); b.position.set(px, getH(px,pz)+2, pz); 
+                let b = new THREE.Mesh(box, gTex('#991b1b', '#7f1d1d', '👹')); b.scale.set(2,2,2); b.position.set(px, getH(px,pz)+2, pz); 
                 b.userData={isMob:true, type:'boss', hp:3, wy:getH(px,pz)+2}; scene.add(b); interactables.push(b); showMsg("⚠️ 知識巨魔出現！", '#ef4444');
             }
-        }, 60000);
+        }, 5000);
 
         // ==========================================
-        // 4. 動態準心與雙搖桿互動控制 (極致操作體驗)
+        // 4. 🚀 真正的物理探測 (修正打洞與瞄準 Bug)
         // ==========================================
         const raycaster = new THREE.Raycaster();
         let currentIntersect = null;
@@ -427,8 +409,7 @@
                     const mat = new THREE.Matrix4(); currentIntersect.object.getMatrixAt(currentIntersect.instanceId, mat);
                     targetBox.position.setFromMatrixPosition(mat);
                 } else {
-                    targetBox.scale.set(1, 1, 1);
-                    targetBox.position.copy(currentIntersect.object.position);
+                    targetBox.scale.set(1, 1, 1); targetBox.position.copy(currentIntersect.object.position);
                 }
             } else { currentIntersect = null; targetBox.visible = false; }
         }
@@ -440,34 +421,42 @@
             const obj = currentIntersect.object;
 
             if(action === 'interact') {
-                if(obj.userData.isNPC) { openNpc(obj.userData.data); return; }
                 if(obj.userData.isQ || obj.userData.isMob) { openQuiz(obj); return; }
-                // 撿起雞蛋
                 if(obj.userData.isItem && obj.userData.id === 'egg') {
                     playSnd('success'); playerInventory['egg'] = (playerInventory['egg']||0) + 1; showMsg('撿起 🥚雞蛋');
                     scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); renderUI(); return;
                 }
             }
+
+            // ⛏️ 修正：將打破的方塊移至地底深處，徹底消除物理碰撞！
             if(action === 'break') {
                 modifyStat('energy', -2); playSnd('break');
                 if(obj.isInstancedMesh) {
-                    const mat = new THREE.Matrix4(); mat.makeScale(0,0,0);
+                    const mat = new THREE.Matrix4(); mat.makeTranslation(0, -9999, 0); // 送往虛空
                     obj.setMatrixAt(currentIntersect.instanceId, mat); obj.instanceMatrix.needsUpdate = true;
                     spawnParticles(targetBox.position);
+                    
                     const rnd = Math.random();
-                    if(rnd < 0.2) { playerInventory['stone'] = (playerInventory['stone']||0)+1; showMsg('挖到 🪨石頭'); }
-                    else if(rnd < 0.4) { playerInventory['dirt'] = (playerInventory['dirt']||0)+1; showMsg('挖到 🟤泥土'); }
-                    else if(rnd < 0.6) { playerInventory['wood'] = (playerInventory['wood']||0)+1; showMsg('砍伐 🪵木頭'); }
-                } else if(!obj.userData.isNPC && !obj.userData.isMob) { scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); spawnParticles(obj.position); }
+                    if(rnd < 0.05) { playerInventory['diamond_ore'] = (playerInventory['diamond_ore']||0)+1; showMsg('挖到 💎鑽石礦'); }
+                    else if(rnd < 0.15) { playerInventory['iron_ore'] = (playerInventory['iron_ore']||0)+1; showMsg('挖到 ⚪鐵礦石'); }
+                    else if(rnd < 0.3) { playerInventory['coal'] = (playerInventory['coal']||0)+1; showMsg('挖到 ⚫煤炭'); }
+                    else if(rnd < 0.5) { playerInventory['stone'] = (playerInventory['stone']||0)+1; showMsg('挖到 🪨石頭'); }
+                    else if(rnd < 0.7) { playerInventory['dirt'] = (playerInventory['dirt']||0)+1; showMsg('挖到 🟤泥土'); }
+                    else { playerInventory['wood'] = (playerInventory['wood']||0)+1; showMsg('砍伐 🪵木頭'); }
+                } else if(!obj.userData.isMob) { scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); spawnParticles(obj.position); }
                 renderUI();
             }
+            
+            // 🧱 修正：完美對齊網格放置
             if(action === 'place') {
                 const invKeys = Object.keys(playerInventory).filter(k => playerInventory[k] > 0);
                 if(invKeys.length === 0 || selectedSlot >= invKeys.length) return;
                 const itemId = invKeys[selectedSlot]; const itemDef = ITEM_REGISTRY[itemId];
-                if(itemDef && itemDef.isBlock && !obj.userData.isNPC) {
+                if(itemDef && itemDef.isBlock) {
                     playerInventory[itemId]--; renderUI(); playSnd('place'); modifyStat('energy', -1);
                     const placePos = targetBox.position.clone().add(currentIntersect.face ? currentIntersect.face.normal : new THREE.Vector3(0,1,0));
+                    placePos.x = Math.round(placePos.x); placePos.y = Math.round(placePos.y); placePos.z = Math.round(placePos.z);
+                    
                     targetBox.scale.set(1,1,1);
                     const newBlock = new THREE.Mesh(box, MATS[itemDef.bType]); newBlock.position.copy(placePos); scene.add(newBlock); interactables.push(newBlock);
                 }
@@ -478,9 +467,8 @@
         document.getElementById('btn-break').onclick = () => interact('break');
         document.getElementById('btn-place').onclick = () => interact('place');
 
-        // ==== 雙搖桿控制 (手機) ====
+        // ==== 雙搖桿控制 ====
         const keys = {w:false, a:false, s:false, d:false};
-        
         const joyBg = document.getElementById('joystick-bg'), joyKnob = document.getElementById('joystick-knob');
         joyBg.addEventListener('touchstart', e => handleJoyMove(e.touches[0])); joyBg.addEventListener('touchmove', e => { handleJoyMove(e.touches[0]); e.preventDefault(); }, {passive:false});
         joyBg.addEventListener('touchend', () => { joyKnob.style.transform=`translate(0,0)`; keys.w=keys.s=keys.a=keys.d=false; });
@@ -502,29 +490,18 @@
             aimVector.x = nx / 60; aimVector.y = ny / 60; 
         }
 
-        // ==== 電腦控制 (防呆鍵盤 + 游標瞄準) ====
         const crosshairEl = document.getElementById('crosshair');
         document.addEventListener('mousemove', e => {
             crosshairEl.style.left = e.clientX + 'px'; crosshairEl.style.top = e.clientY + 'px';
             pointerNDC.x = (e.clientX / window.innerWidth) * 2 - 1; pointerNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
         });
 
-        document.addEventListener('mousedown', e => {
-            if (e.target.tagName === 'CANVAS') { interact('interact'); interact('break'); }
-        });
-
-        // 🚀 關鍵修復：防大寫/防中文輸入法卡死
-        document.addEventListener('keydown', e => { 
-            let k = e.key.toLowerCase();
-            if(keys.hasOwnProperty(k)) keys[k] = true; 
-        });
-        document.addEventListener('keyup', e => { 
-            let k = e.key.toLowerCase();
-            if(keys.hasOwnProperty(k)) keys[k] = false; 
-        });
+        document.addEventListener('mousedown', e => { if (e.target.tagName === 'CANVAS') { interact('interact'); interact('break'); } });
+        document.addEventListener('keydown', e => { let k = e.key.toLowerCase(); if(keys.hasOwnProperty(k)) keys[k] = true; });
+        document.addEventListener('keyup', e => { let k = e.key.toLowerCase(); if(keys.hasOwnProperty(k)) keys[k] = false; });
 
         // ==========================================
-        // 5. 答題獲得 XP 與 GAS 寫入 (含防當機機制)
+        // 5. 答題獲得 XP 與 GAS 寫入
         // ==========================================
         function openQuiz(obj) {
             activeInteractObj = obj; document.getElementById('quiz-overlay').style.display = 'block';
@@ -550,18 +527,13 @@
                             obj.userData.hp--;
                             if(obj.userData.hp <= 0) {
                                 showMsg("🎉 擊退巨魔！獲得 1000 XP 與鑽石！", '#10b981'); spawnParticles(obj.position);
-                                playerInventory['diamond'] = (playerInventory['diamond']||0)+5;
-                                syncGASXP(1000, "擊退知識巨魔"); 
+                                playerInventory['diamond'] = (playerInventory['diamond']||0)+5; syncGASXP(1000, "擊退知識巨魔"); 
                                 scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); closeUI(); renderUI();
                             } else { showMsg(`✅ 攻擊成功！巨魔剩血：${obj.userData.hp}`, '#fbbf24'); openQuiz(obj); }
                         } else if(ANIMALS.find(a => a.type === obj.userData.type)) {
-                            // 打倒動物掉落專屬肉類/毛皮
-                            let dropItem = obj.userData.drop;
-                            let dropName = ITEM_REGISTRY[dropItem].name;
-                            showMsg(`🍖 獲得 ${dropName}！`, '#10b981'); 
-                            playerInventory[dropItem] = (playerInventory[dropItem]||0)+2; 
-                            spawnParticles(obj.position);
-                            scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); closeUI(); renderUI();
+                            let dropItem = obj.userData.drop; let dropName = ITEM_REGISTRY[dropItem].name;
+                            showMsg(`🍖 獲得 ${dropName}！`, '#10b981'); playerInventory[dropItem] = (playerInventory[dropItem]||0)+2; 
+                            spawnParticles(obj.position); scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); closeUI(); renderUI();
                         } else {
                             showMsg("🎉 答對！獲得物資與 200 XP", '#10b981'); modifyStat('energy', 20); playerInventory['apple'] = (playerInventory['apple']||0)+2;
                             syncGASXP(200, "解開知識方塊"); 
@@ -577,17 +549,15 @@
         }
 
         const clock = new THREE.Clock();
-        let dayTime = 8; // 遊戲時間 (0~24)
+        let dayTime = 8;
         
         function animate() {
             requestAnimationFrame(animate); const delta = Math.min(clock.getDelta(), 0.1); const time = Date.now();
             
-            // 🌤️ 日夜循環系統
             dayTime = (dayTime + delta * 0.1) % 24;
             let isNight = dayTime > 18 || dayTime < 6;
             document.getElementById('time-display').innerText = isNight ? '黑夜 (危險)' : '白晝';
-            scene.background.setHSL(0.6, 0.5, isNight ? 0.05 : 0.6);
-            scene.fog.color.setHSL(0.6, 0.5, isNight ? 0.05 : 0.6);
+            scene.background.setHSL(0.6, 0.5, isNight ? 0.05 : 0.6); scene.fog.color.setHSL(0.6, 0.5, isNight ? 0.05 : 0.6);
             dirLight.intensity = isNight ? 0.1 : 0.8;
 
             if(isAiming) {
@@ -598,39 +568,52 @@
 
             updateRaycast();
 
-            // 🚀 電腦移動完全修復 (防呆三元運算子)
             let speed = (energy > 0 ? 6 : 2);
-            let dz = (keys.w ? 1 : 0) - (keys.s ? 1 : 0); 
-            let dx = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
+            let dz = (keys.w ? 1 : 0) - (keys.s ? 1 : 0); let dx = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
+            
+            let px = camera.position.x, pz = camera.position.z;
             
             if(dz !== 0 || dx !== 0) {
                 const euler = new THREE.Euler(0, camera.rotation.y, 0, 'YXZ');
                 const velocity = new THREE.Vector3(dx * speed, 0, -dz * speed);
                 velocity.applyEuler(euler);
-                camera.position.x += velocity.x * delta; camera.position.z += velocity.z * delta;
+                px += velocity.x * delta; pz += velocity.z * delta;
+                camera.position.x = px; camera.position.z = pz;
             }
             
-            const px = camera.position.x, pz = camera.position.z; const h = getH(px, pz);
-            camera.position.y += ((h + 2) - camera.position.y) * 0.1;
+            // 🚀 關鍵修復：真實向下探測重力系統
+            let groundY = getH(px, pz); // 預設地形高度
+            const downRay = new THREE.Raycaster(new THREE.Vector3(px, camera.position.y + 2, pz), new THREE.Vector3(0, -1, 0));
+            const hits = downRay.intersectObjects([...terrainMeshes, ...interactables]);
+            
+            for (let i = 0; i < hits.length; i++) {
+                if (hits[i].object.material && hits[i].object.material.transparent) continue; // 忽略水體
+                if (hits[i].object.userData.isNPC || hits[i].object.userData.isItem) continue; // 忽略生物跟雞蛋
+                groundY = hits[i].point.y;
+                break;
+            }
+            
+            camera.position.y += ((groundY + 1.6) - camera.position.y) * 0.15; // 平滑掉落與吸附
 
             const cx = Math.floor(px/16), cz = Math.floor(pz/16);
             for(let x=-2; x<=2; x++) for(let z=-2; z<=2; z++) { const key = `${cx+x},${cz+z}`; if(!chunks.has(key)) genChunk(cx+x, cz+z); else chunks.get(key).group.visible = true; }
 
-            // 🐔 動物行為與雞下蛋
             interactables.forEach(b => {
                 if(b.userData.isQ) { b.rotation.y += 0.02; b.position.y = b.userData.wy + Math.sin(time*0.002)*0.2; }
                 if(b.userData.isMob) {
                     if(ANIMALS.find(a=>a.type===b.userData.type)) { 
-                        b.position.x += Math.sin(time*0.001+b.id)*0.02; b.position.z += Math.cos(time*0.001+b.id)*0.02; b.position.y = getH(b.position.x, b.position.z)+1; 
+                        b.position.x += Math.sin(time*0.001+b.id)*0.02; b.position.z += Math.cos(time*0.001+b.id)*0.02; 
                         
-                        // 雞下蛋機制 (每 15 秒機率下蛋)
+                        // 動物也套用簡單重力
+                        const ah = getH(b.position.x, b.position.z);
+                        b.position.y = ah + 1; 
+
                         if(b.userData.type === 'chicken' && time - b.userData.lastEgg > 15000) {
                             b.userData.lastEgg = time;
                             if(Math.random() < 0.5) {
                                 playSnd('egg');
                                 let egg = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.4,0.4), gTex('#ffffff', '#eeeeee', '🥚'));
-                                egg.position.set(b.position.x, b.position.y - 0.2, b.position.z);
-                                egg.userData = { isItem: true, id: 'egg' };
+                                egg.position.set(b.position.x, b.position.y - 0.2, b.position.z); egg.userData = { isItem: true, id: 'egg' };
                                 scene.add(egg); interactables.push(egg);
                             }
                         }
