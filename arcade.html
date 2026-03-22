@@ -1393,7 +1393,30 @@ function initVoxel() {
 
     setupThreeJS();
 }
+// ==========================================
+// ✅ 安全接管 startGame
+// ==========================================
 
+if (typeof window.startGame !== "function") {
+    window.startGame = function(id) {
+        console.warn("⚠️ startGame 尚未定義:", id);
+    };
+}
+
+const originalStartGame = window.startGame;
+
+window.startGame = function(id) {
+    if(id === 'voxel') {
+        document.getElementById('gameMenu').classList.add('hidden');
+        document.getElementById('voxelHeroBanner').classList.add('hidden');
+        document.querySelectorAll('.game-section').forEach(el => el.classList.add('hidden'));
+        document.getElementById('game-voxel').classList.remove('hidden');
+        initVoxel();
+    } else {
+        document.getElementById('voxelHeroBanner').classList.add('hidden');
+        if (originalStartGame) originalStartGame(id);
+    }
+};
 // 攔截 startGame
 // 攔截 startGame (加入安全檢查)
 const originalStartGame = window.startGame;
@@ -1800,6 +1823,1568 @@ function backToMenu() {
     document.getElementById('gameMenu').classList.remove('hidden');
     document.getElementById('voxelHeroBanner').classList.remove('hidden');
 }
+
+
+<!-- VoxelQuest Pro extension (append-only) -->
+<script>
+(() => {
+  if (window.__VQ_EXTENDED_V3__) return;
+  window.__VQ_EXTENDED_V3__ = true;
+
+  const _origBackToMenu = window.backToMenu;
+  const _origTriggerVoxelQuiz = window.triggerVoxelQuiz;
+
+  const VQ_CHUNK_SIZE = 16;
+  const VQ_RENDER_DISTANCE = 3;
+  const VQ_MAX_STEP = 2;
+  const VQ_AUTOSAVE_MS = 15000;
+  const VQ_WS_URL = window.VQ_WS_URL || '';
+  const VQ_CLOUD_ACTION_SAVE = 'save_voxel_world';
+  const VQ_CLOUD_ACTION_LOAD = 'load_voxel_world';
+
+  const VQ_FALLBACK_SURFACE = 2;
+  const VQ_SEA_LEVEL = 1;
+
+  window.moveForward = false;
+  window.moveBackward = false;
+  window.moveLeft = false;
+  window.moveRight = false;
+  window.canJump = false;
+
+  const vqInf = {
+    chunks: new Map(),
+    blockEdits: new Map(),
+    animals: [],
+    monsters: [],
+    remotePlayers: new Map(),
+    fallingPieces: [],
+    currentTargetBlock: null,
+    highlightMesh: null,
+    buildMode: false,
+    selectedBuildBlock: 'wood_plank',
+    autoLookDown: true,
+    hp: 100,
+    hunger: 100,
+    stamina: 100,
+    inventory: {
+      log: 0,
+      plank: 0,
+      stone: 0,
+      food: 0,
+      rawMeat: 0,
+      cookedMeat: 0,
+      seeds: 0,
+      apple: 0,
+      axe: 1,
+      sword: 0,
+      pickaxe: 0,
+      dirt: 0,
+      sand: 0,
+      cobble: 0
+    },
+    cloudTimer: null,
+    netTimer: null,
+    lastNetSend: 0,
+    lastAutosave: 0,
+    lastMonsterSpawn: 0,
+    ws: null,
+    lastMouseWorldHit: null
+  };
+
+  const VQ_ENTITY_COLORS = {
+    pig: 0xF48FB1,
+    cow: 0xFAFAFA,
+    sheep: 0xE0E0E0,
+    deer: 0xD7CCC8,
+    zombie: 0x4CAF50,
+    creeper: 0x81C784,
+    boss: 0x8E24AA
+  };
+
+  function vqClamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+  }
+
+  function vqKey(x, y, z) {
+    return `${x}|${y}|${z}`;
+  }
+
+  function vqChunkKey(cx, cz) {
+    return `${cx},${cz}`;
+  }
+
+  function vqHash2D(x, z, seed = 0) {
+    const n = Math.sin(x * 12.9898 + z * 78.233 + seed * 37.719) * 43758.5453123;
+    return n - Math.floor(n);
+  }
+
+  function vqTerrainHeight(wx, wz) {
+    const base = Math.sin(wx / 11) * 3.5 + Math.cos(wz / 13) * 2.9 + Math.sin((wx + wz) / 19) * 1.8;
+    const hills = Math.floor((vqHash2D(wx, wz, 17) + vqHash2D(wx * 2, wz * 2, 23)) * 3.5);
+    return Math.floor(base + hills + 2.5);
+  }
+
+  function vqBiome(wx, wz) {
+    const n = vqHash2D(wx, wz, 101);
+    if (n < 0.18) return 'desert';
+    if (n < 0.38) return 'forest';
+    if (n < 0.58) return 'plain';
+    if (n < 0.78) return 'snow';
+    return 'mountain';
+  }
+
+  function vqColorForBlock(typeKey) {
+    const v = BLOCK_TYPES[typeKey];
+    return typeof v === 'number' ? v : 0xffffff;
+  }
+
+  function vqAddBaseBlock(chunk, wx, wy, wz, typeKey) {
+    const block = { x: wx, y: wy, z: wz, type: typeKey };
+    chunk.baseBlocks.push(block);
+    chunk.baseLookup.set(vqKey(wx, wy, wz), typeKey);
+  }
+
+  function vqAddEntity(chunk, entity) {
+    chunk.entities.push(entity);
+    if (vqScene && entity.mesh) vqScene.add(entity.mesh);
+    if (entity.kind === 'animal') vqInf.animals.push(entity);
+    if (entity.kind === 'monster') vqInf.monsters.push(entity);
+  }
+
+  function vqCreateAnimalMesh(kind) {
+    const group = new THREE.Group();
+    const color = VQ_ENTITY_COLORS[kind] || 0xcccccc;
+    const mat = new THREE.MeshLambertMaterial({ color });
+
+    const body = new THREE.Mesh(new THREE.BoxGeometry(6, 4, 10), mat);
+    body.position.y = 5;
+    group.add(body);
+
+    const head = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4), mat);
+    head.position.set(0, 6, 7);
+    group.add(head);
+
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+    const eye1 = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), eyeMat);
+    eye1.position.set(-1, 6.8, 8.8);
+    group.add(eye1);
+    const eye2 = eye1.clone();
+    eye2.position.x = 1;
+    group.add(eye2);
+
+    for (const [x, z] of [[-2, -3], [2, -3], [-2, 3], [2, 3]]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(1.3, 4, 1.3), mat);
+      leg.position.set(x, 1.5, z);
+      group.add(leg);
+    }
+
+    return group;
+  }
+
+  function vqCreateMonsterMesh(kind = 'zombie', boss = false) {
+    const group = new THREE.Group();
+    const color = boss ? VQ_ENTITY_COLORS.boss : VQ_ENTITY_COLORS[kind] || 0x4CAF50;
+    const mat = new THREE.MeshLambertMaterial({ color, emissive: boss ? 0x2A0040 : 0x000000 });
+
+    const body = new THREE.Mesh(new THREE.BoxGeometry(boss ? 12 : 7, boss ? 14 : 10, boss ? 12 : 7), mat);
+    body.position.y = boss ? 10 : 7;
+    group.add(body);
+
+    const eyesMat = new THREE.MeshBasicMaterial({ color: boss ? 0xff44ff : 0xff5555 });
+    const eye1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), eyesMat);
+    eye1.position.set(-2, boss ? 12 : 9, boss ? 6 : 4);
+    group.add(eye1);
+    const eye2 = eye1.clone();
+    eye2.position.x = boss ? 2 : 2;
+    group.add(eye2);
+
+    return group;
+  }
+
+  function vqGetChunkCoord(n) {
+    return Math.floor(n / VQ_CHUNK_SIZE);
+  }
+
+  function vqGetChunkByWorld(wx, wz) {
+    return vqInf.chunks.get(vqChunkKey(vqGetChunkCoord(wx), vqGetChunkCoord(wz)));
+  }
+
+  function vqGetEditedType(wx, wy, wz) {
+    return vqInf.blockEdits.get(vqKey(wx, wy, wz));
+  }
+
+  function vqSetEditedType(wx, wy, wz, typeKey) {
+    vqInf.blockEdits.set(vqKey(wx, wy, wz), typeKey);
+  }
+
+  function vqProceduralBlockType(wx, wy, wz) {
+    const height = vqTerrainHeight(wx, wz);
+    const biome = vqBiome(wx, wz);
+
+    if (wy < -3) return 'stone';
+    if (wy < height - 2) return wy < 0 ? 'stone' : 'dirt';
+    if (wy === height - 2) return biome === 'desert' ? 'sand' : (biome === 'snow' ? 'snow' : 'dirt');
+    if (wy === height - 1) {
+      if (height < VQ_SEA_LEVEL) return 'sand';
+      if (biome === 'desert') return 'sand';
+      if (biome === 'snow') return 'snow';
+      if (biome === 'mountain' && vqHash2D(wx, wz, 222) > 0.75) return 'stone';
+      return 'grass';
+    }
+    if (wy >= height && wy <= VQ_SEA_LEVEL && biome === 'plain') return 'water';
+    return undefined;
+  }
+
+  function vqGetBlock(wx, wy, wz) {
+    const edited = vqGetEditedType(wx, wy, wz);
+    if (edited !== undefined) return edited || undefined;
+
+    const chunk = vqGetChunkByWorld(wx, wz);
+    if (chunk && chunk.baseLookup.has(vqKey(wx, wy, wz))) {
+      return chunk.baseLookup.get(vqKey(wx, wy, wz)) || undefined;
+    }
+    return vqProceduralBlockType(wx, wy, wz);
+  }
+
+  function vqIsSolidBlock(typeKey) {
+    return !!typeKey && typeKey !== 'water';
+  }
+
+  function vqCheckCollision(x, y, z) {
+    const gridX = Math.round(x / blockSize);
+    const gridY = Math.round((y - 5) / blockSize);
+    const gridZ = Math.round(z / blockSize);
+    return vqIsSolidBlock(vqGetBlock(gridX, gridY, gridZ)) || vqIsSolidBlock(vqGetBlock(gridX, gridY + 1, gridZ));
+  }
+
+  function vqAddBlockToChunk(chunk, wx, wy, wz, typeKey) {
+    if (!typeKey) return;
+    const block = { x: wx, y: wy, z: wz, type: typeKey };
+    chunk.baseBlocks.push(block);
+    chunk.baseLookup.set(vqKey(wx, wy, wz), typeKey);
+  }
+
+  function vqAddTree(chunk, wx, wy, wz, variant = 'oak') {
+    const logType = variant === 'birch' ? 'birch_log' : variant === 'pine' ? 'pine_log' : 'oak_log';
+    const leafType = variant === 'birch' ? 'birch_leaves' : variant === 'pine' ? 'pine_leaves' : 'oak_leaves';
+    const height = 4 + Math.floor(vqHash2D(wx, wz, 55) * 4);
+
+    for (let i = 0; i < height; i++) {
+      vqAddBlockToChunk(chunk, wx, wy + i, wz, logType);
+    }
+
+    for (let lx = -2; lx <= 2; lx++) {
+      for (let lz = -2; lz <= 2; lz++) {
+        for (let ly = height - 2; ly <= height + 1; ly++) {
+          if (Math.abs(lx) === 2 && Math.abs(lz) === 2 && ly === height + 1) continue;
+          if (!chunk.baseLookup.has(vqKey(wx + lx, wy + ly, wz + lz))) {
+            vqAddBlockToChunk(chunk, wx + lx, wy + ly, wz + lz, leafType);
+          }
+        }
+      }
+    }
+  }
+
+  function vqAddHouse(chunk, wx, wy, wz) {
+    const w = 5, h = 4, d = 5;
+    for (let x = 0; x < w; x++) {
+      for (let y = 0; y < h; y++) {
+        for (let z = 0; z < d; z++) {
+          if (x === 0 || x === w - 1 || z === 0 || z === d - 1) vqAddBlockToChunk(chunk, wx + x, wy + y, wz + z, 'wood_plank');
+          if (y === h - 1) vqAddBlockToChunk(chunk, wx + x, wy + y + 1, wz + z, 'roof_tile');
+          if (y === 0) vqAddBlockToChunk(chunk, wx + x, wy - 1, wz + z, 'stone_brick');
+        }
+      }
+    }
+    vqAddBlockToChunk(chunk, wx + 2, wy, wz, 'door_bottom');
+    vqAddBlockToChunk(chunk, wx + 2, wy + 1, wz, 'door_top');
+    vqAddBlockToChunk(chunk, wx + 1, wy + 1, wz + d - 1, 'glass');
+    vqAddBlockToChunk(chunk, wx + 1, wy, wz + 1, 'bed_red');
+  }
+
+  function vqSpawnAnimal(chunk, wx, wy, wz, kind = 'pig') {
+    const mesh = vqCreateAnimalMesh(kind);
+    mesh.position.set(wx * blockSize, wy * blockSize + 2, wz * blockSize);
+    mesh.userData = { vqEntity: true, kind: 'animal', species: kind, wx, wy, wz, hp: 20, speed: 0.22 + Math.random() * 0.12, wander: Math.random() * Math.PI * 2 };
+    vqAddEntity(chunk, { kind: 'animal', species: kind, wx, wy, wz, hp: 20, mesh, chunkKey: vqChunkKey(chunk.cx, chunk.cz), alive: true });
+  }
+
+  function vqSpawnMonster(chunk, wx, wy, wz, boss = false) {
+    const mesh = vqCreateMonsterMesh(boss ? 'boss' : 'zombie', boss);
+    mesh.position.set(wx * blockSize, wy * blockSize + (boss ? 8 : 4), wz * blockSize);
+    mesh.userData = { vqEntity: true, kind: boss ? 'boss' : 'monster', wx, wy, wz, hp: boss ? 300 : 60, speed: boss ? 0.18 : 0.28, path: [], pathTimer: 0, lastPathAt: 0, boss };
+    vqAddEntity(chunk, { kind: boss ? 'boss' : 'monster', wx, wy, wz, hp: boss ? 300 : 60, mesh, chunkKey: vqChunkKey(chunk.cx, chunk.cz), alive: true });
+  }
+
+  function vqGenerateChunk(cx, cz) {
+    const key = vqChunkKey(cx, cz);
+    if (vqInf.chunks.has(key)) return vqInf.chunks.get(key);
+
+    const chunk = {
+      cx,
+      cz,
+      key,
+      baseBlocks: [],
+      baseLookup: new Map(),
+      edits: new Map(),
+      entities: [],
+      mesh: null,
+      dirty: true
+    };
+
+    for (let lx = 0; lx < VQ_CHUNK_SIZE; lx++) {
+      for (let lz = 0; lz < VQ_CHUNK_SIZE; lz++) {
+        const wx = cx * VQ_CHUNK_SIZE + lx;
+        const wz = cz * VQ_CHUNK_SIZE + lz;
+        const height = vqTerrainHeight(wx, wz);
+        const biome = vqBiome(wx, wz);
+
+        for (let wy = -4; wy < height - 2; wy++) {
+          vqAddBlockToChunk(chunk, wx, wy, wz, wy < -1 ? 'stone' : 'dirt');
+        }
+
+        if (height < VQ_SEA_LEVEL) {
+          for (let wy = height - 1; wy <= VQ_SEA_LEVEL; wy++) {
+            vqAddBlockToChunk(chunk, wx, wy, wz, wy === height - 1 ? 'sand' : 'water');
+          }
+        } else {
+          if (biome === 'desert') vqAddBlockToChunk(chunk, wx, height - 1, wz, 'sand');
+          else if (biome === 'snow') vqAddBlockToChunk(chunk, wx, height - 1, wz, 'snow');
+          else if (biome === 'mountain') vqAddBlockToChunk(chunk, wx, height - 1, wz, vqHash2D(wx, wz, 221) > 0.75 ? 'stone' : 'grass');
+          else vqAddBlockToChunk(chunk, wx, height - 1, wz, 'grass');
+        }
+
+        const r = vqHash2D(wx, wz, 7);
+        if (r < 0.026 && height > -2) vqAddTree(chunk, wx, height, wz, biome === 'snow' ? 'pine' : (r < 0.01 ? 'birch' : 'oak'));
+        else if (r < 0.052) vqAddBlockToChunk(chunk, wx, height, wz, 'tall_grass');
+        else if (r < 0.063) vqAddBlockToChunk(chunk, wx, height, wz, 'red_flower');
+        else if (r < 0.07) vqAddBlockToChunk(chunk, wx, height, wz, 'yellow_flower');
+        else if (r < 0.082) vqSpawnAnimal(chunk, wx, height + 1, wz, r < 0.074 ? 'cow' : 'pig');
+        else if (r < 0.089) vqSpawnAnimal(chunk, wx, height + 1, wz, 'sheep');
+        else if (r < 0.094 && biome === 'forest') vqSpawnAnimal(chunk, wx, height + 1, wz, 'deer');
+        else if (r > 0.996) vqSpawnMonster(chunk, wx, height + 1, wz, false);
+
+        if (wx % 15 === 0 && wz % 15 === 0 && vqHash2D(wx, wz, 13) > 0.46) {
+          vqAddHouse(chunk, wx, height + 1, wz);
+        }
+      }
+    }
+
+    vqInf.chunks.set(key, chunk);
+    return chunk;
+  }
+
+  function vqCompileChunkBlocks(chunk) {
+    const merged = [];
+    const seen = new Set();
+
+    for (const b of chunk.baseBlocks) {
+      const k = vqKey(b.x, b.y, b.z);
+      seen.add(k);
+      if (chunk.edits.has(k)) {
+        const edit = chunk.edits.get(k);
+        if (edit) merged.push({ x: b.x, y: b.y, z: b.z, type: edit });
+      } else {
+        merged.push(b);
+      }
+    }
+
+    for (const [k, typeKey] of chunk.edits.entries()) {
+      if (!typeKey || seen.has(k)) continue;
+      const [x, y, z] = k.split('|').map(Number);
+      merged.push({ x, y, z, type: typeKey });
+    }
+
+    return merged;
+  }
+
+  function vqDisposeChunkMesh(chunk) {
+    if (!chunk.mesh) return;
+    vqScene.remove(chunk.mesh);
+    if (chunk.mesh.geometry) chunk.mesh.geometry.dispose();
+    if (chunk.mesh.material) {
+      if (Array.isArray(chunk.mesh.material)) chunk.mesh.material.forEach(m => m.dispose && m.dispose());
+      else chunk.mesh.material.dispose && chunk.mesh.material.dispose();
+    }
+    chunk.mesh = null;
+  }
+
+  function vqBuildChunkMesh(chunk) {
+    if (!vqScene) return;
+    vqDisposeChunkMesh(chunk);
+    const blocks = vqCompileChunkBlocks(chunk);
+    if (!blocks.length) return;
+
+    const geo = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
+    const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true });
+    const mesh = new THREE.InstancedMesh(geo, mat, blocks.length);
+    const dummy = new THREE.Object3D();
+    const color = new THREE.Color();
+
+    mesh.userData.vqChunk = chunk.key;
+    mesh.userData.vqBlocks = blocks;
+    mesh.userData.vqChunkRef = chunk;
+    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+    for (let i = 0; i < blocks.length; i++) {
+      const b = blocks[i];
+      dummy.position.set(b.x * blockSize, b.y * blockSize, b.z * blockSize);
+      dummy.rotation.set(0, 0, 0);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+      color.setHex(vqColorForBlock(b.type));
+      mesh.setColorAt(i, color);
+    }
+
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    chunk.mesh = mesh;
+    vqScene.add(mesh);
+  }
+
+  function vqEnsureChunksAroundPlayer() {
+    if (!vqControls || !vqScene) return;
+    const pos = vqControls.getObject().position;
+    const pcx = vqGetChunkCoord(Math.round(pos.x / blockSize));
+    const pcz = vqGetChunkCoord(Math.round(pos.z / blockSize));
+    const required = new Set();
+
+    for (let cx = pcx - VQ_RENDER_DISTANCE; cx <= pcx + VQ_RENDER_DISTANCE; cx++) {
+      for (let cz = pcz - VQ_RENDER_DISTANCE; cz <= pcz + VQ_RENDER_DISTANCE; cz++) {
+        const key = vqChunkKey(cx, cz);
+        required.add(key);
+        const chunk = vqGenerateChunk(cx, cz);
+        if (chunk.dirty || !chunk.mesh) {
+          vqBuildChunkMesh(chunk);
+          chunk.dirty = false;
+        }
+      }
+    }
+
+    for (const [key, chunk] of vqInf.chunks.entries()) {
+      if (!required.has(key)) {
+        if (chunk.mesh) vqDisposeChunkMesh(chunk);
+        for (const e of chunk.entities) {
+          if (e && e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh);
+          e.alive = false;
+        }
+        vqInf.chunks.delete(key);
+      }
+    }
+
+    for (const [k, typeKey] of vqInf.blockEdits.entries()) {
+      if (typeKey === undefined) vqInf.blockEdits.delete(k);
+    }
+  }
+
+  function vqWorldToBlock(wx) {
+    return Math.round(wx / blockSize);
+  }
+
+  function vqMarkChunkDirtyByWorld(wx, wz) {
+    const cx = vqGetChunkCoord(wx);
+    const cz = vqGetChunkCoord(wz);
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dz = -1; dz <= 1; dz++) {
+        const c = vqInf.chunks.get(vqChunkKey(cx + dx, cz + dz));
+        if (c) c.dirty = true;
+      }
+    }
+  }
+
+  function vqSetBlock(wx, wy, wz, typeKey, sync = true) {
+    const key = vqKey(wx, wy, wz);
+    const chunk = vqGetChunkByWorld(wx, wz) || vqGenerateChunk(vqGetChunkCoord(wx), vqGetChunkCoord(wz));
+    chunk.edits.set(key, typeKey || null);
+    vqSetEditedType(wx, wy, wz, typeKey || null);
+    chunk.dirty = true;
+    vqMarkChunkDirtyByWorld(wx, wz);
+    if (chunk.mesh) vqBuildChunkMesh(chunk);
+    if (sync) vqBroadcastBlockUpdate('set', wx, wy, wz, typeKey);
+    queueVoxelAutosave();
+  }
+
+  function vqRemoveBlock(wx, wy, wz, sync = true) {
+    const key = vqKey(wx, wy, wz);
+    const chunk = vqGetChunkByWorld(wx, wz) || vqGenerateChunk(vqGetChunkCoord(wx), vqGetChunkCoord(wz));
+    chunk.edits.set(key, null);
+    vqSetEditedType(wx, wy, wz, null);
+    chunk.dirty = true;
+    vqMarkChunkDirtyByWorld(wx, wz);
+    if (chunk.mesh) vqBuildChunkMesh(chunk);
+    if (sync) vqBroadcastBlockUpdate('remove', wx, wy, wz, null);
+    queueVoxelAutosave();
+  }
+
+  function vqBlockCategory(typeKey) {
+    if (!typeKey) return 'air';
+    if (typeKey.includes('log')) return 'log';
+    if (typeKey.includes('leaf')) return 'leaf';
+    if (['stone', 'granite', 'diorite', 'andesite', 'basalt', 'bedrock'].includes(typeKey)) return 'stone';
+    if (['sand', 'red_sand', 'sandstone'].includes(typeKey)) return 'sand';
+    if (['wheat', 'red_flower', 'yellow_flower', 'blue_flower', 'fern', 'tall_grass'].includes(typeKey)) return 'plant';
+    return 'other';
+  }
+
+  function vqSpawnFallingPiece(typeKey, wx, wy, wz) {
+    if (!vqScene) return;
+    const geo = new THREE.BoxGeometry(blockSize * 0.9, blockSize * 0.9, blockSize * 0.9);
+    const mat = new THREE.MeshLambertMaterial({ color: vqColorForBlock(typeKey) });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(wx * blockSize, wy * blockSize, wz * blockSize);
+    mesh.userData = {
+      vx: (Math.random() - 0.5) * 2.5,
+      vy: 4 + Math.random() * 2.5,
+      vz: (Math.random() - 0.5) * 2.5,
+      rotX: Math.random() * 0.08,
+      rotY: Math.random() * 0.12
+    };
+    vqScene.add(mesh);
+    vqInf.fallingPieces.push(mesh);
+  }
+
+  function vqAwardHarvest(typeKey) {
+    const cat = vqBlockCategory(typeKey);
+    if (cat === 'log') vqInf.inventory.log += 1;
+    else if (cat === 'stone') vqInf.inventory.stone += 1;
+    else if (cat === 'sand') vqInf.inventory.sand += 1;
+    else if (cat === 'plant') vqInf.inventory.food += 1;
+  }
+
+  function vqCollapseTreeAt(wx, wy, wz) {
+    const startType = vqGetBlock(wx, wy, wz);
+    if (!startType || !startType.includes('log')) return false;
+
+    const queue = [[wx, wy, wz]];
+    const visited = new Set();
+    const parts = [];
+    const maxRadius = 6;
+
+    while (queue.length) {
+      const [x, y, z] = queue.shift();
+      const key = vqKey(x, y, z);
+      if (visited.has(key)) continue;
+      visited.add(key);
+
+      const type = vqGetBlock(x, y, z);
+      if (!type) continue;
+      const cat = vqBlockCategory(type);
+      if (cat !== 'log' && cat !== 'leaf') continue;
+      if (Math.abs(x - wx) > maxRadius || Math.abs(y - wy) > maxRadius || Math.abs(z - wz) > maxRadius) continue;
+
+      parts.push({ x, y, z, type });
+      queue.push([x + 1, y, z], [x - 1, y, z], [x, y + 1, z], [x, y - 1, z], [x, y, z + 1], [x, y, z - 1]);
+      queue.push([x + 1, y + 1, z], [x - 1, y + 1, z], [x, y + 1, z + 1], [x, y + 1, z - 1]);
+    }
+
+    if (!parts.length) return false;
+
+    for (const part of parts) {
+      vqRemoveBlock(part.x, part.y, part.z, false);
+      vqSpawnFallingPiece(part.type, part.x, part.y, part.z);
+      vqAwardHarvest(part.type);
+    }
+
+    queueVoxelAutosave();
+    return true;
+  }
+
+  function vqFindGroundY(wx, wz) {
+    const chunk = vqGetChunkByWorld(wx, wz);
+    if (chunk) {
+      let best = -9999;
+      for (const b of chunk.baseBlocks) {
+        if (b.x === wx && b.z === wz) best = Math.max(best, b.y);
+      }
+      for (const [k, typeKey] of chunk.edits.entries()) {
+        const [x, y, z] = k.split('|').map(Number);
+        if (x === wx && z === wz) {
+          if (typeKey) best = Math.max(best, y);
+          else if (y >= best) best = best - 1;
+        }
+      }
+      if (best > -9999) return best;
+    }
+    return vqTerrainHeight(wx, wz) - 1;
+  }
+
+  function vqIsWalkableCell(wx, wz) {
+    const groundY = vqFindGroundY(wx, wz);
+    const a = vqGetBlock(wx, groundY + 1, wz);
+    const b = vqGetBlock(wx, groundY + 2, wz);
+    return !vqIsSolidBlock(a) && !vqIsSolidBlock(b);
+  }
+
+  function vqHeuristic(a, b) {
+    return Math.abs(a.x - b.x) + Math.abs(a.z - b.z);
+  }
+
+  function vqAStar(start, goal) {
+    const open = [];
+    const openMap = new Map();
+    const closed = new Set();
+
+    function addNode(node) {
+      open.push(node);
+      openMap.set(vqKey(node.x, 0, node.z), node);
+    }
+
+    addNode({ x: start.x, z: start.z, g: 0, f: vqHeuristic(start, goal), parent: null });
+
+    while (open.length) {
+      open.sort((a, b) => a.f - b.f);
+      const current = open.shift();
+      openMap.delete(vqKey(current.x, 0, current.z));
+
+      if (current.x === goal.x && current.z === goal.z) {
+        const path = [];
+        let n = current;
+        while (n) {
+          path.push({ x: n.x, z: n.z });
+          n = n.parent;
+        }
+        return path.reverse();
+      }
+
+      closed.add(vqKey(current.x, 0, current.z));
+      const curH = vqFindGroundY(current.x, current.z);
+
+      const neighbors = [
+        { x: current.x + 1, z: current.z },
+        { x: current.x - 1, z: current.z },
+        { x: current.x, z: current.z + 1 },
+        { x: current.x, z: current.z - 1 }
+      ];
+
+      for (const nb of neighbors) {
+        const nk = vqKey(nb.x, 0, nb.z);
+        if (closed.has(nk)) continue;
+        if (!vqIsWalkableCell(nb.x, nb.z)) continue;
+        const nbH = vqFindGroundY(nb.x, nb.z);
+        if (Math.abs(nbH - curH) > VQ_MAX_STEP) continue;
+
+        const g = current.g + 1 + Math.abs(nbH - curH) * 0.25;
+        const prev = openMap.get(nk);
+        if (!prev || g < prev.g) {
+          const node = { x: nb.x, z: nb.z, g, f: g + vqHeuristic(nb, goal), parent: current };
+          if (prev) {
+            const idx = open.indexOf(prev);
+            if (idx >= 0) open.splice(idx, 1);
+          }
+          addNode(node);
+        }
+      }
+    }
+
+    return [];
+  }
+
+  function vqSpawnRemoteAvatar(id, data) {
+    if (!vqScene) return;
+    const color = data.color || 0x66ccff;
+    const group = new THREE.Group();
+    const mat = new THREE.MeshLambertMaterial({ color });
+    const body = new THREE.Mesh(new THREE.BoxGeometry(5, 8, 3), mat);
+    body.position.y = 6;
+    const head = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4), new THREE.MeshLambertMaterial({ color: 0xffe0bd }));
+    head.position.y = 11;
+    group.add(body);
+    group.add(head);
+    group.position.set(data.x || 0, data.y || 20, data.z || 0);
+    group.userData = { vqEntity: true, remoteId: id };
+    vqScene.add(group);
+    vqInf.remotePlayers.set(id, { group, lastSeen: Date.now(), name: data.name || id });
+  }
+
+  function vqUpdateRemoteAvatar(id, data) {
+    const entry = vqInf.remotePlayers.get(id);
+    if (!entry) {
+      vqSpawnRemoteAvatar(id, data);
+      return;
+    }
+    entry.lastSeen = Date.now();
+    if (data.name) entry.name = data.name;
+    entry.group.position.set(data.x || 0, data.y || 20, data.z || 0);
+    if (typeof data.yaw === 'number') entry.group.rotation.y = data.yaw;
+  }
+
+  function vqRemoveRemoteAvatar(id) {
+    const entry = vqInf.remotePlayers.get(id);
+    if (!entry) return;
+    if (entry.group && entry.group.parent) entry.group.parent.remove(entry.group);
+    vqInf.remotePlayers.delete(id);
+  }
+
+  function vqUpdateAnimals(delta) {
+    const playerPos = vqControls ? vqControls.getObject().position : null;
+    if (!playerPos) return;
+    const removeList = [];
+
+    for (const animal of vqInf.animals) {
+      if (!animal.alive || !animal.mesh) {
+        removeList.push(animal);
+        continue;
+      }
+      const mesh = animal.mesh;
+      mesh.userData.wander += delta * 0.6;
+      const dx = Math.cos(mesh.userData.wander) * mesh.userData.speed;
+      const dz = Math.sin(mesh.userData.wander) * mesh.userData.speed;
+      const dist = mesh.position.distanceTo(playerPos);
+
+      if (dist < 42) {
+        const flee = new THREE.Vector3().subVectors(mesh.position, playerPos).setY(0).normalize().multiplyScalar(0.9);
+        mesh.position.addScaledVector(flee, 0.8);
+      } else {
+        mesh.position.x += dx * 0.6;
+        mesh.position.z += dz * 0.6;
+      }
+
+      const bx = vqWorldToBlock(mesh.position.x);
+      const bz = vqWorldToBlock(mesh.position.z);
+      const gy = vqFindGroundY(bx, bz);
+      mesh.position.y = gy * blockSize + 2;
+      mesh.rotation.y = Math.atan2(playerPos.x - mesh.position.x, playerPos.z - mesh.position.z);
+    }
+
+    for (const a of removeList) {
+      if (a.mesh && a.mesh.parent) a.mesh.parent.remove(a.mesh);
+      const idx = vqInf.animals.indexOf(a);
+      if (idx >= 0) vqInf.animals.splice(idx, 1);
+    }
+  }
+
+  function vqSpawnMonsterNearPlayer() {
+    if (!vqControls || !vqScene) return;
+    const now = performance.now();
+    if (now - vqInf.lastMonsterSpawn < 12000) return;
+    vqInf.lastMonsterSpawn = now;
+
+    const pos = vqControls.getObject().position.clone();
+    const offsets = [
+      [VQ_CHUNK_SIZE * 2, 0],
+      [-VQ_CHUNK_SIZE * 2, 0],
+      [0, VQ_CHUNK_SIZE * 2],
+      [0, -VQ_CHUNK_SIZE * 2]
+    ];
+    const [ox, oz] = offsets[Math.floor(Math.random() * offsets.length)];
+    const wx = vqWorldToBlock(pos.x) + ox;
+    const wz = vqWorldToBlock(pos.z) + oz;
+    const wy = vqFindGroundY(wx, wz) + 1;
+    const chunk = vqGetChunkByWorld(wx, wz) || vqGenerateChunk(vqGetChunkCoord(wx), vqGetChunkCoord(wz));
+    vqSpawnMonster(chunk, wx, wy, wz, Math.random() > 0.92);
+    if (chunk.mesh) chunk.dirty = true;
+  }
+
+  function vqUpdateMonsterPath(monster, delta) {
+    if (!vqControls || !monster.mesh) return;
+    const mesh = monster.mesh;
+    const playerPos = vqControls.getObject().position;
+    const now = performance.now();
+    const mx = vqWorldToBlock(mesh.position.x);
+    const mz = vqWorldToBlock(mesh.position.z);
+    const px = vqWorldToBlock(playerPos.x);
+    const pz = vqWorldToBlock(playerPos.z);
+
+    if (!monster.path || now - monster.lastPathAt > 700 || !monster.path.length) {
+      monster.path = vqAStar({ x: mx, z: mz }, { x: px, z: pz });
+      monster.lastPathAt = now;
+    }
+
+    if (monster.path && monster.path.length > 1) {
+      const next = monster.path[1];
+      const target = new THREE.Vector3(next.x * blockSize, vqFindGroundY(next.x, next.z) * blockSize + 4, next.z * blockSize);
+      const dir = new THREE.Vector3().subVectors(target, mesh.position);
+      const dist = dir.length();
+      if (dist > 0.01) {
+        dir.normalize();
+        const speed = monster.boss ? 0.18 : 0.33;
+        mesh.position.addScaledVector(dir, speed * blockSize * delta * 2);
+        mesh.rotation.y = Math.atan2(dir.x, dir.z);
+      }
+      if (dist < 5) monster.path.shift();
+    } else {
+      const dir = new THREE.Vector3().subVectors(playerPos, mesh.position).setY(0);
+      const d = dir.length();
+      if (d > 0.1) {
+        dir.normalize();
+        mesh.position.addScaledVector(dir, (monster.boss ? 0.15 : 0.24) * blockSize * delta * 2);
+        mesh.rotation.y = Math.atan2(dir.x, dir.z);
+      }
+    }
+
+    const ground = vqFindGroundY(mx, mz);
+    mesh.position.y = ground * blockSize + (monster.boss ? 8 : 4);
+
+    const hitDist = mesh.position.distanceTo(playerPos);
+    if (hitDist < (monster.boss ? 18 : 10)) {
+      vqInf.hp -= monster.boss ? 18 * delta : 8 * delta;
+      if (vqInf.hp <= 0) {
+        vqInf.hp = 100;
+        vqInf.hunger = 100;
+        if (vqControls) vqControls.getObject().position.set(0, 80, 0);
+      }
+      updateVoxelSurvivalHUD();
+    }
+  }
+
+  function vqUpdateMonsters(delta) {
+    const playerPos = vqControls ? vqControls.getObject().position : null;
+    if (!playerPos) return;
+    for (const monster of vqInf.monsters) {
+      if (!monster.alive || !monster.mesh) continue;
+      vqUpdateMonsterPath(monster, delta);
+      const dist = monster.mesh.position.distanceTo(playerPos);
+      if (dist < 6 && !monster.boss) {
+        vqInf.hp = Math.max(0, vqInf.hp - 20 * delta);
+        updateVoxelSurvivalHUD();
+      }
+    }
+  }
+
+  function vqUpdateFallingPieces(delta) {
+    const remove = [];
+    for (const mesh of vqInf.fallingPieces) {
+      if (!mesh || !mesh.parent) {
+        remove.push(mesh);
+        continue;
+      }
+      mesh.userData.vy -= 18 * delta;
+      mesh.position.x += mesh.userData.vx * delta * blockSize * 2;
+      mesh.position.y += mesh.userData.vy * delta * blockSize * 2;
+      mesh.position.z += mesh.userData.vz * delta * blockSize * 2;
+      mesh.rotation.x += mesh.userData.rotX;
+      mesh.rotation.y += mesh.userData.rotY;
+      if (mesh.position.y < -200) {
+        mesh.parent.remove(mesh);
+        remove.push(mesh);
+      }
+    }
+    vqInf.fallingPieces = vqInf.fallingPieces.filter(m => !remove.includes(m));
+  }
+
+  function vqGetHighlightTarget() {
+    if (!vqScene || !vqCamera) return null;
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(new THREE.Vector2(0, 0), vqCamera);
+    const meshes = [];
+    for (const chunk of vqInf.chunks.values()) {
+      if (chunk.mesh) meshes.push(chunk.mesh);
+    }
+    if (!meshes.length) return null;
+    const hits = ray.intersectObjects(meshes, false);
+    if (!hits.length) return null;
+    const hit = hits[0];
+    const mesh = hit.object;
+    const block = mesh.userData.vqBlocks && mesh.userData.vqBlocks[hit.instanceId];
+    if (!block) return null;
+    return { hit, mesh, block };
+  }
+
+  function vqUpdateHighlight() {
+    if (!vqScene || !vqCamera) return;
+    const target = vqGetHighlightTarget();
+    if (!target) {
+      if (vqInf.highlightMesh) vqInf.highlightMesh.visible = false;
+      vqInf.currentTargetBlock = null;
+      return;
+    }
+
+    vqInf.currentTargetBlock = target.block;
+    if (!vqInf.highlightMesh) {
+      const geo = new THREE.BoxGeometry(blockSize + 0.3, blockSize + 0.3, blockSize + 0.3);
+      const mat = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true, transparent: true, opacity: 0.95 });
+      vqInf.highlightMesh = new THREE.Mesh(geo, mat);
+      vqScene.add(vqInf.highlightMesh);
+    }
+    vqInf.highlightMesh.visible = true;
+    vqInf.highlightMesh.position.set(target.block.x * blockSize, target.block.y * blockSize, target.block.z * blockSize);
+  }
+
+  function vqUpdateHUD() {
+    const hp = document.getElementById('vq-hp');
+    const hunger = document.getElementById('vq-hunger');
+    const stamina = document.getElementById('vq-stamina');
+    const build = document.getElementById('vq-build-mode');
+    const blockName = document.getElementById('vq-block-name');
+    if (hp) hp.textContent = Math.max(0, Math.floor(vqInf.hp));
+    if (hunger) hunger.textContent = Math.max(0, Math.floor(vqInf.hunger));
+    if (stamina) stamina.textContent = Math.max(0, Math.floor(vqInf.stamina));
+    if (build) build.textContent = vqInf.buildMode ? '建造中' : '探索中';
+    if (blockName) blockName.textContent = vqInf.selectedBuildBlock;
+  }
+
+  function ensureVoxelSurvivalHUD() {
+    const hud = document.getElementById('vq-hud');
+    if (!hud || document.getElementById('vq-survival-panel')) return;
+    const panel = document.createElement('div');
+    panel.id = 'vq-survival-panel';
+    panel.className = 'pointer-events-none bg-black/60 backdrop-blur-md px-4 py-3 rounded-2xl text-white font-bold border border-white/10 shadow-lg flex flex-col gap-2';
+    panel.innerHTML = `
+      <div>❤️ HP: <span id="vq-hp">100</span></div>
+      <div>🍗 飢餓: <span id="vq-hunger">100</span></div>
+      <div>⚡ 體力: <span id="vq-stamina">100</span></div>
+      <div>🧱 <span id="vq-build-mode">探索中</span> / <span id="vq-block-name">wood_plank</span></div>
+    `;
+    hud.appendChild(panel);
+    vqUpdateHUD();
+  }
+
+  function updateVoxelSurvivalHUD() {
+    ensureVoxelSurvivalHUD();
+    vqUpdateHUD();
+  }
+
+  function vqEatFood() {
+    let healed = 0;
+    if (vqInf.inventory.cookedMeat > 0) {
+      vqInf.inventory.cookedMeat--;
+      vqInf.hunger = Math.min(100, vqInf.hunger + 35);
+      vqInf.hp = Math.min(100, vqInf.hp + 12);
+      healed = 1;
+    } else if (vqInf.inventory.food > 0) {
+      vqInf.inventory.food--;
+      vqInf.hunger = Math.min(100, vqInf.hunger + 20);
+      vqInf.hp = Math.min(100, vqInf.hp + 6);
+      healed = 1;
+    } else if (vqInf.inventory.rawMeat > 0) {
+      vqInf.inventory.rawMeat--;
+      vqInf.hunger = Math.min(100, vqInf.hunger + 12);
+      vqInf.hp = Math.min(100, vqInf.hp + 2);
+      healed = 1;
+    }
+    if (healed) {
+      updateVoxelSurvivalHUD();
+      queueVoxelAutosave();
+      return true;
+    }
+    return false;
+  }
+
+  function vqAttackMonsterNearCrosshair() {
+    if (!vqScene || !vqCamera) return false;
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(new THREE.Vector2(0, 0), vqCamera);
+    const monsterMeshes = vqInf.monsters.filter(m => m.alive && m.mesh).map(m => m.mesh);
+    const hits = ray.intersectObjects(monsterMeshes, true);
+    if (!hits.length) return false;
+
+    const hitMesh = hits[0].object;
+    const monster = vqInf.monsters.find(m => m.mesh === hitMesh || m.mesh.children.includes(hitMesh) || m.mesh.getObjectById(hitMesh.id));
+    if (!monster) return false;
+
+    const damage = vqInf.inventory.sword > 0 ? 30 : vqInf.inventory.axe > 0 ? 18 : 8;
+    monster.hp -= damage;
+    monster.mesh.scale.setScalar(monster.boss ? 1.0 + Math.max(0, monster.hp) / 3000 : 1);
+    if (monster.hp <= 0) {
+      monster.alive = false;
+      if (monster.mesh.parent) monster.mesh.parent.remove(monster.mesh);
+      const idx = vqInf.monsters.indexOf(monster);
+      if (idx >= 0) vqInf.monsters.splice(idx, 1);
+      vqInf.inventory.rawMeat += monster.boss ? 5 : 2;
+      vqInf.inventory.food += monster.boss ? 2 : 1;
+      queueVoxelAutosave();
+    }
+    return true;
+  }
+
+  function vqBreakTargetBlock() {
+    const target = vqInf.currentTargetBlock;
+    if (!target) return false;
+    const wx = target.x, wy = target.y, wz = target.z;
+    const type = vqGetBlock(wx, wy, wz);
+    if (!type) return false;
+
+    if (type.includes('log')) {
+      vqCollapseTreeAt(wx, wy, wz);
+      return true;
+    }
+
+    if (type === 'bedrock') return false;
+
+    vqRemoveBlock(wx, wy, wz);
+    vqAwardHarvest(type);
+    if (type === 'wheat') vqInf.inventory.food += 1;
+    if (type === 'red_flower' || type === 'yellow_flower' || type === 'blue_flower') vqInf.inventory.food += 0;
+    if (type === 'water') return false;
+    updateVoxelSurvivalHUD();
+    return true;
+  }
+
+  function vqPlaceTargetBlock() {
+    const target = vqInf.currentTargetBlock;
+    if (!target || !vqScene) return false;
+    const cam = vqCamera;
+    const dir = new THREE.Vector3();
+    cam.getWorldDirection(dir);
+    const tx = target.x + Math.round(dir.x > 0 ? 1 : (dir.x < 0 ? -1 : 0));
+    const ty = target.y + Math.round(dir.y > 0 ? 1 : (dir.y < 0 ? -1 : 1));
+    const tz = target.z + Math.round(dir.z > 0 ? 1 : (dir.z < 0 ? -1 : 0));
+    if (vqGetBlock(tx, ty, tz)) return false;
+    vqSetBlock(tx, ty, tz, vqInf.selectedBuildBlock);
+    if (vqInf.inventory.plank > 0) vqInf.inventory.plank--;
+    updateVoxelSurvivalHUD();
+    return true;
+  }
+
+  function vqInteractWithCrosshair() {
+    if (vqAttackMonsterNearCrosshair()) return true;
+    if (vqInf.buildMode) return vqPlaceTargetBlock();
+    return vqBreakTargetBlock();
+  }
+
+  function vqToggleBuildMode() {
+    vqInf.buildMode = !vqInf.buildMode;
+    updateVoxelSurvivalHUD();
+    return vqInf.buildMode;
+  }
+
+  function vqCycleBuildBlock(step = 1) {
+    const list = [
+      'wood_plank', 'stone_brick', 'glass', 'roof_tile', 'fence', 'sandstone',
+      'grass', 'dirt', 'stone', 'lantern', 'chest', 'crafting_table'
+    ];
+    const idx = list.indexOf(vqInf.selectedBuildBlock);
+    vqInf.selectedBuildBlock = list[(idx + step + list.length) % list.length];
+    updateVoxelSurvivalHUD();
+  }
+
+  function vqHandleKeyDownAdvanced(event) {
+    switch (event.code) {
+      case 'KeyB':
+        vqToggleBuildMode();
+        event.preventDefault();
+        break;
+      case 'KeyF':
+        vqInteractWithCrosshair();
+        event.preventDefault();
+        break;
+      case 'KeyE':
+        vqEatFood();
+        event.preventDefault();
+        break;
+      case 'BracketRight':
+        vqCycleBuildBlock(1);
+        event.preventDefault();
+        break;
+      case 'BracketLeft':
+        vqCycleBuildBlock(-1);
+        event.preventDefault();
+        break;
+      case 'KeyL':
+        vqInf.autoLookDown = !vqInf.autoLookDown;
+        event.preventDefault();
+        break;
+      case 'KeyX':
+        vqAttackMonsterNearCrosshair();
+        event.preventDefault();
+        break;
+    }
+  }
+
+  function vqHandleContextMenu(e) {
+    e.preventDefault();
+    if (vqInf.buildMode) vqPlaceTargetBlock();
+  }
+
+  function vqSerializeWorldSnapshot() {
+    return {
+      hp: vqInf.hp,
+      hunger: vqInf.hunger,
+      stamina: vqInf.stamina,
+      inventory: vqInf.inventory,
+      buildMode: vqInf.buildMode,
+      selectedBuildBlock: vqInf.selectedBuildBlock,
+      autoLookDown: vqInf.autoLookDown,
+      player: vqControls ? {
+        x: vqControls.getObject().position.x,
+        y: vqControls.getObject().position.y,
+        z: vqControls.getObject().position.z,
+        rotY: vqControls.getObject().rotation.y
+      } : null,
+      edits: Array.from(vqInf.blockEdits.entries())
+    };
+  }
+
+  function vqApplyWorldSnapshot(snapshot) {
+    if (!snapshot) return;
+    if (typeof snapshot.hp === 'number') vqInf.hp = snapshot.hp;
+    if (typeof snapshot.hunger === 'number') vqInf.hunger = snapshot.hunger;
+    if (typeof snapshot.stamina === 'number') vqInf.stamina = snapshot.stamina;
+    if (snapshot.inventory) vqInf.inventory = Object.assign(vqInf.inventory, snapshot.inventory);
+    if (typeof snapshot.buildMode === 'boolean') vqInf.buildMode = snapshot.buildMode;
+    if (typeof snapshot.selectedBuildBlock === 'string') vqInf.selectedBuildBlock = snapshot.selectedBuildBlock;
+    if (typeof snapshot.autoLookDown === 'boolean') vqInf.autoLookDown = snapshot.autoLookDown;
+    if (Array.isArray(snapshot.edits)) {
+      vqInf.blockEdits.clear();
+      for (const [k, v] of snapshot.edits) vqInf.blockEdits.set(k, v);
+    }
+    if (snapshot.player && vqControls) {
+      vqControls.getObject().position.set(snapshot.player.x || 0, snapshot.player.y || 80, snapshot.player.z || 0);
+      vqControls.getObject().rotation.y = snapshot.player.rotY || 0;
+    }
+    for (const chunk of vqInf.chunks.values()) chunk.dirty = true;
+    updateVoxelSurvivalHUD();
+  }
+
+  function getVoxelCloudUser() {
+    const user = (window.Auth && Auth.getCurrentUser && Auth.getCurrentUser()) || JSON.parse(localStorage.getItem('currentUser') || '{}');
+    return user && (user.username || user.account) ? user : null;
+  }
+
+  async function loadVoxelCloudState() {
+    const user = getVoxelCloudUser();
+    if (!user || typeof GAS_URL === 'undefined' || !GAS_URL) return;
+    try {
+      const res = await fetch(`${GAS_URL}?action=${VQ_CLOUD_ACTION_LOAD}&username=${encodeURIComponent(user.username || user.account)}`);
+      const data = await res.json();
+      if (data && data.status === 'success' && data.snapshot) {
+        const snapshot = typeof data.snapshot === 'string' ? JSON.parse(data.snapshot) : data.snapshot;
+        vqApplyWorldSnapshot(snapshot);
+      }
+    } catch (err) {
+      console.warn('Voxel cloud load failed:', err);
+    }
+  }
+
+  async function saveVoxelCloudState() {
+    const user = getVoxelCloudUser();
+    if (!user || typeof GAS_URL === 'undefined' || !GAS_URL) return;
+    const payload = {
+      action: VQ_CLOUD_ACTION_SAVE,
+      username: user.username || user.account,
+      snapshot: JSON.stringify(vqSerializeWorldSnapshot())
+    };
+    try {
+      await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+    } catch (err) {
+      const key = `vq_cloud_fallback_${user.username || user.account}`;
+      localStorage.setItem(key, JSON.stringify(payload.snapshot));
+      console.warn('Voxel cloud save fallback:', err);
+    }
+  }
+
+  function queueVoxelAutosave() {
+    vqInf.lastAutosave = performance.now();
+    if (vqInf.cloudTimer) clearTimeout(vqInf.cloudTimer);
+    vqInf.cloudTimer = setTimeout(() => {
+      saveVoxelCloudState();
+    }, VQ_AUTOSAVE_MS);
+  }
+
+  function vqBroadcastBlockUpdate(action, wx, wy, wz, typeKey) {
+    if (!vqInf.ws || vqInf.ws.readyState !== WebSocket.OPEN) return;
+    const user = getVoxelCloudUser();
+    vqInf.ws.send(JSON.stringify({
+      type: 'block_update',
+      action,
+      username: user ? (user.username || user.account || 'guest') : 'guest',
+      x: wx,
+      y: wy,
+      z: wz,
+      block: typeKey || null
+    }));
+  }
+
+  function vqConnectWebSocket() {
+    if (!VQ_WS_URL) return;
+    if (vqInf.ws && (vqInf.ws.readyState === WebSocket.OPEN || vqInf.ws.readyState === WebSocket.CONNECTING)) return;
+
+    try {
+      vqInf.ws = new WebSocket(VQ_WS_URL);
+      vqInf.ws.onopen = () => {
+        const user = getVoxelCloudUser();
+        vqInf.ws.send(JSON.stringify({
+          type: 'join',
+          username: user ? (user.username || user.account || 'guest') : 'guest',
+          state: vqSerializeWorldSnapshot()
+        }));
+      };
+      vqInf.ws.onmessage = (ev) => {
+        let msg = null;
+        try { msg = JSON.parse(ev.data); } catch (e) { return; }
+        if (!msg || !msg.type) return;
+
+        if (msg.type === 'player_state' && msg.id) {
+          if (msg.id === (getVoxelCloudUser()?.username || getVoxelCloudUser()?.account)) return;
+          vqUpdateRemoteAvatar(msg.id, msg);
+        }
+        if (msg.type === 'player_leave' && msg.id) {
+          vqRemoveRemoteAvatar(msg.id);
+        }
+        if (msg.type === 'block_update' && typeof msg.x === 'number') {
+          if (msg.action === 'remove') vqRemoveBlock(msg.x, msg.y, msg.z, false);
+          if (msg.action === 'set' && msg.block) vqSetBlock(msg.x, msg.y, msg.z, msg.block, false);
+        }
+        if (msg.type === 'sync_snapshot' && msg.snapshot) {
+          try { vqApplyWorldSnapshot(typeof msg.snapshot === 'string' ? JSON.parse(msg.snapshot) : msg.snapshot); } catch (e) {}
+        }
+      };
+      vqInf.ws.onclose = () => {
+        vqInf.ws = null;
+      };
+      vqInf.ws.onerror = () => {
+        try { vqInf.ws.close(); } catch (e) {}
+      };
+    } catch (err) {
+      console.warn('Voxel websocket unavailable:', err);
+    }
+  }
+
+  function vqSendLocalState() {
+    if (!vqInf.ws || vqInf.ws.readyState !== WebSocket.OPEN || !vqControls) return;
+    const now = performance.now();
+    if (now - vqInf.lastNetSend < 120) return;
+    vqInf.lastNetSend = now;
+    const user = getVoxelCloudUser();
+    vqInf.ws.send(JSON.stringify({
+      type: 'player_state',
+      id: user ? (user.username || user.account || 'guest') : 'guest',
+      name: user ? (user.name || user.username || user.account || 'player') : 'player',
+      x: vqControls.getObject().position.x,
+      y: vqControls.getObject().position.y,
+      z: vqControls.getObject().position.z,
+      yaw: vqControls.getObject().rotation.y,
+      hp: vqInf.hp,
+      hunger: vqInf.hunger,
+      inventory: vqInf.inventory
+    }));
+  }
+
+  function vqUpdateNetCleanup() {
+    if (!vqInf.ws) return;
+    const stale = [];
+    const now = Date.now();
+    for (const [id, entry] of vqInf.remotePlayers.entries()) {
+      if (now - entry.lastSeen > 15000) stale.push(id);
+    }
+    stale.forEach(vqRemoveRemoteAvatar);
+  }
+
+  function vqUpdatePhysics(delta) {
+    if (!vqControls) return;
+    const time = performance.now();
+    if (vqInf.autoLookDown && vqControls.isLocked) {
+      vqCamera.rotation.x = THREE.MathUtils.lerp(vqCamera.rotation.x, -0.36, 0.08);
+    }
+
+    vqInf.hunger = Math.max(0, vqInf.hunger - delta * 0.45);
+    if (vqInf.hunger <= 0) vqInf.hp = Math.max(0, vqInf.hp - delta * 2.5);
+    if (vqInf.hp <= 0) {
+      vqInf.hp = 100;
+      vqInf.hunger = 100;
+      vqControls.getObject().position.set(0, 80, 0);
+    }
+
+    vqInf.stamina = vqClamp(vqInf.stamina + delta * 10, 0, 100);
+    updateVoxelSurvivalHUD();
+
+    const velocity = window.__vqVelocity || (window.__vqVelocity = new THREE.Vector3());
+    const direction = window.__vqDirection || (window.__vqDirection = new THREE.Vector3());
+    velocity.x -= velocity.x * 10.0 * delta;
+    velocity.z -= velocity.z * 10.0 * delta;
+    velocity.y -= 9.8 * 60.0 * delta;
+
+    direction.z = Number(window.moveForward) - Number(window.moveBackward);
+    direction.x = Number(window.moveRight) - Number(window.moveLeft);
+    direction.normalize();
+
+    const speed = window.__vqMoveSpeed || 400.0;
+    if (window.moveForward || window.moveBackward) velocity.z -= direction.z * speed * delta;
+    if (window.moveLeft || window.moveRight) velocity.x -= direction.x * speed * delta;
+
+    const pos = vqControls.getObject().position;
+    const nextX = pos.x - (velocity.x * delta);
+    const nextZ = pos.z - (velocity.z * delta);
+    const nextY = pos.y + (velocity.y * delta);
+
+    if (vqCheckCollision(nextX, pos.y, pos.z)) velocity.x = 0;
+    if (vqCheckCollision(pos.x, pos.y, nextZ)) velocity.z = 0;
+    if (vqCheckCollision(pos.x, nextY, pos.z)) {
+      if (velocity.y < 0) {
+        velocity.y = 0;
+        window.canJump = true;
+        pos.y = Math.ceil(pos.y / blockSize) * blockSize + 5;
+      } else {
+        velocity.y = 0;
+      }
+    }
+
+    if (pos.y < -50) {
+      velocity.y = 0;
+      pos.set(0, 80, 0);
+    }
+
+    vqControls.moveRight(-velocity.x * delta);
+    vqControls.moveForward(-velocity.z * delta);
+    pos.y += (velocity.y * delta);
+  }
+
+  function vqUpdateTimeOfDay() {
+    vqTimeOfDay += 0.0005;
+    if (vqTimeOfDay > Math.PI * 2) vqTimeOfDay = 0;
+    const sunHeight = Math.sin(vqTimeOfDay);
+    vqSunLight.position.x = Math.cos(vqTimeOfDay) * 200;
+    vqSunLight.position.y = sunHeight * 200;
+
+    const skyColor = new THREE.Color();
+    let timeText = '白天';
+    let timeIcon = 'fa-sun';
+
+    if (sunHeight > 0.2) {
+      skyColor.setHex(0x87ceeb);
+      vqAmbientLight.intensity = 0.6;
+      vqSunLight.intensity = 0.8;
+      timeText = '白天';
+      timeIcon = 'fa-sun';
+    } else if (sunHeight > 0) {
+      const ratio = sunHeight / 0.2;
+      skyColor.lerpColors(new THREE.Color(0xfd5e53), new THREE.Color(0x87ceeb), ratio);
+      vqAmbientLight.intensity = 0.3 + (0.3 * ratio);
+      vqSunLight.intensity = 0.8 * ratio;
+      timeText = sunHeight > 0.1 ? '清晨' : '黃昏';
+      timeIcon = 'fa-cloud-sun';
+    } else {
+      skyColor.setHex(0x050510);
+      vqAmbientLight.intensity = 0.15;
+      vqSunLight.intensity = 0;
+      timeText = '黑夜';
+      timeIcon = 'fa-moon';
+    }
+
+    vqScene.background = skyColor;
+    vqScene.fog.color = skyColor;
+    const textEl = document.getElementById('vq-time-text');
+    const iconEl = document.getElementById('vq-time-icon');
+    if (textEl) textEl.textContent = timeText;
+    if (iconEl) iconEl.className = `fas ${timeIcon} text-yellow-500`;
+  }
+
+  function setupVoxelSurvivalInputs() {
+    if (window.__VQ_INPUTS_BOUND__) return;
+    window.__VQ_INPUTS_BOUND__ = true;
+
+    document.addEventListener('keydown', vqHandleKeyDownAdvanced);
+    document.addEventListener('contextmenu', vqHandleContextMenu);
+
+    document.addEventListener('mousedown', (event) => {
+      if (!vqControls || !vqControls.isLocked) return;
+      if (event.button !== 0) return;
+      if (vqInf.buildMode) return;
+      if (vqInf.currentTargetBlock) return;
+      vqInteractWithCrosshair();
+    });
+  }
+
+  function vqInitVoxelHUDExtras() {
+    ensureVoxelSurvivalHUD();
+    updateVoxelSurvivalHUD();
+    if (!document.getElementById('vq-block-name') && document.getElementById('vq-hud')) ensureVoxelSurvivalHUD();
+  }
+
+  window.checkCollision = vqCheckCollision;
+  window.getBlock = vqGetBlock;
+  window.setBlock = function (x, y, z, typeKey) {
+    const wx = typeof x === 'number' ? x : Number(x);
+    const wy = typeof y === 'number' ? y : Number(y);
+    const wz = typeof z === 'number' ? z : Number(z);
+    const chunk = vqGetChunkByWorld(wx, wz) || vqGenerateChunk(vqGetChunkCoord(wx), vqGetChunkCoord(wz));
+    chunk.edits.set(vqKey(wx, wy, wz), typeKey);
+    chunk.dirty = true;
+    vqSetEditedType(wx, wy, wz, typeKey);
+    if (chunk.mesh) vqBuildChunkMesh(chunk);
+  };
+
+  window.generateWorldData = function () {
+    vqInf.chunks.clear();
+    vqInf.blockEdits.clear();
+  };
+
+  window.renderWorldInstanced = function () {
+    vqEnsureChunksAroundPlayer();
+  };
+
+  window.spawnTargetCubes = function (count) {
+    vqTargetCubes.forEach(cube => vqScene && vqScene.remove(cube));
+    vqTargetCubes = [];
+    const qGeo = new THREE.BoxGeometry(8, 8, 8);
+    const qMat = new THREE.MeshPhongMaterial({ color: 0xFFD700, emissive: 0xFF8C00, shininess: 100 });
+    const origin = vqControls ? vqControls.getObject().position.clone() : new THREE.Vector3(0, 80, 0);
+
+    for (let i = 0; i < count; i++) {
+      const chunkRadius = VQ_RENDER_DISTANCE - 1;
+      const cx = vqGetChunkCoord(vqWorldToBlock(origin.x)) + Math.floor((Math.random() * 2 - 1) * chunkRadius);
+      const cz = vqGetChunkCoord(vqWorldToBlock(origin.z)) + Math.floor((Math.random() * 2 - 1) * chunkRadius);
+      const wx = cx * VQ_CHUNK_SIZE + Math.floor(Math.random() * VQ_CHUNK_SIZE);
+      const wz = cz * VQ_CHUNK_SIZE + Math.floor(Math.random() * VQ_CHUNK_SIZE);
+      const wy = vqFindGroundY(wx, wz) + 4 + Math.floor(Math.random() * 5);
+      const cube = new THREE.Mesh(qGeo, qMat);
+      cube.position.set(wx * blockSize, wy * blockSize, wz * blockSize);
+      vqScene.add(cube);
+      vqTargetCubes.push(cube);
+    }
+  };
+
+  window.setupThreeJS = function () {
+    const container = document.getElementById('vq-canvas-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    vqScene = new THREE.Scene();
+    vqScene.fog = new THREE.FogExp2(0x87ceeb, 0.002);
+
+    vqCamera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 1, 2000);
+
+    vqAmbientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    vqScene.add(vqAmbientLight);
+
+    vqSunLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    vqSunLight.position.set(100, 200, 50);
+    vqScene.add(vqSunLight);
+
+    vqTimeOfDay = Math.PI / 4;
+    vqControls = new THREE.PointerLockControls(vqCamera, document.body);
+
+    const blocker = document.getElementById('vq-blocker');
+    if (blocker) {
+      blocker.onclick = function () {
+        const quiz = document.getElementById('vq-quiz-overlay');
+        if (quiz && !quiz.classList.contains('hidden')) return;
+        vqControls.lock();
+      };
+    }
+
+    vqControls.addEventListener('lock', function () {
+      if (blocker) blocker.style.display = 'none';
+      const hud = document.getElementById('vq-hud');
+      const cross = document.getElementById('vq-crosshair');
+      if (hud) hud.classList.remove('hidden');
+      if (cross) cross.classList.remove('hidden');
+    });
+
+    vqControls.addEventListener('unlock', function () {
+      const quiz = document.getElementById('vq-quiz-overlay');
+      if (quiz && quiz.classList.contains('hidden')) {
+        if (blocker) blocker.style.display = 'flex';
+        const cross = document.getElementById('vq-crosshair');
+        if (cross) cross.classList.add('hidden');
+      }
+    });
+    vqScene.add(vqControls.getObject());
+
+    if (!window.__VQ_MOVEMENT_BOUND__) {
+      window.__VQ_MOVEMENT_BOUND__ = true;
+      document.addEventListener('keydown', function (event) {
+        switch (event.code) {
+          case 'ArrowUp': case 'KeyW': window.moveForward = true; break;
+          case 'ArrowLeft': case 'KeyA': window.moveLeft = true; break;
+          case 'ArrowDown': case 'KeyS': window.moveBackward = true; break;
+          case 'ArrowRight': case 'KeyD': window.moveRight = true; break;
+          case 'Space': if (window.canJump) (window.__vqVelocity || (window.__vqVelocity = new THREE.Vector3())).y += 150; window.canJump = false; break;
+        }
+      });
+      document.addEventListener('keyup', function (event) {
+        switch (event.code) {
+          case 'ArrowUp': case 'KeyW': window.moveForward = false; break;
+          case 'ArrowLeft': case 'KeyA': window.moveLeft = false; break;
+          case 'ArrowDown': case 'KeyS': window.moveBackward = false; break;
+          case 'ArrowRight': case 'KeyD': window.moveRight = false; break;
+        }
+      });
+    }
+
+    vqGenerateChunk(0, 0);
+    vqEnsureChunksAroundPlayer();
+    vqInitVoxelHUDExtras();
+    vqControls.getObject().position.set(0, 80, 0);
+
+    const interactionRaycaster = new THREE.Raycaster();
+    document.addEventListener('mousedown', (event) => {
+      if (vqControls.isLocked && event.button === 0 && vqTargetCubes.length > 0) {
+        interactionRaycaster.setFromCamera(new THREE.Vector2(0, 0), vqCamera);
+        const intersects = interactionRaycaster.intersectObjects(vqTargetCubes);
+        if (intersects.length > 0) {
+          const hitObj = intersects[0].object;
+          if (vqCamera.position.distanceTo(hitObj.position) < 80) {
+            currentHitCube = hitObj;
+            triggerVoxelQuiz();
+            return;
+          }
+        }
+      }
+    });
+
+    vqRenderer = new THREE.WebGLRenderer({ antialias: true });
+    vqRenderer.setPixelRatio(window.devicePixelRatio);
+    vqRenderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(vqRenderer.domElement);
+
+    if (!window.__VQ_RESIZE_BOUND__) {
+      window.__VQ_RESIZE_BOUND__ = true;
+      window.addEventListener('resize', function () {
+        if (!vqCamera || !vqRenderer) return;
+        const c = document.getElementById('vq-canvas-container');
+        if (!c) return;
+        vqCamera.aspect = c.clientWidth / c.clientHeight;
+        vqCamera.updateProjectionMatrix();
+        vqRenderer.setSize(c.clientWidth, c.clientHeight);
+      });
+    }
+
+    setupVoxelSurvivalInputs();
+    loadVoxelCloudState().then(() => {
+      vqEnsureChunksAroundPlayer();
+      vqConnectWebSocket();
+      updateVoxelSurvivalHUD();
+    });
+
+    prevTime = performance.now();
+    window.animateVoxelWorld();
+  };
+
+  window.animateVoxelWorld = function () {
+    vqAnimationId = requestAnimationFrame(window.animateVoxelWorld);
+    const time = performance.now();
+
+    if (vqControls && vqControls.isLocked === true) {
+      const delta = (time - prevTime) / 1000;
+      vqUpdateTimeOfDay();
+      vqEnsureChunksAroundPlayer();
+      vqSpawnMonsterNearPlayer();
+      vqUpdateAnimals(delta);
+      vqUpdateMonsters(delta);
+      vqUpdateFallingPieces(delta);
+      vqUpdateHighlight();
+      vqUpdatePhysics(delta);
+      vqSendLocalState();
+      vqUpdateNetCleanup();
+      vqUpdateHUD();
+      vqInf.lastMouseWorldHit = vqInf.currentTargetBlock;
+    }
+
+    prevTime = time;
+    if (vqRenderer && vqScene && vqCamera) vqRenderer.render(vqScene, vqCamera);
+  };
+
+  window.backToMenu = function () {
+    if (vqAnimationId) cancelAnimationFrame(vqAnimationId);
+    if (vqInf.cloudTimer) clearTimeout(vqInf.cloudTimer);
+    if (vqInf.netTimer) clearInterval(vqInf.netTimer);
+    try { saveVoxelCloudState(); } catch (e) {}
+    if (vqInf.ws) {
+      try { vqInf.ws.close(); } catch (e) {}
+      vqInf.ws = null;
+    }
+    if (vqControls) vqControls.unlock();
+    if (_origBackToMenu) _origBackToMenu();
+  };
+
+  window.vqSaveWorldToCloud = saveVoxelCloudState;
+  window.vqLoadWorldFromCloud = loadVoxelCloudState;
+  window.vqConnectWebSocket = vqConnectWebSocket;
+  window.vqToggleBuildMode = vqToggleBuildMode;
+  window.vqEatFood = vqEatFood;
+})();
+
 </script>
 </body>
 </html>
