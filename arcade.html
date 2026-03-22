@@ -809,25 +809,27 @@ function toggleSidebar() {
     }
 
     // 題目生成器
-    function generateGameQuestions(subj, count) {
-        if (window.generatePaper) {
-            let q = window.generatePaper({ 
-                subject: subj, 
-                total: count, 
-                // 優先使用 targetTags (使用者的年級)，如果沒有則回退到科目
-                tags: targetTags.length > 0 ? targetTags : [subj] 
-            }).filter(i => i && i.question);
-            
-            // 補齊題目防止當機
-            if (q.length < count) {
-                const backup = window.generatePaper({ subject: subj, total: count - q.length });
-                q = q.concat(backup);
-            }
-            return q;
+function generateGameQuestions(subj, count) {
+    if (window.generatePaper) {
+        let q = window.generatePaper({ 
+            subject: subj, 
+            total: count, 
+            // 優先使用 targetTags (使用者的年級)，如果沒有則回退到科目
+            tags: targetTags.length > 0 ? targetTags : [subj] 
+        }).filter(i => i && i.question);
+        
+        // 補齊題目防止當機
+        if (q.length < count) {
+            // 🌟 修復：幫 backup 也加上 filter，確保塞進來的題目都是有效的
+            const backup = window.generatePaper({ subject: subj, total: count - q.length })
+                                 .filter(i => i && i.question); 
+            q = q.concat(backup);
         }
-        console.warn("無法載入題目生成器");
-        return [];
+        return q;
     }
+    console.warn("無法載入題目生成器");
+    return [];
+}
 
     function resolveAnswerText(q) {
         if (!q) return "???";
@@ -884,17 +886,32 @@ function toggleSidebar() {
         if(!gameQuestions.length) { alert("⚠️ 無題目，請檢查題庫設定"); backToMenu(); return; }
         currentQIdx = 0; renderFlashcard();
     }
-    function renderFlashcard() {
-        const q = gameQuestions[currentQIdx % gameQuestions.length];
-        document.getElementById('fcQuestion').innerHTML = q.question.replace(/\n/g, '<br>');
-        let ans = resolveAnswerText(q);
-        if(q.options && typeof q.answer === 'number') {
-            ans = `<span class="text-4xl font-bold block mb-2 text-blue-300">${String.fromCharCode(65+q.answer)}</span><span class="text-xl">${ans}</span>`;
-        }
-        document.getElementById('fcAnswer').innerHTML = ans;
-        document.getElementById('flashCardInner').classList.remove('is-flipped');
-        if(window.MathJax) MathJax.typesetPromise();
+   function renderFlashcard() {
+    // 防呆 1：確保陣列有東西，避免除以 0 產生 NaN
+    if (!gameQuestions || gameQuestions.length === 0) return;
+
+    const q = gameQuestions[currentQIdx % gameQuestions.length];
+    
+    // 🛡️ 防呆 2：如果這題資料是壞的，自動跳下一題
+    if (!q || !q.question) {
+        console.warn("偵測到損壞的題目，自動跳過：", q);
+        currentQIdx++;
+        setTimeout(renderFlashcard, 0); // 延遲呼叫避免無窮迴圈鎖死瀏覽器
+        return; 
     }
+
+    // 確定 q 存在，安心渲染
+    document.getElementById('fcQuestion').innerHTML = String(q.question).replace(/\n/g, '<br>');
+    let ans = resolveAnswerText(q);
+    
+    if(q.options && typeof q.answer === 'number') {
+        ans = `<span class="text-4xl font-bold block mb-2 text-blue-300">${String.fromCharCode(65+q.answer)}</span><span class="text-xl">${ans}</span>`;
+    }
+    document.getElementById('fcAnswer').innerHTML = ans;
+    document.getElementById('flashCardInner').classList.remove('is-flipped');
+    
+    if(window.MathJax) MathJax.typesetPromise();
+}
     function flipCard(el) { el.querySelector('.card-inner').classList.toggle('is-flipped'); }
     function nextFlashcard() { currentQIdx++; renderFlashcard(); }
 
