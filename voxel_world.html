@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D 理化生存世界 - 完整生態與魔王版</title>
+    <title>3D 理化生存世界 - 準心瞄準與流暢生態版</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -34,16 +34,18 @@
         body { margin: 0; overflow: hidden; font-family: 'Noto Sans TC', sans-serif; touch-action: none; user-select: none; -webkit-user-select: none; background-color: #87CEEB; }
         
         /* UI 元素 */
-        #crosshair { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255,255,255,0.8); font-size: 30px; pointer-events: none; z-index: 10; text-shadow: 0 0 3px black; }
-        #msg-box { position: fixed; top: 15%; left: 50%; transform: translateX(-50%); font-size: 22px; font-weight: bold; color: #fbbf24; text-shadow: 2px 2px 4px black; z-index: 100; opacity: 0; transition: opacity 0.3s; pointer-events: none; width: 100%; text-align: center; }
+        #crosshair-container { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; text-align: center; }
+        #crosshair { color: rgba(255,255,255,0.8); font-size: 24px; text-shadow: 0 0 3px black; transition: transform 0.1s, color 0.1s; }
+        #target-info { color: white; font-size: 12px; margin-top: 5px; text-shadow: 1px 1px 2px black; opacity: 0; transition: opacity 0.2s; }
+        
+        #msg-box { position: fixed; top: 15%; left: 50%; transform: translateX(-50%); font-size: 20px; font-weight: bold; color: #fbbf24; text-shadow: 2px 2px 4px black; z-index: 100; opacity: 0; transition: opacity 0.3s; pointer-events: none; width: 100%; text-align: center; }
         #view-model { position: fixed; bottom: -30px; right: 15%; font-size: 120px; z-index: 15; transform-origin: bottom right; transition: transform 0.1s; pointer-events: none; filter: drop-shadow(0px 10px 10px rgba(0,0,0,0.5)); }
         
         /* 狀態條 */
-        .status-ui { position: fixed; top: 15px; right: 15px; background: rgba(0,0,0,0.6); padding: 12px; border-radius: 12px; color: white; z-index: 20; min-width: 160px; pointer-events: none; backdrop-filter: blur(4px); }
-        .stat-bar { width: 100%; height: 12px; background: #333; border-radius: 6px; margin-top: 4px; overflow: hidden; border: 1px solid #555; }
+        .status-ui { position: fixed; top: 15px; right: 15px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 12px; color: white; z-index: 20; min-width: 140px; pointer-events: none; backdrop-filter: blur(4px); }
+        .stat-bar { width: 100%; height: 10px; background: #333; border-radius: 5px; margin-top: 3px; overflow: hidden; border: 1px solid #555; }
         .hp-fill { height: 100%; background: #ef4444; width: 100%; transition: width 0.3s; }
         .energy-fill { height: 100%; background: #10b981; width: 100%; transition: width 0.3s; }
-        #luck-overlay { display: none; position: fixed; top: 80px; left: 50%; transform: translateX(-50%); color: #fbbf24; font-weight: bold; font-size: 18px; text-shadow: 2px 2px 4px black; z-index: 20; }
 
         /* 左側選單 */
         .toggle-btn { position: fixed; top: 15px; left: 15px; z-index: 60; background: rgba(0,0,0,0.6); color: white; padding: 10px 15px; border-radius: 8px; cursor: pointer; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); pointer-events: auto; }
@@ -51,31 +53,31 @@
         #sidebar.open { left: 0; }
         #inventory-list, #recipe-list { max-height: 300px; overflow-y: auto; }
 
-        /* 🚀 快捷列與搖桿 (手機版佈局優化) */
-        #hotbar { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 16px; z-index: 40; backdrop-filter: blur(4px); pointer-events: auto; }
-        .slot { width: 45px; height: 45px; border: 2px solid #555; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; position: relative; cursor: pointer; background: rgba(255,255,255,0.1); }
-        .slot.active { border-color: #fbbf24; background: rgba(251, 191, 36, 0.3); box-shadow: 0 0 15px rgba(251,191,36,0.8); transform: scale(1.1); transition: 0.1s; }
-        .slot-count { position: absolute; bottom: 2px; right: 4px; font-size: 12px; font-weight: bold; text-shadow: 1px 1px 2px black; }
+        /* 🚀 快捷列 (Hotbar)：支援滑動瀏覽 */
+        #hotbar-container { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); z-index: 40; pointer-events: auto; }
+        #hotbar { display: flex; gap: 6px; background: rgba(0,0,0,0.7); padding: 8px; border-radius: 16px; backdrop-filter: blur(4px); overflow-x: auto; max-width: 90vw; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+        #hotbar::-webkit-scrollbar { display: none; } /* 隱藏捲動條 */
+        
+        .slot { flex: 0 0 45px; width: 45px; height: 45px; border: 2px solid #555; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; position: relative; cursor: pointer; background: rgba(255,255,255,0.1); transition: transform 0.1s, border-color: 0.1s; }
+        .slot.active { border-color: #fbbf24; background: rgba(251, 191, 36, 0.3); box-shadow: 0 0 15px rgba(251,191,36,0.8); transform: scale(1.1); }
+        .slot-count { position: absolute; bottom: 2px; right: 4px; font-size: 11px; font-weight: bold; text-shadow: 1px 1px 2px black; }
 
-        .joystick-zone { position: fixed; bottom: 120px; width: 130px; height: 130px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; z-index: 30; backdrop-filter: blur(4px); pointer-events: auto; }
-        #joystick-move { left: 30px; }
-        #joystick-look { right: 30px; background: rgba(255,100,100,0.1); border-color: rgba(255,100,100,0.3); }
-        .joystick-knob { position: absolute; top: 40px; left: 40px; width: 50px; height: 50px; background: rgba(255,255,255,0.8); border-radius: 50%; pointer-events: none; }
+        /* 搖桿區 */
+        .joystick-zone { position: fixed; bottom: 120px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; z-index: 30; backdrop-filter: blur(4px); pointer-events: auto; }
+        #joystick-move { left: 25px; }
+        #joystick-look { right: 25px; background: rgba(255,100,100,0.1); border-color: rgba(255,100,100,0.3); }
+        .joystick-knob { position: absolute; top: 37.5px; left: 37.5px; width: 45px; height: 45px; background: rgba(255,255,255,0.8); border-radius: 50%; pointer-events: none; }
         #joystick-look .joystick-knob { background: rgba(255,100,100,0.8); }
 
         /* 互動按鈕 */
-        #controls { position: fixed; bottom: 270px; right: 30px; z-index: 30; display: flex; flex-direction: column; gap: 15px; pointer-events: auto; }
-        .action-btn { width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.5); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; backdrop-filter: blur(4px); }
+        #controls { position: fixed; bottom: 260px; right: 25px; z-index: 30; display: flex; flex-direction: column; gap: 12px; pointer-events: auto; }
+        .action-btn { width: 55px; height: 55px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.5); color: white; display: flex; align-items: center; justify-content: center; font-size: 22px; backdrop-filter: blur(4px); }
 
         /* 彈窗 */
-        .overlay-box { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); border: 2px solid #3b82f6; border-radius: 16px; padding: 24px; color: white; z-index: 200; box-shadow: 0 20px 40px rgba(0,0,0,0.8); max-height: 80vh; overflow-y: auto; }
-        .quiz-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer; width: 100%; text-align: left; color: white; font-size: 16px; transition: 0.2s; }
+        .overlay-box { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 450px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); border: 2px solid #3b82f6; border-radius: 16px; padding: 20px; color: white; z-index: 200; box-shadow: 0 20px 40px rgba(0,0,0,0.8); max-height: 80vh; overflow-y: auto; }
+        .quiz-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 10px; margin: 6px 0; border-radius: 8px; cursor: pointer; width: 100%; text-align: left; color: white; font-size: 15px; transition: 0.2s; }
         .quiz-btn:hover { background: rgba(59, 130, 246, 0.5); border-color: #3b82f6; }
         
-        /* 動物與魔王模型樣式 (使用 CSS 3D 簡單模擬體素) */
-        .voxel-model { position: absolute; transform-style: preserve-3d; pointer-events: none; }
-        .voxel-cube { position: absolute; width: 100%; height: 100%; background-size: cover; backface-visibility: hidden; }
-
         /* 揮動動畫 */
         .swing { animation: swingAnim 0.2s ease-in-out; }
         @keyframes swingAnim { 0% { transform: rotate(0deg) translateY(0); } 50% { transform: rotate(-40deg) translateY(-30px) translateX(-20px); } 100% { transform: rotate(0deg) translateY(0); } }
@@ -83,10 +85,14 @@
 </head>
 <body>
 
-    <div id="crosshair">✚</div>
+    <div id="crosshair-container">
+        <div id="crosshair">✚</div>
+        <div id="target-info">瞄準中...</div>
+    </div>
+    
     <div id="msg-box">系統訊息</div>
     <div id="view-model">👊</div>
-    <div id="luck-overlay">✨ 幸運增幅中！掉落增加！(<span id="luck-time"></span>s)</div>
+    <div id="luck-overlay">✨ 幸運增幅中！(<span id="luck-time"></span>s)</div>
 
     <div class="status-ui">
         <div class="flex justify-between text-xs font-bold text-red-400 mb-1"><span>生命 HP</span><span id="hp-txt">100</span></div>
@@ -104,18 +110,16 @@
     </div>
 
     <div id="boss-quiz-overlay" class="overlay-box" style="border-color: #ef4444;">
-        <h2 class="text-2xl font-bold text-red-400 mb-4 border-b border-gray-600 pb-2">
-            <i class="fas fa-skull"></i> 理化大魔王的挑戰！
-        </h2>
+        <h2 class="text-2xl font-bold text-red-400 mb-4 border-b border-gray-600 pb-2"><i class="fas fa-skull"></i> 魔王的挑戰！</h2>
         <div id="boss-question" class="text-gray-200 text-lg mb-6 leading-relaxed">題目載入中...</div>
-        <div id="boss-options" class="space-y-3">
-            </div>
-        <div class="mt-6 text-right">
-            <button onclick="closeBossQuiz()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded">逃跑 (扣 20 體力)</button>
-        </div>
+        <div id="boss-options" class="space-y-3"></div>
+        <div class="mt-6 text-right"><button onclick="closeBossQuiz()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded">逃跑 (-20 體力)</button></div>
     </div>
 
-    <div id="hotbar"></div>
+    <div id="hotbar-container">
+        <div id="hotbar">
+            </div>
+    </div>
 
     <div id="controls">
         <button id="btn-interact" class="action-btn" style="background: rgba(59, 130, 246, 0.4); border-color: #3b82f6;"><i class="fas fa-hand-pointer"></i></button>
@@ -131,18 +135,14 @@
         // 1. 遊戲資料設定 (物品、食物、工具、配方)
         // ==========================================
         const ITEMS = {
-            'wood': { name: '木頭', icon: '🪵', type: 'block' },
-            'stone': { name: '石頭', icon: '🪨', type: 'block' },
-            'dirt': { name: '泥土', icon: '🟤', type: 'block' },
-            'stick': { name: '木棍', icon: '🦯', type: 'mat' },
-            'apple': { name: '蘋果', icon: '🍎', type: 'food', energy: 15, hp: 10 },
-            'meat': { name: '生肉', icon: '🥩', type: 'food', energy: 5, hp: 0 },
-            'cooked_meat': { name: '烤肉', icon: '🍖', type: 'food', energy: 40, hp: 30 },
+            'wood': { name: '木頭', icon: '🪵', type: 'block' }, 'stone': { name: '石頭', icon: '🪨', type: 'block' }, 'dirt': { name: '泥土', icon: '🟤', type: 'block' },
+            'stick': { name: '木棍', icon: '🦯', type: 'mat' }, 'apple': { name: '蘋果', icon: '🍎', type: 'food', energy: 15, hp: 10 },
+            'meat': { name: '生肉', icon: '🥩', type: 'food', energy: 5, hp: 0 }, 'cooked_meat': { name: '烤肉', icon: '🍖', type: 'food', energy: 40, hp: 30 },
             'golden_apple': { name: '幸運金蘋果', icon: '✨', type: 'food', energy: 80, hp: 80, isLuck: true },
-            'diamond': { name: '鑽石', icon: '💎', type: 'mat' },
-            'wood_pickaxe': { name: '木鎬', icon: '⛏️', type: 'tool' },
-            'stone_pickaxe': { name: '石鎬', icon: '⛏️', type: 'tool' },
-            'torch': { name: '火把', icon: '🔥', type: 'block' }
+            'diamond': { name: '鑽石', icon: '💎', type: 'mat' }, 'wood_pickaxe': { name: '木鎬', icon: '⛏️', type: 'tool' },
+            'stone_pickaxe': { name: '石鎬', icon: '⛏️', type: 'tool' }, 'torch': { name: '火把', icon: '🔥', type: 'block' },
+            // 多一些材料供滑動測試
+            'iron_ore': { name: '鐵礦', icon: '⚪', type: 'mat' }, 'coal': { name: '煤炭', icon: '⚫', type: 'mat' }, 'string': { name: '線', icon: '🧶', type: 'mat' }
         };
 
         const RECIPES = [
@@ -154,590 +154,217 @@
         ];
 
         // 玩家資料
-        let inventory = { 'wood': 20, 'stone': 10, 'apple': 5, 'wood_pickaxe': 1 }; 
-        let hotbarSlots = ['wood', 'stone', 'apple', 'wood_pickaxe', '', ''];
+        let inventory = { 'wood': 20, 'stone': 10, 'apple': 5, 'wood_pickaxe': 1, 'dirt': 5, 'iron_ore': 2, 'coal': 3 }; 
+        let hotbarSlots = ['wood', 'stone', 'apple', 'wood_pickaxe', 'dirt', 'iron_ore', 'coal']; // 超過6個
         let selectedSlotIndex = 0;
-        let hp = 100, energy = 100;
-        let luckEndTime = 0;
+        let hp = 100, energy = 100, luckEndTime = 0;
 
-        //魔王題目資料庫 (保底)
-        let bossQuestions = [
-            { question: "國八理化：下列何者不是物理變化？", options: ["冰融化", "鐵生鏽", "水蒸發", "糖溶於水"], answer: 1 },
-            { question: "國八理化：阿基米德原理是指物體在流體中所受的浮力，等於其所排開流體的？", options: ["體積", "密度", "重量", "深度"], answer: 2 },
-            { question: "國八理化：密度（D）的公式為何？", options: ["D = M/V", "D = V/M", "D = M*V", "D = M+V"], answer: 0 }
-        ];
+        // 魔王題目 (保底)
+        let bossQuestions = [{ question: "國八理化：冰融化是？變化", options: ["物理", "化學", "生物", "心理"], answer: 0 }];
         let currentBossQ = null;
 
         // ==========================================
         // 2. UI 更新與互動邏輯
         // ==========================================
-        function showMsg(txt, color='#fbbf24') {
-            const m = document.getElementById('msg-box');
-            m.innerText = txt; m.style.color = color; m.style.opacity = 1;
-            setTimeout(() => m.style.opacity = 0, 2000);
-        }
+        function showMsg(txt, color='#fbbf24') { const m = document.getElementById('msg-box'); m.innerText = txt; m.style.color = color; m.style.opacity = 1; setTimeout(() => m.style.opacity = 0, 2000); }
+        function updateStats(hpChange, energyChange) { hp = Math.max(0, Math.min(100, hp + hpChange)); energy = Math.max(0, Math.min(100, energy + energyChange)); document.getElementById('hp-fill').style.width = `${hp}%`; document.getElementById('hp-txt').innerText = Math.floor(hp); document.getElementById('energy-fill').style.width = `${energy}%`; document.getElementById('energy-txt').innerText = Math.floor(energy); if (hp <= 0) { showMsg("💀 你餓死/摔死了！", "red"); resetPlayer(); } }
+        function resetPlayer() { camera.position.set(0, 5, 0); hp = 100; energy = 100; updateStats(0,0); }
+        function consumeItem(itemId) { const item = ITEMS[itemId]; if (item && item.type === 'food' && inventory[itemId] > 0) { inventory[itemId]--; updateStats(item.hp, item.energy); showMsg(`😋 吃了 ${item.name}！`, '#10b981'); if (item.isLuck) { luckEndTime = Date.now() + 60000; document.getElementById('luck-overlay').style.display = 'block'; } if (inventory[itemId] <= 0) { delete inventory[itemId]; } renderUI(); } }
 
-        function updateStats(hpChange, energyChange) {
-            hp = Math.max(0, Math.min(100, hp + hpChange));
-            energy = Math.max(0, Math.min(100, energy + energyChange));
-            document.getElementById('hp-fill').style.width = `${hp}%`;
-            document.getElementById('hp-txt').innerText = Math.floor(hp);
-            document.getElementById('energy-fill').style.width = `${energy}%`;
-            document.getElementById('energy-txt').innerText = Math.floor(energy);
-            if (hp <= 0) { showMsg("💀 你餓死/摔死了！", "red"); resetPlayer(); }
-        }
-
-        function resetPlayer() {
-            camera.position.set(0, 5, 0); hp = 100; energy = 100; updateStats(0,0);
-        }
-
-        function consumeItem(itemId) {
-            const item = ITEMS[itemId];
-            if (item && item.type === 'food' && inventory[itemId] > 0) {
-                inventory[itemId]--;
-                updateStats(item.hp, item.energy);
-                showMsg(`😋 吃了 ${item.name}！`, '#10b981');
-                if (item.isLuck) {
-                    luckEndTime = Date.now() + 60000; 
-                    document.getElementById('luck-overlay').style.display = 'block';
-                }
-                if (inventory[itemId] <= 0) { delete inventory[itemId]; hotbarSlots[selectedSlotIndex] = ''; }
-                renderUI();
-            }
-        }
-
+        // 🎒 🚀 終極修復：滑動快捷列 (Hotbar)
         function renderUI() {
+            // 背包
             const invDiv = document.getElementById('inventory-list'); invDiv.innerHTML = '';
-            Object.keys(inventory).forEach(key => {
-                if(inventory[key] > 0) {
-                    const item = ITEMS[key];
-                    invDiv.innerHTML += `<div class="slot bg-slate-800" title="${item.name}">${item.icon}<span class="slot-count">${inventory[key]}</span></div>`;
-                }
-            });
+            Object.keys(inventory).forEach(key => { if(inventory[key] > 0) { const item = ITEMS[key]; invDiv.innerHTML += `<div class="slot bg-slate-800">${item.icon}<span class="slot-count">${inventory[key]}</span></div>`; } });
 
+            // 合成表
             const recDiv = document.getElementById('recipe-list'); recDiv.innerHTML = '';
-            RECIPES.forEach(r => {
-                const canCraft = r.req.every(req => (inventory[req.id] || 0) >= req.count);
-                let reqHtml = r.req.map(req => `<span class="text-xs bg-black/40 px-1 rounded">${ITEMS[req.id].icon}x${req.count}</span>`).join(' ');
-                recDiv.innerHTML += `
-                    <div class="flex justify-between items-center p-2 rounded ${canCraft ? 'bg-blue-900/60' : 'bg-slate-800 opacity-50'}">
-                        <div class="flex items-center gap-2"><span class="text-2xl">${r.icon}</span>
-                        <div><div class="font-bold text-sm">${r.name} x${r.outCount}</div><div class="flex gap-1 mt-1">${reqHtml}</div></div></div>
-                        <button onclick="craft('${r.id}')" class="px-3 py-1 bg-blue-600 rounded text-xs text-white ${!canCraft?'hidden':''}">合成</button>
-                    </div>`;
-            });
+            RECIPES.forEach(r => { const canCraft = r.req.every(req => (inventory[req.id] || 0) >= req.count); recDiv.innerHTML += `<div class="flex justify-between items-center p-2 rounded ${canCraft ? 'bg-blue-900/60' : 'bg-slate-800 opacity-50'}"><div class="flex items-center gap-2"><span class="text-2xl">${r.icon}</span><div><div class="font-bold text-sm">${r.name}</div></div></div><button onclick="craft('${r.id}')" class="px-3 py-1 bg-blue-600 rounded text-xs text-white ${!canCraft?'hidden':''}">合成</button></div>`; });
 
+            // 🚀 快捷列 (支援滑動與自動對齊)
             const hotbarDiv = document.getElementById('hotbar'); hotbarDiv.innerHTML = '';
-            for(let i=0; i<6; i++) {
-                const itemId = hotbarSlots[i];
-                const count = itemId ? (inventory[itemId] || 0) : 0;
-                const icon = itemId ? ITEMS[itemId].icon : '';
-                if (itemId && count <= 0) { hotbarSlots[i] = ''; }
+            
+            // 整理快捷列 (移除數量為0的物品)
+            hotbarSlots = hotbarSlots.filter(id => id && inventory[id] > 0);
+            if(selectedSlotIndex >= hotbarSlots.length) selectedSlotIndex = 0;
+
+            hotbarSlots.forEach((itemId, i) => {
+                const count = inventory[itemId]; const icon = ITEMS[itemId].icon;
                 const div = document.createElement('div');
                 div.className = `slot ${i === selectedSlotIndex ? 'active' : ''}`;
-                div.innerHTML = `${icon}${count > 0 ? `<span class="slot-count">${count}</span>` : ''}`;
-                div.onclick = () => {
-                    if (selectedSlotIndex === i && itemId && ITEMS[itemId].type === 'food') { consumeItem(itemId); }
+                div.innerHTML = `${icon}<span class="slot-count">${count}</span>`;
+                div.onclick = (e) => {
+                    if (selectedSlotIndex === i && ITEMS[itemId].type === 'food') { consumeItem(itemId); }
                     else { selectedSlotIndex = i; }
                     renderUI();
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); // 自動選中對齊
                 };
                 hotbarDiv.appendChild(div);
-            }
+            });
+            
+            // 更新手持物
             const currentItem = hotbarSlots[selectedSlotIndex];
-            document.getElementById('view-model').innerText = currentItem && inventory[currentItem] > 0 ? ITEMS[currentItem].icon : '👊';
-        }
-
-        function craft(recipeId) {
-            const r = RECIPES.find(x => x.id === recipeId);
-            if(r.req.every(req => (inventory[req.id] || 0) >= req.count)) {
-                r.req.forEach(req => inventory[req.id] -= req.count);
-                inventory[r.id] = (inventory[r.id] || 0) + r.outCount;
-                if(!hotbarSlots.includes(r.id)) {
-                    const emptyIdx = hotbarSlots.findIndex(x => x === '');
-                    if(emptyIdx !== -1) hotbarSlots[emptyIdx] = r.id;
-                }
-                showMsg(`🔨 合成了 ${r.name}`, '#3b82f6');
-                renderUI();
-            }
+            document.getElementById('view-model').innerText = currentItem ? ITEMS[currentItem].icon : '👊';
         }
 
         // ==========================================
-        // 3. 💥 大魔王系統 (理化題目挑戰)
+        // 3. 大魔王系統 與 準心瞄準
         // ==========================================
         let isBossQuizOpen = false;
+        function openBossQuiz() { if (isBossQuizOpen || energy < 20) return; isBossQuizOpen = true; document.getElementById('boss-quiz-overlay').style.display = 'block'; currentBossQ = bossQuestions[0]; document.getElementById('boss-question').innerHTML = currentBossQ.question; const optionsDiv = document.getElementById('boss-options'); optionsDiv.innerHTML = ''; currentBossQ.options.forEach((opt, idx) => { const btn = document.createElement('button'); btn.className = "quiz-btn w-full text-left p-3 rounded-lg bg-slate-800"; btn.innerHTML = `${String.fromCharCode(65+idx)}. ${opt}`; btn.onclick = () => checkBossAnswer(idx); optionsDiv.appendChild(btn); }); }
+        function checkBossAnswer(selectedIdx) { if (selectedIdx === currentBossQ.answer) { showMsg("🎉 擊敗了大魔王！", "#10b981"); inventory['golden_apple'] = (inventory['golden_apple'] || 0) + 1; inventory['diamond'] = (inventory['diamond'] || 0) + 3; setTimeout(() => { removeBoss(); closeBossQuiz(true); renderUI(); }, 1500); } else { showMsg("💥 答錯了！受到懲罰！", "red"); updateStats(-30, -10); setTimeout(() => closeBossQuiz(false), 1500); } }
+        function closeBossQuiz(isVictory = false) { document.getElementById('boss-quiz-overlay').style.display = 'none'; isBossQuizOpen = false; if(!isVictory) updateStats(0, -10); }
 
-        function openBossQuiz() {
-            if (isBossQuizOpen || energy < 20) {
-                if(energy < 20) showMsg("⚠️ 體力不足以挑戰魔王！", "red");
-                return;
-            }
-            isBossQuizOpen = true;
-            document.getElementById('boss-quiz-overlay').style.display = 'block';
+        // 🎯 🚀 終極修復：動態準心與目標移動監測
+        const raycaster = new THREE.Raycaster(); const center = new THREE.Vector2(0, 0);
+
+        function updateCrosshairSystem() {
+            raycaster.setFromCamera(center, camera);
             
-            // 嘗試從外部題庫抓取大魔王題目，沒有就用保底的
-            if(window.generatePaper) {
-                try {
-                    const cloudQ = window.generatePaper({ subject: 'physics', total: 1, tags: ['大魔王'] });
-                    if(cloudQ && cloudQ.length > 0) {
-                        bossQuestions = cloudQ;
-                    }
-                } catch(e) { console.warn("無法抓取雲端魔王題", e); }
-            }
-
-            currentBossQ = bossQuestions[Math.floor(Math.random() * bossQuestions.length)];
+            // 檢測所有物體 (方塊與動物群)
+            const allTargets = [ ...scene.children.filter(obj => obj.geometry && obj.geometry.type === 'BoxGeometry'), ...entities.map(e => e.group) ];
+            const intersects = raycaster.intersectObjects(allTargets, true);
             
-            document.getElementById('boss-question').innerHTML = currentBossQ.question.replace(/\n/g, '<br>');
-            const optionsDiv = document.getElementById('boss-options');
-            optionsDiv.innerHTML = '';
-            
-            currentBossQ.options.forEach((opt, idx) => {
-                const btn = document.createElement('button');
-                btn.className = "quiz-btn quiz-option-btn w-full text-left p-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition active:scale-95";
-                btn.innerHTML = `${String.fromCharCode(65+idx)}. ${opt}`;
-                btn.onclick = () => checkBossAnswer(idx);
-                optionsDiv.appendChild(btn);
-            });
-            if(window.MathJax) MathJax.typesetPromise();
-        }
+            const crosshairEl = document.getElementById('crosshair'); const targetInfoEl = document.getElementById('target-info');
 
-        function checkBossAnswer(selectedIdx) {
-            const btns = document.querySelectorAll('.quiz-option-btn');
-            btns.forEach(b => b.disabled = true); // 防止連點
+            if (intersects.length > 0 && intersects[0].distance < 12) {
+                const target = intersects[0].object; const dist = Math.floor(intersects[0].distance);
+                crosshairEl.style.transform = 'scale(1.3)'; // 放大準心
+                targetInfoEl.style.opacity = '1';
 
-            if (selectedIdx === currentBossQ.answer) {
-                // 答對：獎勵金蘋果和鑽石，移除魔王
-                btns[selectedIdx].style.backgroundColor = "#10b981"; // 變綠
-                showMsg("🎉 答對了！大魔王被你擊敗了！", "#10b981");
-                inventory['golden_apple'] = (inventory['golden_apple'] || 0) + 1;
-                inventory['diamond'] = (inventory['diamond'] || 0) + 3;
-                setTimeout(() => {
-                    removeBoss();
-                    closeBossQuiz(true); // true 代表是勝利關閉
-                    renderUI();
-                }, 1500);
+                // 辨識目標
+                if (target.parent && target.parent.userData.type) { // 是動物
+                    const type = target.parent.userData.type;
+                    crosshairEl.style.color = '#fbbf24'; // 變黃
+                    targetInfoEl.innerText = `${type === 'pig' ? '🐷' : '🐮'} 動物 (${dist}m)`;
+                } else if (target.userData.type === 'boss') { // 是魔王
+                    crosshairEl.style.color = '#ef4444'; // 變紅
+                    targetInfoEl.innerText = `👹 理化大魔王 (${dist}m)`;
+                } else { // 是方塊
+                    crosshairEl.style.color = 'rgba(255,255,255,0.9)'; // 變白
+                    const bType = target.userData.blockType;
+                    targetInfoEl.innerText = `🧱 ${ITEMS[bType] ? ITEMS[bType].name : '方塊'} (${dist}m)`;
+                }
             } else {
-                // 答錯：扣血，魔王不死
-                btns[selectedIdx].style.backgroundColor = "#ef4444"; // 變紅
-                btns[currentBossQ.answer].style.backgroundColor = "#10b981"; // 顯示正解
-                showMsg("💥 答錯了！受到魔王的懲罰！", "red");
-                updateStats(-30, -10);
-                setTimeout(() => {
-                    closeBossQuiz(false); // 失敗關閉
-                }, 1500);
-            }
-        }
-
-        function closeBossQuiz(isVictory = false) {
-            document.getElementById('boss-quiz-overlay').style.display = 'none';
-            isBossQuizOpen = false;
-            currentBossQ = null;
-            if(!isVictory) {
-                // 如果不是勝利（是逃跑或答錯），額外扣體力
-                updateStats(0, -10);
+                // 瞄準空白
+                crosshairEl.style.transform = 'scale(1)'; crosshairEl.style.color = 'rgba(255,255,255,0.8)'; targetInfoEl.style.opacity = '0';
             }
         }
 
         // ==========================================
-        // 4. Three.js: 無限地形、生物、植物與魔王
+        // 4. Three.js: 地形、動物 AI 與跳躍
         // ==========================================
-        const scene = new THREE.Scene(); 
-        scene.fog = new THREE.FogExp2(0x87CEEB, 0.05);
-        
+        const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x87CEEB, 0.05);
         const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
-        const renderer = new THREE.WebGLRenderer({ antialias: false });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio > 1 ? 1.5 : 1);
-        document.body.appendChild(renderer.domElement);
+        const renderer = new THREE.WebGLRenderer({ antialias: false }); renderer.setSize(window.innerWidth, window.innerHeight); renderer.setPixelRatio(window.devicePixelRatio > 1 ? 1.5 : 1); document.body.appendChild(renderer.domElement);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.8)); const dirLight = new THREE.DirectionalLight(0xffffff, 0.5); dirLight.position.set(10, 20, 10); scene.add(dirLight);
 
-        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
-        dirLight.position.set(10, 20, 10); scene.add(dirLight);
-
-        // 材質
+        const MATS = { 'grass': createColorMaterial(0x55aa55), 'dirt': createColorMaterial(0x8b5a2b), 'stone': createColorMaterial(0x888888), 'wood': createColorMaterial(0x5c4033), 'leaves': createColorMaterial(0x228b22), 'pig': createColorMaterial(0xffc0cb), 'cow': createColorMaterial(0x7f4c1e), 'boss': createColorMaterial(0xef4444) };
         function createColorMaterial(color) { return new THREE.MeshLambertMaterial({ color: color }); }
-        const MATS = {
-            'grass': createColorMaterial(0x55aa55),
-            'dirt': createColorMaterial(0x8b5a2b),
-            'stone': createColorMaterial(0x888888),
-            'wood': createColorMaterial(0x5c4033),
-            'leaves': createColorMaterial(0x228b22),
-            'pig': createColorMaterial(0xffc0cb),
-            'cow': createColorMaterial(0x7f4c1e),
-            'boss': createColorMaterial(0xef4444), // 魔王是紅色的
-        };
         const boxGeo = new THREE.BoxGeometry(1, 1, 1);
 
-        // 地形與實體
-        const blocks = new Map();
-        const entities = []; // 🐷 生物植物人
-        let bossEntity = null; // 👹 大魔王
-        noise.seed(Math.random());
-        
-        function getBlockKey(x, y, z) { return `${Math.floor(x)},${Math.floor(y)},${Math.floor(z)}`; }
-        
-        function addBlock(x, y, z, type) {
-            const mesh = new THREE.Mesh(boxGeo, MATS[type] || MATS['dirt']);
-            mesh.position.set(x, y, z);
-            scene.add(mesh);
-            blocks.set(getBlockKey(x, y, z), { mesh, type });
-        }
+        const blocks = new Map(); const entities = []; let bossEntity = null; noise.seed(Math.random());
+        function addBlock(x, y, z, type) { const mesh = new THREE.Mesh(boxGeo, MATS[type] || MATS['dirt']); mesh.position.set(x, y, z); mesh.userData.blockType = type; scene.add(mesh); blocks.set(`${Math.floor(x)},${Math.floor(y)},${Math.floor(z)}`, { mesh, type }); }
+        function spawnTree(x, z) { let baseH = Math.floor(noise.perlin2(x/15, z/15) * 4) + 2; for(let y=baseH+1; y<=baseH+4; y++) addBlock(x, y, z, 'wood'); for(let ox=-1; ox<=1; ox++) for(let oz=-1; oz<=1; oz++) addBlock(x+ox, baseH+4, z+oz, 'leaves'); }
 
-        // 🌿 🌱 植物：生成樹木
-        function spawnTree(x, z) {
-            let baseH = Math.floor(noise.perlin2(x/15, z/15) * 4) + 2;
-            for(let y=baseH+1; y<=baseH+4; y++) {
-                addBlock(x, y, z, 'wood'); // 樹干
-            }
-            // 樹葉
-            for(let ox=-1; ox<=1; ox++) {
-                for(let oz=-1; oz<=1; oz++) {
-                    addBlock(x+ox, baseH+4, z+oz, 'leaves');
-                    if(Math.random()<0.6) addBlock(x+ox, baseH+5, z+oz, 'leaves');
-                }
-            }
-        }
-
-        // 🐷🐄 生物：生成動物 (方塊豬和牛)
+        // 🐖🐄 動態生物 (流暢 AI 與自動跳躍)
         function spawnAnimal(type) {
             const group = new THREE.Group();
-            const bodyMat = MATS[type];
-            
-            // 身體
-            const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 1.2), bodyMat);
-            body.position.y = 0.6;
-            group.add(body);
-
-            // 頭
-            const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), bodyMat);
-            head.position.set(0, 0.8, -0.7);
-            group.add(head);
-            
-            // 隨機位置
-            let rx = (Math.random() - 0.5) * 20;
-            let rz = (Math.random() - 0.5) * 20;
-            let rh = Math.floor(noise.perlin2(rx/15, rz/15) * 4) + 3;
-            group.position.set(rx, rh, rz);
-            
-            scene.add(group);
-            entities.push({ group, type, velocity: new THREE.Vector3(0, 0, 0), nextWander: 0 });
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 1.2), MATS[type]); body.position.y = 0.6; group.add(body);
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), MATS[type]); head.position.set(0, 0.8, -0.7); group.add(head);
+            group.position.set((Math.random()-0.5)*30, 5, (Math.random()-0.5)*30);
+            group.userData = { type, id: entities.length, velY: 0, isJumping: false }; scene.add(group);
+            entities.push({ group, velocity: new THREE.Vector3(0, 0, 0), nextStateTime: 0, state: 'idle' });
         }
 
-        // 👹 大魔王：生成大魔王題目方塊
-        function spawnBoss() {
-            if(bossEntity) return;
-            const group = new THREE.Group();
-            
-            // 魔王主體 (超大紅色方塊)
-            const mesh = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), MATS['boss']);
-            group.add(mesh);
+        function removeBoss() { if(bossEntity) { scene.remove(bossEntity); bossEntity = null; } }
 
-            // 裝飾 (問號)
-            const loader = new THREE.FontLoader();
-            // 這裡簡單用個發光的方塊代替問號，因為載入字體在單檔比較麻煩
-            const lightGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-            const lightMat = new THREE.MeshBasicMaterial({ color: 0xFFFF00 });
-            const light = new THREE.Mesh(lightGeo, lightMat);
-            light.position.set(0, 0, -1.1);
-            group.add(light);
-            
-            //魔王位置 (0, 10, 0) 高空中
-            group.position.set(0, 10, 0);
-            
-            scene.add(group);
-            bossEntity = { group, type: 'boss', lastPulse: 0 };
-            showMsg("👹 理化大魔王降臨在天空中 (0, 10, 0)！去挑戰它吧！", "red");
-        }
+        const generatedChunks = new Set(); const CHUNK_SIZE = 8;
+        function updateInfiniteTerrain() { const px = Math.floor(camera.position.x / CHUNK_SIZE); const pz = Math.floor(camera.position.z / CHUNK_SIZE); const viewDist = 2; for (let x = px - viewDist; x <= px + viewDist; x++) for (let z = pz - viewDist; z <= pz + viewDist; z++) { if (!generatedChunks.has(`${x},${z}`)) { generateChunk(x, z); generatedChunks.add(`${x},${z}`); } } }
+        function generateChunk(cx, cz) { for (let x = 0; x < CHUNK_SIZE; x++) for (let z = 0; z < CHUNK_SIZE; z++) { const wx = cx * CHUNK_SIZE + x; const wz = cz * CHUNK_SIZE + z; let h = Math.floor(noise.perlin2(wx/15, wz/15) * 4) + 2; for(let y = -1; y <= h; y++) addBlock(wx, y, wz, y === h ? 'grass' : (y > h-2 ? 'dirt' : 'stone')); if (wx !== 0 && wz !== 0 && Math.random() < 0.03) spawnTree(wx, wz); } }
 
-        function removeBoss() {
-            if(bossEntity) {
-                scene.remove(bossEntity.group);
-                bossEntity = null;
-            }
-        }
+        updateInfiniteTerrain(); camera.position.set(0, 5, 0);
 
-        // 🧱 無限地形核心：Chunk生成系統
-        const generatedChunks = new Set();
-        const CHUNK_SIZE = 8;
-
-        function updateInfiniteTerrain() {
-            const playerX = Math.floor(camera.position.x / CHUNK_SIZE);
-            const playerZ = Math.floor(camera.position.z / CHUNK_SIZE);
-            const viewDist = 2; //渲染距離 (Chunk 數量)
-
-            for (let x = playerX - viewDist; x <= playerX + viewDist; x++) {
-                for (let z = playerZ - viewDist; z <= playerZ + viewDist; z++) {
-                    const chunkKey = `${x},${z}`;
-                    if (!generatedChunks.has(chunkKey)) {
-                        generateChunk(x, z);
-                        generatedChunks.add(chunkKey);
-                    }
-                }
-            }
-        }
-
-        function generateChunk(cx, cz) {
-            for (let x = 0; x < CHUNK_SIZE; x++) {
-                for (let z = 0; z < CHUNK_SIZE; z++) {
-                    const wx = cx * CHUNK_SIZE + x;
-                    const wz = cz * CHUNK_SIZE + z;
-                    
-                    let h = Math.floor(noise.perlin2(wx/15, wz/15) * 4) + 2;
-                    for(let y = -1; y <= h; y++) {
-                        let type = y === h ? 'grass' : (y > h-2 ? 'dirt' : 'stone');
-                        addBlock(wx, y, wz, type);
-                    }
-                    
-                    // 🌲 隨機長樹 (植物)
-                    if (wx !== 0 && wz !== 0 && Math.random() < 0.03) {
-                        spawnTree(wx, wz);
-                    }
-                }
-            }
-        }
-
-        // 初始化場景
-        updateInfiniteTerrain(); //生成初始地形
-        camera.position.set(0, 5, 0);
-
-        // 生成初始生態
-        for(let i=0; i<3; i++) spawnAnimal('pig');
-        for(let i=0; i<2; i++) spawnAnimal('cow');
-        setTimeout(spawnBoss, 5000); // 5秒後魔王降臨
+        // 🚀 🌱 動物多一點 (但不要太多)：增加到 30 隻
+        for(let i=0; i<18; i++) spawnAnimal('pig');
+        for(let i=0; i<12; i++) spawnAnimal('cow');
+        bossEntity = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), MATS['boss']); bossEntity.position.set(0, 10, 0); bossEntity.userData.type = 'boss'; scene.add(bossEntity);
 
         // ==========================================
-        // 5. 破壞、放置與 👁️ 互動邏輯 (魔王挑戰)
+        // 5. 互動與 6. 移動系統
         // ==========================================
-        const raycaster = new THREE.Raycaster();
-        const center = new THREE.Vector2(0, 0);
-
-        function swingHand() {
-            const vm = document.getElementById('view-model');
-            vm.classList.remove('swing'); void vm.offsetWidth; vm.classList.add('swing');
-            updateStats(0, -1);
-        }
-
-        function handleInteract() {
-            // 射線檢測，看玩家瞄準哪裡
-            raycaster.setFromCamera(center, camera);
-            // 這裡要檢測魔王實體
-            if(bossEntity) {
-                const intersectBoss = raycaster.intersectObject(bossEntity.group, true);
-                if(intersectBoss.length > 0 && intersectBoss[0].distance < 8) {
-                    // 靠近魔王，啟動理化挑戰
-                    openBossQuiz();
-                    return; // 互動優先於破壞
-                }
-            }
-            
-            // 沒瞄準魔王，就嘗試破壞
-            handleBreak();
-        }
-
-        function handleBreak() {
-            const currentItemId = hotbarSlots[selectedSlotIndex];
-            if (currentItemId && ITEMS[currentItemId].type === 'food') {
-                showMsg("⚠️ 食物太軟了，無法用來挖礦！", "#ef4444"); return;
-            }
-            swingHand();
-            raycaster.setFromCamera(center, camera);
-            const intersects = raycaster.intersectObjects(scene.children).filter(i => i.object.geometry.type === 'BoxGeometry');
-            if (intersects.length > 0 && intersects[0].distance < 5) {
-                const target = intersects[0]; const p = target.object.position; const key = getBlockKey(p.x, p.y, p.z);
-                if (blocks.has(key)) {
-                    const bType = blocks.get(key).type;
-                    if(bType === 'boss') { openBossQuiz(); return; } // 打魔王方塊也觸發題目
-                    scene.remove(target.object); blocks.delete(key);
-                    // 採礦掉落邏輯
-                    let dropCount = (Date.now() < luckEndTime) ? 2 : 1;
-                    if (currentItemId && ITEMS[currentItemId].type === 'tool') dropCount += 1;
-                    let dropId = bType === 'grass' ? 'dirt' : bType; 
-                    inventory[dropId] = (inventory[dropId] || 0) + dropCount;
-                    showMsg(`⛏️ 獲得 ${ITEMS[dropId].name} x${dropCount}`);
-                    renderUI();
-                }
-            }
-        }
-
-        // 電腦版互動 (空白鍵)
-        document.addEventListener('keydown', (e) => {
-            if(e.key === ' ' && !isBossQuizOpen) {
-                if(camera.position.y > 10) return; //在魔王附近才算互動
-                handleInteract();
-                e.preventDefault();
-            }
-        });
-
-        // 綁定按鈕
-        document.getElementById('btn-break').addEventListener('pointerdown', handleBreak);
-        document.getElementById('btn-interact').addEventListener('pointerdown', handleInteract);
-
-        document.getElementById('btn-place').addEventListener('pointerdown', () => {
-            const currentItemId = hotbarSlots[selectedSlotIndex];
-            if (!currentItemId || ITEMS[currentItemId].type !== 'block' || !(inventory[currentItemId] > 0)) return;
-            swingHand();
-            raycaster.setFromCamera(center, camera);
-            const intersects = raycaster.intersectObjects(scene.children).filter(i => i.object.geometry.type === 'BoxGeometry');
-            if (intersects.length > 0 && intersects[0].distance < 5) {
-                const p = intersects[0].object.position.clone().add(intersects[0].face.normal);
-                if (!blocks.has(getBlockKey(p.x, p.y, p.z))) {
-                    addBlock(p.x, p.y, p.z, currentItemId);
-                    inventory[currentItemId]--;
-                    if(inventory[currentItemId] <= 0) hotbarSlots[selectedSlotIndex] = '';
-                    renderUI();
-                }
-            }
-        });
-
-        // ==========================================
-        // 6. 🎮 移動系統與動物 AI
-        // ==========================================
-        let moveInput = { x: 0, y: 0 };
-        let lookInput = { x: 0, y: 0 };
-        const keysPressed = {};
-
-        // 監聽鍵盤 (PC WASD)
-        document.addEventListener('keydown', e => {
-            keysPressed[e.key.toLowerCase()] = true;
-            // 快捷列數字鍵 1-6
-            if(['1','2','3','4','5','6'].includes(e.key)) {
-                selectedSlotIndex = parseInt(e.key) - 1; renderUI();
-            }
-        });
+        let moveInput = { x: 0, y: 0 }; let lookInput = { x: 0, y: 0 }; const keysPressed = {};
+        document.addEventListener('keydown', e => { keysPressed[e.key.toLowerCase()] = true; if(['1','2','3','4','5','6','7','8'].includes(e.key)) { selectedSlotIndex = parseInt(e.key) - 1; if(selectedSlotIndex < hotbarSlots.length) renderUI(); document.querySelector(`.slot:nth-child(${selectedSlotIndex+1})`).scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); } });
         document.addEventListener('keyup', e => keysPressed[e.key.toLowerCase()] = false);
+        // PC 滾輪滑動快捷列
+        document.addEventListener('wheel', (e) => { if(isBossQuizOpen) return; selectedSlotIndex = (selectedSlotIndex + (e.deltaY > 0 ? 1 : -1) + hotbarSlots.length) % hotbarSlots.length; renderUI(); document.querySelector('.slot.active').scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); });
 
-        // 手機搖桿設定
-        function setupJoystick(zoneId, knobId, outputObj) {
-            const zone = document.getElementById(zoneId); const knob = document.getElementById(knobId);
-            let activeId = null; let centerX, centerY, maxR = 40;
-            zone.addEventListener('touchstart', e => {
-                e.preventDefault(); const touch = e.changedTouches[0]; activeId = touch.identifier;
-                const rect = zone.getBoundingClientRect(); centerX = rect.left + rect.width / 2; centerY = rect.top + rect.height / 2;
-                updateKnob(touch.clientX, touch.clientY);
-            }, {passive: false});
-            zone.addEventListener('touchmove', e => {
-                e.preventDefault(); for(let i=0; i<e.changedTouches.length; i++) {
-                    if(e.changedTouches[i].identifier === activeId) { updateKnob(e.changedTouches[i].clientX, e.changedTouches[i].clientY); break; }
-                }
-            }, {passive: false});
-            const endDrag = (e) => {
-                for(let i=0; i<e.changedTouches.length; i++) {
-                    if(e.changedTouches[i].identifier === activeId) { activeId = null; knob.style.transform = `translate(0px, 0px)`; outputObj.x = 0; outputObj.y = 0; break; }
-                }
-            };
-            zone.addEventListener('touchend', endDrag); zone.addEventListener('touchcancel', endDrag);
-            function updateKnob(tx, ty) {
-                let dx = tx - centerX; let dy = ty - centerY; let dist = Math.sqrt(dx*dx + dy*dy);
-                if (dist > maxR) { dx = (dx/dist)*maxR; dy = (dy/dist)*maxR; }
-                knob.style.transform = `translate(${dx}px, ${dy}px)`; outputObj.x = dx / maxR; outputObj.y = dy / maxR;
-            }
-        }
-        setupJoystick('joystick-move', 'knob-move', moveInput);
-        setupJoystick('joystick-look', 'knob-look', lookInput);
+        function setupJoystick(zoneId, knobId, outputObj) { const zone = document.getElementById(zoneId); const knob = document.getElementById(knobId); let activeId = null; let centerX, centerY, maxR = 40; zone.addEventListener('touchstart', e => { e.preventDefault(); const touch = e.changedTouches[0]; activeId = touch.identifier; const rect = zone.getBoundingClientRect(); centerX = rect.left + rect.width / 2; centerY = rect.top + rect.height / 2; updateKnob(touch.clientX, touch.clientY); }, {passive: false}); zone.addEventListener('touchmove', e => { e.preventDefault(); for(let i=0; i<e.changedTouches.length; i++) if(e.changedTouches[i].identifier === activeId) { updateKnob(e.changedTouches[i].clientX, e.changedTouches[i].clientY); break; } }, {passive: false}); zone.addEventListener('touchend', e => { for(let i=0; i<e.changedTouches.length; i++) if(e.changedTouches[i].identifier === activeId) { activeId = null; knob.style.transform = `translate(0px, 0px)`; outputObj.x = 0; outputObj.y = 0; break; } }); function updateKnob(tx, ty) { let dx = tx - centerX; let dy = ty - centerY; let dist = Math.sqrt(dx*dx + dy*dy); if (dist > maxR) { dx = (dx/dist)*maxR; dy = (dy/dist)*maxR; } knob.style.transform = `translate(${dx}px, ${dy}px)`; outputObj.x = dx / maxR; outputObj.y = dy / maxR; } }
+        setupJoystick('joystick-move', 'knob-move', moveInput); setupJoystick('joystick-look', 'knob-look', lookInput);
 
-        const direction = new THREE.Vector3();
-        let euler = new THREE.Euler(0, 0, 0, 'YXZ');
-        let playerVelocityY = 0; // 重力
-
-        // 遊戲迴圈
-        const clock = new THREE.Clock();
+        const direction = new THREE.Vector3(); let euler = new THREE.Euler(0, 0, 0, 'YXZ'); let playerVelocityY = 0; const clock = new THREE.Clock();
 
         function updateGame() {
-            requestAnimationFrame(updateGame);
-            const delta = clock.getDelta();
+            requestAnimationFrame(updateGame); const delta = clock.getDelta(); const time = Date.now();
+            if(isBossQuizOpen) { renderer.render(scene, camera); return; }
 
-            // 1. 視角轉動 (流暢設定)
-            let lookX = lookInput.x * 0.04;
-            let lookY = lookInput.y * 0.04;
-            // 支援滑鼠 (PC要加上 Pointer Lock 才能用，這裡先略過)
+            // 1. 視角
+            euler.setFromQuaternion(camera.quaternion); euler.y -= lookInput.x * 0.04; euler.x -= lookInput.y * 0.04; euler.x = Math.max(-1.5, Math.min(1.5, euler.x)); camera.quaternion.setFromEuler(euler);
 
-            euler.setFromQuaternion(camera.quaternion);
-            euler.y -= lookX; euler.x -= lookY;
-            euler.x = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, euler.x));
-            camera.quaternion.setFromEuler(euler);
+            // 2. 玩家移動
+            let inputX = moveInput.x; let inputZ = moveInput.y;
+            if(keysPressed['w']) inputZ = -1; if(keysPressed['s']) inputZ = 1; if(keysPressed['a']) inputX = -1; if(keysPressed['d']) inputX = 1;
+            if (inputX !== 0 || inputZ !== 0) { direction.set(inputX, 0, inputZ).normalize(); direction.applyAxisAngle(new THREE.Vector3(0,1,0), euler.y); camera.position.addScaledVector(direction, 0.15); updateInfiniteTerrain(); }
 
-            // 2. 玩家移動 (WASD + 搖桿)
-            const moveSpeed = 0.15;
-            direction.set(0, 0, 0);
-            
-            // 整合 PC 鍵盤
-            let inputX = moveInput.x;
-            let inputZ = moveInput.y;
-            if(keysPressed['w']) inputZ = -1; if(keysPressed['s']) inputZ = 1;
-            if(keysPressed['a']) inputX = -1; if(keysPressed['d']) inputX = 1;
+            // 3. ✨ 重力 與 準心瞄準
+            playerVelocityY = blocks.has(`${Math.floor(camera.position.x)},${Math.floor(camera.position.y - 1.8)},${Math.floor(camera.position.z)}`) ? 0 : playerVelocityY - 0.01;
+            camera.position.y += playerVelocityY; if(camera.position.y < -10) resetPlayer();
+            updateCrosshairSystem();
 
-            if (inputX !== 0 || inputZ !== 0) {
-                direction.set(inputX, 0, inputZ).normalize();
-                direction.applyAxisAngle(new THREE.Vector3(0,1,0), euler.y);
-                camera.position.addScaledVector(direction, moveSpeed);
-                // 體力消耗
-                if(Math.random()<0.01) updateStats(0, -1);
-                
-                // 3. ✨ 動態地形更新：走動時產生新地形
-                updateInfiniteTerrain();
-            }
-
-            // 4. 重力模擬 (簡單)
-            const playerKey = getBlockKey(camera.position.x, camera.position.y - 1.8, camera.position.z);
-            if (!blocks.has(playerKey)) {
-                playerVelocityY -= 0.01; // 下墜
-            } else {
-                playerVelocityY = 0; // 踩在地面
-                // 如果掉太深，回到地面
-                if(camera.position.y < -10) resetPlayer();
-            }
-            camera.position.y += playerVelocityY;
-
-            // 5. 🐄 動物 AI (簡單遊蕩)
-            const time = Date.now();
+            // 4. 🐖🐄 🌱 終極生物 AI 與自動跳躍 (流暢化)
             entities.forEach(ent => {
-                if (time > ent.nextWander) {
-                    // 隨機轉向並走一段時間
-                    ent.group.rotation.y = Math.random() * Math.PI * 2;
-                    ent.velocity.set(0, 0, -0.02).applyAxisAngle(new THREE.Vector3(0,1,0), ent.group.rotation.y);
-                    ent.nextWander = time + 2000 + Math.random() * 3000;
+                const group = ent.group; const data = group.userData;
+
+                if (time > ent.nextStateTime) {
+                    // 隨機切換狀態：idle (發呆), wander (遊蕩), run (小跑)
+                    const rnd = Math.random();
+                    if(rnd < 0.4) { ent.state = 'idle'; ent.velocity.set(0,0,0); ent.nextStateTime = time + 2000 + Math.random()*2000; }
+                    else if(rnd < 0.8) { ent.state = 'wander'; group.rotation.y = Math.random()*Math.PI*2; ent.velocity.set(0, 0, -0.02).applyAxisAngle(new THREE.Vector3(0,1,0), group.rotation.y); ent.nextStateTime = time + 3000 + Math.random()*3000; }
+                    else { ent.state = 'run'; group.rotation.y = Math.random()*Math.PI*2; ent.velocity.set(0, 0, -0.05).applyAxisAngle(new THREE.Vector3(0,1,0), group.rotation.y); ent.nextStateTime = time + 1000 + Math.random()*2000; }
                 }
-                ent.group.position.add(ent.velocity);
                 
-                // 簡單地形吸附 (防止掉下去)
-                const entKey = getBlockKey(ent.group.position.x, ent.group.position.y - 1, ent.group.position.z);
-                if (!blocks.has(entKey)) ent.group.position.y -= 0.1;
-                else ent.group.position.y = Math.floor(ent.group.position.y); //踩地
+                // 移動與跳躍偵測
+                if(ent.state !== 'idle') {
+                    const nextPos = group.position.clone().add(ent.velocity);
+                    
+                    // 🚀 關鍵修復：自動跳躍 AI (遇到障礙物時)
+                    const blockInFrontKey = `${Math.floor(nextPos.x)},${Math.floor(group.position.y)},${Math.floor(nextPos.z)}`;
+                    if(blocks.has(blockInFrontKey) && !data.isJumping) {
+                        data.velY = 0.15; // 跳躍力
+                        data.isJumping = true;
+                    }
+                    group.position.add(ent.velocity);
+                }
+
+                // 生物重力
+                const entFeetKey = `${Math.floor(group.position.x)},${Math.floor(group.position.y - 0.1)},${Math.floor(group.position.z)}`;
+                if (!blocks.has(entFeetKey)) {
+                    data.velY -= 0.01;
+                } else {
+                    if(data.isJumping && data.velY <= 0) data.isJumping = false;
+                    data.velY = Math.max(0, data.velY);
+                }
+                group.position.y += data.velY;
             });
 
-            // 6. 👹 魔王視覺效果 (脈動)
-            if(bossEntity) {
-                const scale = 1 + Math.sin(time * 0.005) * 0.1;
-                bossEntity.group.scale.set(scale, scale, scale);
-            }
-
-            // 7. 更新幸運UI倒數
-            if (luckEndTime > 0) {
-                let remain = Math.ceil((luckEndTime - Date.now()) / 1000);
-                if (remain > 0) document.getElementById('luck-time').innerText = remain;
-                else { luckEndTime = 0; document.getElementById('luck-overlay').style.display = 'none'; showMsg("幸運效果結束了", "#aaaaaa"); }
-            }
+            // 魔王視覺
+            if(bossEntity) bossEntity.rotation.y += 0.01;
 
             renderer.render(scene, camera);
         }
 
-        // 初始化
-        window.onload = () => {
-            // 身分驗證 (如果Auth模組不存在就預設)
-            if(window.Auth && Auth.getCurrentUser()) {
-                document.getElementById('sideUserName').innerText = Auth.getCurrentUser().name;
-            }
-            renderUI();
-            updateGame();
-            showMsg("🌲 Survival Start! 收集木頭(W)蓋房子吧！", "#ffffff");
-        };
-
-        // 處理螢幕縮放
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
+        window.onload = () => { renderUI(); updateGame(); showMsg("🌲 生存 Start! 瞄準動物說🐷牛🐮", "#ffffff"); };
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
     </script>
 </body>
 </html>
