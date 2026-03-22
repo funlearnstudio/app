@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D 生存學習世界 - GAS 同步與雙搖桿版</title>
+    <title>3D 生存學習世界 - 終極完全體</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -15,7 +15,21 @@
     <script src="assets/js/auth.js"></script>
     <script src="assets/js/generator_engine.js"></script>
     <script src="mockdata/generator_engine_polyfill.js"></script>
+    <script src="mockdata/AutoTemplateFissionFactory.js"></script>
+    <script src="mockdata/auto_fission_bootstrap.js"></script>
     <script src="mockdata/paper_generator.js"></script>
+    <script src="mockdata/curriculum_integrated.js"></script>
+    
+    <script src="mockdata/templates_math_algebra_geometry.js"></script>
+    <script src="mockdata/templates_physics_multistep.js"></script>
+    <script src="mockdata/templates_chemistry_core.js"></script>
+    <script src="mockdata/templates_biology_core.js"></script>
+    <script src="mockdata/templates_earth_science_core.js"></script>
+    <script src="mockdata/templates_english_core.js"></script>
+    <script src="mockdata/templates_chinese_core.js"></script>
+    <script src="mockdata/templates_history_core.js"></script>
+    <script src="mockdata/templates_geography_core.js"></script>
+    <script src="mockdata/templates_civics_core.js"></script>
 
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Noto Sans TC', sans-serif; touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -46,7 +60,6 @@
         #joystick-bg { position: fixed; bottom: 40px; left: 20px; width: 120px; height: 120px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; z-index: 30; backdrop-filter: blur(4px); pointer-events: auto; }
         #joystick-knob { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(255,255,255,0.7); border-radius: 50%; pointer-events: none; }
 
-        /* 新增：右側瞄準搖桿 (讓準心可以滑順移動) */
         #joystick-aim-bg { position: fixed; bottom: 40px; right: 20px; width: 120px; height: 120px; background: rgba(255,100,100,0.15); border: 2px solid rgba(255,100,100,0.3); border-radius: 50%; z-index: 30; backdrop-filter: blur(4px); pointer-events: auto; }
         #joystick-aim-knob { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(255,100,100,0.7); border-radius: 50%; pointer-events: none; }
         .aim-label { position: absolute; top: -25px; left: 50%; transform: translateX(-50%); color: white; font-size: 12px; font-weight: bold; text-shadow: 1px 1px 2px black; pointer-events: none; }
@@ -137,11 +150,11 @@
     </div>
 
     <div id="npc-dialog" class="overlay-box border-emerald-500">
-        <h2 id="npc-name" class="text-xl font-bold text-emerald-400 mb-2"><i class="fas fa-user"></i> NPC</h2>
+        <h2 id="npc-name" class="text-xl font-bold text-emerald-400 mb-2"><i class="fas fa-user"></i> 村長</h2>
         <p id="npc-lore" class="text-sm text-gray-400 mb-4 italic">"閒聊內容..."</p>
         <div class="bg-slate-800 p-3 rounded mb-6">
             <p class="text-sm font-bold text-yellow-400 mb-1">任務需求：</p>
-            <p id="npc-quest" class="text-base">需要 5 個木頭</p>
+            <p id="npc-quest" class="text-base">需要 10 個木頭</p>
             <p id="npc-reward" class="text-sm text-blue-300 mt-1">獎勵: 蘋果 x5</p>
         </div>
         <div class="flex flex-col gap-2">
@@ -152,38 +165,26 @@
 
     <script>
         // ==========================================
-        // 1. 雲端 GAS 經驗值同步系統 (核心新增)
+        // 1. 雲端 GAS 經驗值同步系統
         // ==========================================
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
         
         async function syncGASXP(xpToAdd, reason) {
             if (!currentUser || currentUser.username === 'guest') return;
             
-            // 本地更新 XP
             currentUser.xp = (Number(currentUser.xp) || 0) + xpToAdd;
             document.getElementById('xp-val').innerText = currentUser.xp;
             try { localStorage.setItem('currentUser', JSON.stringify(currentUser)); } catch(e){}
 
-            // 背景發送至 Google Sheets
             const payload = {
-                action: "save_record",
-                username: currentUser.username,
-                activity: `【3D生存】${reason}`,
-                score: xpToAdd,
-                xp: xpToAdd,
-                detail: JSON.stringify({ unitName: 'VoxelWorld', xpGained: xpToAdd })
+                action: "save_record", username: currentUser.username, activity: `【3D生存】${reason}`,
+                score: xpToAdd, xp: xpToAdd, detail: JSON.stringify({ unitName: 'VoxelWorld', xpGained: xpToAdd })
             };
 
-            fetch(GAS_URL, {
-                method: 'POST',
-                body: JSON.stringify(payload)
-            }).then(r => console.log(`✅ GAS 雲端儲存成功：獲得 ${xpToAdd} XP`))
-              .catch(e => console.error('❌ GAS 雲端儲存失敗', e));
+            fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) })
+              .then(r => console.log(`✅ GAS 儲存成功`)).catch(e => console.error('❌ GAS 失敗', e));
 
-            // 相容主網站 arcade.html 的跨頁面同步
-            if(typeof window.awardXPAndSync === 'function') {
-                window.awardXPAndSync(xpToAdd, `3D生存-${reason}`, xpToAdd);
-            }
+            if(typeof window.awardXPAndSync === 'function') window.awardXPAndSync(xpToAdd, `3D生存-${reason}`, xpToAdd);
         }
 
         // ==========================================
@@ -205,8 +206,6 @@
 
         [...baseMats, ...foodMats].forEach(m => ITEM_REGISTRY[m.id] = { name: m.n, icon: m.i, type: m.r !== undefined ? 'food' : 'mat', restore: m.r, heal: m.h||0, isBlock: m.isBlock, bType: m.bType });
         RECIPES.push({ id: 'cooked_meat', name: '烤肉', icon: '🍖', req: [{id:'meat', count:1}, {id:'coal', count:1}], count: 1 });
-
-        const NPCS = [ { id: 'mayor', name: '村長 阿爾伯特', icon: '👴', lore: ['多讀書，多看報。', '小心晚上的知識巨魔！'], quest: { req: [{id:'wood', c:10}], reward: [{id:'apple', c:5}], txt: '幫我收集建材，我給你蘋果！' } } ];
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSnd(t) {
@@ -356,6 +355,56 @@
             scene.add(group); chunks.set(key, {group, active:true}); return chunks.get(key);
         }
 
+        // ==========================================
+        // 🌟 新增：Minecraft 風格「人形 NPC」生成器
+        // ==========================================
+        function createHumanoidNPC(px, pz, data) {
+            const h = getH(px, pz);
+            const npcGroup = new THREE.Group();
+            npcGroup.position.set(px, h+1, pz);
+            
+            // 定義皮膚顏色 (村民服裝)
+            const skinMat = new THREE.MeshLambertMaterial({color: 0xffccaa});
+            const shirtMat = new THREE.MeshLambertMaterial({color: 0x2563eb});
+            const pantsMat = new THREE.MeshLambertMaterial({color: 0x475569});
+
+            // 臉部加上 Emoji 的特製材質
+            const faceMat = gTex('#ffccaa', '#e2b392', data.icon);
+
+            // 頭 (0.5 x 0.5 x 0.5)
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), [skinMat, skinMat, skinMat, skinMat, faceMat, skinMat]);
+            head.position.set(0, 1.5, 0); npcGroup.add(head);
+
+            // 身體 (0.5 x 0.75 x 0.25)
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.75, 0.25), shirtMat);
+            body.position.set(0, 0.875, 0); npcGroup.add(body);
+
+            // 手腳 (0.25 x 0.75 x 0.25)
+            const armL = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.75, 0.25), skinMat);
+            armL.position.set(-0.375, 0.875, 0); npcGroup.add(armL);
+            const armR = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.75, 0.25), skinMat);
+            armR.position.set(0.375, 0.875, 0); npcGroup.add(armR);
+            
+            const legL = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.75, 0.25), pantsMat);
+            legL.position.set(-0.125, 0.375, 0); npcGroup.add(legL);
+            const legR = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.75, 0.25), pantsMat);
+            legR.position.set(0.125, 0.375, 0); npcGroup.add(legR);
+
+            // 加入隱形的 Hitbox 方便點擊互動
+            const hitbox = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshBasicMaterial({visible: false}));
+            hitbox.position.set(0, 1, 0);
+            hitbox.userData = { isNPC: true, data: data, parentGroup: npcGroup };
+            npcGroup.add(hitbox);
+
+            scene.add(npcGroup); 
+            interactables.push(hitbox); // 加入射線檢測
+            return npcGroup;
+        }
+
+        // 在出生點附近生成村長
+        const mayorData = { id: 'mayor', name: '村長 阿爾伯特', icon: '👴', lore: ['年輕人，這個村子需要你。', '看到地上的黃色方塊了嗎？敲碎它！'], quest: { req: [{id:'wood', c:10}], reward: [{id:'apple', c:5}], txt: '幫我收集建材，我給你蘋果！' } };
+        const theMayor = createHumanoidNPC(startH + 3, startH + 3, mayorData);
+
         const pigMat = gTex('#fca5a5', '#f87171', '🐷'); const bossMat = gTex('#991b1b', '#7f1d1d', '👹');
         setInterval(() => {
             if(Math.random()<0.3) { const p = new THREE.Mesh(box, pigMat); p.scale.set(0.8,0.8,0.8); p.position.set(camera.position.x+(Math.random()-0.5)*30, 20, camera.position.z+(Math.random()-0.5)*30); p.userData={isMob:true, type:'pig'}; scene.add(p); interactables.push(p); }
@@ -367,8 +416,6 @@
         // ==========================================
         const raycaster = new THREE.Raycaster();
         let currentIntersect = null;
-        
-        // 準心的全域座標 (NDC -1 ~ 1)
         let pointerNDC = new THREE.Vector2(0, 0);
 
         function updateRaycast() {
@@ -379,7 +426,16 @@
                 if(currentIntersect.object.isInstancedMesh) {
                     const mat = new THREE.Matrix4(); currentIntersect.object.getMatrixAt(currentIntersect.instanceId, mat);
                     targetBox.position.setFromMatrixPosition(mat);
-                } else targetBox.position.copy(currentIntersect.object.position);
+                } else {
+                    // 如果碰到的是 NPC 的 hitbox，將瞄準框放大到 1x2x1
+                    if(currentIntersect.object.userData.isNPC) {
+                        targetBox.scale.set(1, 2, 1);
+                        targetBox.position.copy(currentIntersect.object.parent.position).add(new THREE.Vector3(0, 1, 0));
+                    } else {
+                        targetBox.scale.set(1, 1, 1);
+                        targetBox.position.copy(currentIntersect.object.position);
+                    }
+                }
             } else { currentIntersect = null; targetBox.visible = false; }
         }
 
@@ -410,9 +466,12 @@
                 const invKeys = Object.keys(playerInventory).filter(k => playerInventory[k] > 0);
                 if(invKeys.length === 0 || selectedSlot >= invKeys.length) return;
                 const itemId = invKeys[selectedSlot]; const itemDef = ITEM_REGISTRY[itemId];
-                if(itemDef && itemDef.isBlock) {
+                if(itemDef && itemDef.isBlock && !obj.userData.isNPC) {
                     playerInventory[itemId]--; renderUI(); playSnd('place'); modifyStat('energy', -1);
-                    const placePos = targetBox.position.clone().add(currentIntersect.face.normal);
+                    // 如果碰到的是地形，則在其表面放置
+                    const placePos = targetBox.position.clone().add(currentIntersect.face ? currentIntersect.face.normal : new THREE.Vector3(0,1,0));
+                    // 修正 targetBox scale 影響
+                    targetBox.scale.set(1,1,1);
                     const newBlock = new THREE.Mesh(box, MATS[itemDef.bType]); newBlock.position.copy(placePos); scene.add(newBlock); interactables.push(newBlock);
                 }
             }
@@ -425,7 +484,6 @@
         // ==== 雙搖桿控制 (手機) ====
         const keys = {w:false, a:false, s:false, d:false};
         
-        // 1. 左搖桿：移動
         const joyBg = document.getElementById('joystick-bg'), joyKnob = document.getElementById('joystick-knob');
         joyBg.addEventListener('touchstart', e => handleJoyMove(e.touches[0])); joyBg.addEventListener('touchmove', e => { handleJoyMove(e.touches[0]); e.preventDefault(); }, {passive:false});
         joyBg.addEventListener('touchend', () => { joyKnob.style.transform=`translate(0,0)`; keys.w=keys.s=keys.a=keys.d=false; });
@@ -435,7 +493,6 @@
             joyKnob.style.transform = `translate(${nx}px, ${ny}px)`; keys.w=ny<-15; keys.s=ny>15; keys.a=nx<-15; keys.d=nx>15;
         }
 
-        // 2. 右搖桿：瞄準與視角 (滑順移動準心)
         const aimBg = document.getElementById('joystick-aim-bg'), aimKnob = document.getElementById('joystick-aim-knob');
         let aimVector = {x: 0, y: 0}; let isAiming = false;
         aimBg.addEventListener('touchstart', e => { isAiming = true; handleJoyAim(e.touches[0]); });
@@ -445,28 +502,22 @@
             const rect = aimBg.getBoundingClientRect(); let nx=t.clientX-rect.left-60, ny=t.clientY-rect.top-60;
             const dist = Math.hypot(nx, ny); if(dist>60) { nx=nx/dist*60; ny=ny/dist*60; }
             aimKnob.style.transform = `translate(${nx}px, ${ny}px)`;
-            aimVector.x = nx / 60; aimVector.y = ny / 60; // 歸一化 -1 到 1
+            aimVector.x = nx / 60; aimVector.y = ny / 60; 
         }
 
-        // ==== 電腦滑鼠控制 (準心直接跟著滑鼠跑) ====
+        // ==== 電腦滑鼠控制 ====
         const crosshairEl = document.getElementById('crosshair');
         document.addEventListener('mousemove', e => {
-            // 將準心圖示移動到滑鼠位置
-            crosshairEl.style.left = e.clientX + 'px';
-            crosshairEl.style.top = e.clientY + 'px';
-            // 轉換給射線檢測用
-            pointerNDC.x = (e.clientX / window.innerWidth) * 2 - 1;
-            pointerNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            crosshairEl.style.left = e.clientX + 'px'; crosshairEl.style.top = e.clientY + 'px';
+            pointerNDC.x = (e.clientX / window.innerWidth) * 2 - 1; pointerNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
         });
 
         document.addEventListener('mousedown', e => {
-            if (e.target.tagName === 'CANVAS') {
-                interact('interact'); interact('break'); // 點擊直接互動或破壞
-            }
+            if (e.target.tagName === 'CANVAS') { interact('interact'); interact('break'); }
         });
 
         // ==========================================
-        // 5. 答題獲得 XP 與 GAS 寫入
+        // 5. 答題獲得 XP 與 GAS 寫入 (含防當機機制)
         // ==========================================
         function openNpc(data) {
             activeInteractObj = data; document.getElementById('npc-dialog').style.display = 'block';
@@ -486,8 +537,23 @@
             document.getElementById('quiz-title').innerHTML = title;
             document.getElementById('quiz-options').innerHTML = '載入中...';
             
-            let qList = typeof window.generatePaper === 'function' ? window.generatePaper({ subject: 'math', total: 1 }) : [{ question: "測試: 1+1=?", options: ["1", "2", "3", "4"], answer: 1 }];
-            const q = qList[0]; document.getElementById('quiz-question').innerHTML = q.question;
+            // 🚀 關鍵防呆機制：確保如果沒抓到題目，給一題預設題目，絕不當機！
+            let currentSubject = new URLSearchParams(window.location.search).get('subject') || 'math';
+            let qList = [];
+            
+            try {
+                if(typeof window.generatePaper === 'function') {
+                    qList = window.generatePaper({ subject: currentSubject, total: 1 });
+                }
+            } catch(e) { console.error("題庫生成失敗:", e); }
+            
+            if (!qList || qList.length === 0 || !qList[0]) {
+                qList = [{ question: "系統連線異常，這是一題備用測試題: 1+1=?", options: ["1", "2", "3", "4"], answer: 1 }];
+            }
+
+            const q = qList[0]; 
+            document.getElementById('quiz-question').innerHTML = q.question.replace(/\n/g, '<br>');
+            
             const optDiv = document.getElementById('quiz-options'); optDiv.innerHTML = '';
             q.options.forEach((opt, idx) => {
                 const btn = document.createElement('button'); btn.className = 'quiz-btn'; btn.innerHTML = `${['A','B','C','D'][idx]}. ${opt}`;
@@ -499,7 +565,7 @@
                             if(obj.userData.hp <= 0) {
                                 showMsg("🎉 擊退巨魔！獲得 100 XP 與鑽石！", '#10b981'); spawnParticles(obj.position);
                                 playerInventory['diamond'] = (playerInventory['diamond']||0)+5;
-                                syncGASXP(100, "擊退知識巨魔"); // 🚀 呼叫 GAS 同步
+                                syncGASXP(100, "擊退知識巨魔"); 
                                 scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); closeUI(); renderUI();
                             } else { showMsg(`✅ 攻擊成功！巨魔剩血：${obj.userData.hp}`, '#fbbf24'); openQuiz(obj); }
                         } else if(obj.userData.type === 'pig') {
@@ -507,7 +573,7 @@
                             scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); closeUI(); renderUI();
                         } else {
                             showMsg("🎉 答對！獲得物資與 20 XP", '#10b981'); modifyStat('energy', 20); playerInventory['apple'] = (playerInventory['apple']||0)+2;
-                            syncGASXP(20, "解開知識方塊"); // 🚀 呼叫 GAS 同步
+                            syncGASXP(20, "解開知識方塊"); 
                             spawnParticles(obj.position); scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); closeUI(); renderUI();
                         }
                     } else { 
@@ -524,21 +590,14 @@
         function animate() {
             requestAnimationFrame(animate); const delta = Math.min(clock.getDelta(), 0.1); const time = Date.now();
             
-            // 處理右側搖桿瞄準 (旋轉視角)
             if(isAiming) {
-                camera.rotation.y -= aimVector.x * 0.03;
-                camera.rotation.x -= aimVector.y * 0.03;
-                camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
-                camera.rotation.order = 'YXZ';
-                
-                // 手機使用搖桿時，強制準心回到畫面正中央
-                pointerNDC.x = 0; pointerNDC.y = 0;
-                crosshairEl.style.left = '50%'; crosshairEl.style.top = '50%';
+                camera.rotation.y -= aimVector.x * 0.03; camera.rotation.x -= aimVector.y * 0.03;
+                camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x)); camera.rotation.order = 'YXZ';
+                pointerNDC.x = 0; pointerNDC.y = 0; crosshairEl.style.left = '50%'; crosshairEl.style.top = '50%';
             }
 
-            updateRaycast(); // 更新黑色外框
+            updateRaycast();
 
-            // 處理左側搖桿移動
             let speed = (energy > 0 ? 6 : 2);
             let dz = Number(keys.w) - Number(keys.s); let dx = Number(keys.d) - Number(keys.a);
             if(dz !== 0 || dx !== 0) {
@@ -553,6 +612,11 @@
 
             const cx = Math.floor(px/16), cz = Math.floor(pz/16);
             for(let x=-2; x<=2; x++) for(let z=-2; z<=2; z++) { const key = `${cx+x},${cz+z}`; if(!chunks.has(key)) genChunk(cx+x, cz+z); else chunks.get(key).group.visible = true; }
+
+            // NPC 永遠面向攝影機
+            if (theMayor) {
+                theMayor.lookAt(camera.position.x, theMayor.position.y, camera.position.z);
+            }
 
             interactables.forEach(b => {
                 if(b.userData.isQ) { b.rotation.y += 0.02; b.position.y = b.userData.wy + Math.sin(time*0.002)*0.2; }
