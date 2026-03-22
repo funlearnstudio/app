@@ -1825,6 +1825,10 @@ function backToMenu() {
 
   const VQ_FALLBACK_SURFACE = 2;
   const VQ_SEA_LEVEL = 1;
+let lastPlayerChunk = { x: null, z: null };
+let vqChunkQueue = [];
+let vqIsProcessingChunk = false;
+let lastPlayerChunk = { x: null, z: null };
 
   window.moveForward = false;
   window.moveBackward = false;
@@ -2223,40 +2227,50 @@ function backToMenu() {
     vqScene.add(mesh);
   }
 
-  function vqEnsureChunksAroundPlayer() {
-    if (!vqControls || !vqScene) return;
-    const pos = vqControls.getObject().position;
-    const pcx = vqGetChunkCoord(Math.round(pos.x / blockSize));
-    const pcz = vqGetChunkCoord(Math.round(pos.z / blockSize));
-    const required = new Set();
+function vqEnsureChunksAroundPlayer() {
+  if (!vqControls || !vqScene) return;
 
-    for (let cx = pcx - VQ_RENDER_DISTANCE; cx <= pcx + VQ_RENDER_DISTANCE; cx++) {
-      for (let cz = pcz - VQ_RENDER_DISTANCE; cz <= pcz + VQ_RENDER_DISTANCE; cz++) {
-        const key = vqChunkKey(cx, cz);
-        required.add(key);
-        const chunk = vqGenerateChunk(cx, cz);
-        if (chunk.dirty || !chunk.mesh) {
-          vqBuildChunkMesh(chunk);
-          chunk.dirty = false;
-        }
+  const pos = vqControls.getObject().position;
+  const pcx = vqGetChunkCoord(Math.round(pos.x / blockSize));
+  const pcz = vqGetChunkCoord(Math.round(pos.z / blockSize));
+
+  if (pcx === lastPlayerChunk.x && pcz === lastPlayerChunk.z) return;
+
+  lastPlayerChunk.x = pcx;
+  lastPlayerChunk.z = pcz;
+
+  const required = new Set();
+  const newQueue = [];
+
+  for (let cx = pcx - VQ_RENDER_DISTANCE; cx <= pcx + VQ_RENDER_DISTANCE; cx++) {
+    for (let cz = pcz - VQ_RENDER_DISTANCE; cz <= pcz + VQ_RENDER_DISTANCE; cz++) {
+      const key = vqChunkKey(cx, cz);
+      required.add(key);
+
+      if (!vqInf.chunks.has(key)) {
+        const dist = Math.abs(cx - pcx) + Math.abs(cz - pcz);
+        newQueue.push({ cx, cz, dist });
       }
-    }
-
-    for (const [key, chunk] of vqInf.chunks.entries()) {
-      if (!required.has(key)) {
-        if (chunk.mesh) vqDisposeChunkMesh(chunk);
-        for (const e of chunk.entities) {
-          if (e && e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh);
-          e.alive = false;
-        }
-        vqInf.chunks.delete(key);
-      }
-    }
-
-    for (const [k, typeKey] of vqInf.blockEdits.entries()) {
-      if (typeKey === undefined) vqInf.blockEdits.delete(k);
     }
   }
+
+  // ✅ 距離排序（近的先生成）
+  newQueue.sort((a, b) => a.dist - b.dist);
+
+  // ✅ 加入 queue
+  for (const job of newQueue) {
+    vqChunkQueue.push(job);
+  }
+
+  // 🧹 清除遠的 chunk
+  for (const [key, chunk] of vqInf.chunks.entries()) {
+    if (!required.has(key)) {
+      if (chunk.mesh) vqDisposeChunkMesh(chunk);
+      vqInf.chunks.delete(key);
+    }
+  }
+}
+
 
   function vqWorldToBlock(wx) {
     return Math.round(wx / blockSize);
@@ -2296,6 +2310,27 @@ function backToMenu() {
     if (sync) vqBroadcastBlockUpdate('remove', wx, wy, wz, null);
     queueVoxelAutosave();
   }
+const VQ_CHUNKS_PER_FRAME = 2; // 👉 可調：1~3 最穩
+
+function vqProcessChunkQueue() {
+  if (vqChunkQueue.length === 0) return;
+
+  let count = 0;
+
+  while (vqChunkQueue.length > 0 && count < VQ_CHUNKS_PER_FRAME) {
+    const job = vqChunkQueue.shift();
+
+    const key = vqChunkKey(job.cx, job.cz);
+    if (vqInf.chunks.has(key)) continue; // ✅ 防重複
+
+    const chunk = vqGenerateChunk(job.cx, job.cz);
+    vqBuildChunkMesh(chunk);
+
+    chunk.dirty = false;
+    count++;
+  }
+}
+
 
   function vqBlockCategory(typeKey) {
     if (!typeKey) return 'air';
