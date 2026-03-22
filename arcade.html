@@ -1380,19 +1380,50 @@ function getBlock(x, y, z) {
 // ==========================================
 // 🛡️ 1. 修正碰撞偵測 (讓你能在草地上滑順走路，不再卡死！)
 // ==========================================
-function checkCollision(x, y, z) {
-    let gridX = Math.round(x / blockSize);
-    let gridY = Math.round((y - 5) / blockSize); 
-    let gridZ = Math.round(z / blockSize);
+// ==========================================
+// 🛡️ 終極碰撞偵測 (修正命名為 vqCheckCollision)
+// ==========================================
+window.vqCheckCollision = function(x, y, z) {
+    // 絕對防護網：萬一掉太深，強制托住 (通常不會發生了)
+    if (y < -100) return true;
 
-    // 🌟 正常的地板判定：只要腳底下的網格高度 <= 0 (草地層)，就判定為踩到地板
-    if (gridY <= 0) return true;
+    // 將真實座標轉換為方塊網格座標
+    let blockSize = window.blockSize || 10; // 確保有 blockSize
+    let bx = Math.round(x / blockSize);
+    let by = Math.round((y - 5) / blockSize); // 玩家腳底的格子
+    let bz = Math.round(z / blockSize);
 
-    // 檢查有沒有撞到其他方塊 (例如我們生成的 5 顆題目方塊)
-    if (getBlock(gridX, gridY, gridZ) || getBlock(gridX, gridY + 1, gridZ)) return true;
-    return false;
-}
+    // 內部查表函數：檢查某個座標是否有實體方塊
+    function checkSolid(wx, wy, wz) {
+        // 1. 檢查是不是撞到我們的「5顆題目方塊」
+        if (typeof getBlock === 'function' && getBlock(wx, wy, wz)) return true;
+        
+        // 2. 檢查是不是撞到「動態生成的生態區塊」
+        const VQ_CHUNK_SIZE = 16; 
+        const cx = Math.floor(wx / VQ_CHUNK_SIZE);
+        const cz = Math.floor(wz / VQ_CHUNK_SIZE);
+        
+        // 確保 vqInf 存在再讀取
+        if (typeof vqInf !== 'undefined' && vqInf.chunks) {
+            const chunk = vqInf.chunks.get(`${cx},${cz}`); 
+            if (chunk && chunk.baseLookup) {
+                const blockType = chunk.baseLookup.get(`${wx}|${wy}|${wz}`);
+                // 如果該位置有方塊，且不是水或可穿透的花草，就判定為撞牆/踩到地板！
+                if (blockType && blockType !== 'water' && blockType !== 'tall_grass' && 
+                    blockType !== 'red_flower' && blockType !== 'yellow_flower') {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
+    // 檢查腳底 (by) 和 身體 (by+1) 是否撞到東西
+    return checkSolid(bx, by, bz) || checkSolid(bx, by + 1, bz);
+};
+
+// 為了防止有其他地方還在叫舊名字，我們買個雙重保險
+window.checkCollision = window.vqCheckCollision;
 
 // ==========================================
 // 🌱 2. 超輕量級平坦地板 (生成綠色草地)
