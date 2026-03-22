@@ -1,48 +1,23 @@
-
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D 生存世界 - 閻羅王降臨究極版</title>
+    <title>3D 生存世界 - 光影殭屍大挑戰</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/gh/josephg/noisejs/perlin.js"></script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <script src="mockdata/users.js"></script>
-    <script src="assets/js/auth.js"></script>
-    <script src="assets/js/generator_engine.js"></script>
-    <script src="mockdata/generator_engine_polyfill.js"></script>
-    <script src="mockdata/AutoTemplateFissionFactory.js"></script>
-    <script src="mockdata/auto_fission_bootstrap.js"></script>
-    <script src="mockdata/paper_generator.js"></script>
-    <script src="mockdata/curriculum_integrated.js"></script>
-    
-    <script src="mockdata/templates_math_algebra_geometry.js"></script>
-    <script src="mockdata/templates_physics_multistep.js"></script>
-    <script src="mockdata/templates_chemistry_core.js"></script>
-    <script src="mockdata/templates_biology_core.js"></script>
-    <script src="mockdata/templates_earth_science_core.js"></script>
-    <script src="mockdata/templates_english_core.js"></script>
-    <script src="mockdata/templates_chinese_core.js"></script>
-    <script src="mockdata/templates_history_core.js"></script>
-    <script src="mockdata/templates_geography_core.js"></script>
-    <script src="mockdata/templates_civics_core.js"></script>
-
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Noto Sans TC', sans-serif; touch-action: none; user-select: none; background-color: #87CEEB; }
-        
-        #boss-navigator { position: fixed; top: 15px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: #ff4444; padding: 10px 25px; border-radius: 30px; font-weight: bold; z-index: 100; border: 2px solid #ff4444; backdrop-filter: blur(4px); display: flex; align-items: center; gap: 10px; font-size: 16px; text-shadow: 0 0 5px #ff0000; box-shadow: 0 0 15px rgba(255,0,0,0.5); }
         #crosshair-container { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; text-align: center; }
         #crosshair { color: rgba(255,255,255,0.8); font-size: 28px; text-shadow: 0 0 3px black; transition: all 0.1s; }
-        #target-info { color: white; font-size: 14px; margin-top: 8px; text-shadow: 1px 1px 2px black; opacity: 0; transition: opacity 0.2s; background: rgba(0,0,0,0.4); padding: 2px 8px; border-radius: 4px; }
         #view-model { position: fixed; bottom: -30px; right: 15%; font-size: 120px; z-index: 15; transform-origin: bottom right; transition: transform 0.1s; pointer-events: none; filter: drop-shadow(0px 10px 10px rgba(0,0,0,0.5)); }
         
         #hotbar-outer { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 40; width: 310px; background: rgba(0,0,0,0.8); padding: 8px; border-radius: 16px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); pointer-events: auto; }
-        #hotbar { display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+        #hotbar { display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x mandatory; }
         #hotbar::-webkit-scrollbar { display: none; }
         .slot { flex: 0 0 45px; width: 45px; height: 45px; border: 2px solid #555; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; position: relative; cursor: pointer; background: rgba(255,255,255,0.1); scroll-snap-align: start; transition: transform 0.1s; }
         .slot.active { border-color: #fbbf24; background: rgba(251, 191, 36, 0.3); box-shadow: 0 0 15px rgba(251,191,36,0.8); transform: scale(1.1); }
@@ -53,11 +28,6 @@
         .hp-fill { height: 100%; background: #ef4444; width: 100%; transition: width 0.3s; }
         .energy-fill { height: 100%; background: #10b981; width: 100%; transition: width 0.3s; }
 
-        .toggle-btn { position: fixed; top: 15px; left: 15px; z-index: 60; background: rgba(0,0,0,0.6); color: white; padding: 10px 15px; border-radius: 8px; cursor: pointer; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); }
-        #sidebar { position: fixed; top: 0; left: -350px; width: 350px; height: 100vh; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); z-index: 50; transition: left 0.3s; color: white; padding: 20px; overflow-y: auto; border-right: 2px solid rgba(255,255,255,0.1); }
-        #sidebar.open { left: 0; }
-        #inventory-list, #recipe-list { max-height: 300px; overflow-y: auto; }
-
         #controls { position: fixed; bottom: 260px; right: 30px; z-index: 30; display: flex; flex-direction: column; gap: 15px; pointer-events: auto; }
         .action-btn { width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.5); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; backdrop-filter: blur(4px); }
         .action-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.4); }
@@ -66,11 +36,7 @@
         #joystick-move { left: 30px; }
         #joystick-look { right: 30px; background: rgba(255,100,100,0.1); border-color: rgba(255,100,100,0.3); }
         .joystick-knob { position: absolute; top: 40px; left: 40px; width: 50px; height: 50px; background: rgba(255,255,255,0.8); border-radius: 50%; pointer-events: none; }
-        #joystick-look .joystick-knob { background: rgba(255,100,100,0.8); }
-
-        .overlay-box { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(8px); border: 2px solid #ef4444; border-radius: 16px; padding: 24px; color: white; z-index: 200; box-shadow: 0 0 30px rgba(239, 68, 68, 0.5); max-height: 80vh; overflow-y: auto; }
-        .quiz-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer; width: 100%; text-align: left; color: white; font-size: 16px; transition: 0.2s; }
-        .quiz-btn:hover { background: rgba(239, 68, 68, 0.5); border-color: #ef4444; }
+        
         #msg-box { position: fixed; top: 15%; left: 50%; transform: translateX(-50%); font-size: 22px; font-weight: bold; color: #fbbf24; text-shadow: 2px 2px 4px black; z-index: 100; opacity: 0; transition: opacity 0.3s; pointer-events: none; width: 100%; text-align: center; }
         .swing { animation: swingAnim 0.2s ease-in-out; }
         @keyframes swingAnim { 0% { transform: rotate(0deg) translateY(0); } 50% { transform: rotate(-40deg) translateY(-30px) translateX(-20px); } 100% { transform: rotate(0deg) translateY(0); } }
@@ -78,8 +44,7 @@
 </head>
 <body>
 
-    <div id="boss-navigator"><i class="fas fa-skull"></i> 閻羅王(題目方塊)距離: <span id="boss-dist">---</span>m</div>
-    <div id="crosshair-container"><div id="crosshair">✚</div><div id="target-info">瞄準中...</div></div>
+    <div id="crosshair-container"><div id="crosshair">✚</div></div>
     <div id="msg-box">系統訊息</div>
     <div id="view-model">👊</div>
 
@@ -90,102 +55,33 @@
         <div class="stat-bar"><div id="energy-fill" class="energy-fill"></div></div>
     </div>
 
-    <button class="toggle-btn" onclick="document.getElementById('sidebar').classList.toggle('open'); renderUI();"><i class="fas fa-bars"></i> 選單合成</button>
-    <div id="sidebar">
-        <h2 class="text-xl font-bold mb-4"><i class="fas fa-cube text-blue-400"></i> 生存背包與合成</h2>
-        <button onclick="document.getElementById('sidebar').classList.remove('open')" class="w-full bg-slate-700 p-2 rounded mb-4">關閉選單</button>
-        <div id="inventory-list" class="grid grid-cols-5 gap-2 mb-6"></div>
-        <h3 class="font-bold mb-2">⚒️ 究極合成台</h3>
-        <div id="recipe-list" class="flex flex-col gap-2"></div>
-    </div>
-
-    <div id="boss-quiz-overlay" class="overlay-box">
-        <h2 class="text-2xl font-bold text-red-400 mb-4 border-b border-gray-700 pb-2"><i class="fas fa-skull"></i> 閻羅王的終極審判！</h2>
-        <div id="boss-question" class="text-gray-200 text-lg mb-6 leading-relaxed">正在向地府題庫讀取題目...</div>
-        <div id="boss-options" class="space-y-3"></div>
-        <div class="mt-6 text-right">
-            <button onclick="closeBossQuiz()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded">逃跑 (-20 體力)</button>
-        </div>
-    </div>
-
     <div id="hotbar-outer"><div id="hotbar"></div></div>
     <div id="controls">
         <button id="btn-interact" class="action-btn" style="background: rgba(59, 130, 246, 0.4); border-color: #3b82f6;"><i class="fas fa-hand-pointer"></i></button>
         <button id="btn-place" class="action-btn" style="background: rgba(16, 185, 129, 0.4); border-color: #10b981;"><i class="fas fa-cube"></i></button>
-        <button id="btn-break" class="action-btn" style="background: rgba(239, 68, 68, 0.4); border-color: #ef4444;"><i class="fas fa-hammer"></i></button>
+        <button id="btn-break" class="action-btn" style="background: rgba(239, 68, 68, 0.4); border-color: #ef4444;"><i class="fas fa-fire"></i></button>
     </div>
     <div id="joystick-move" class="joystick-zone"><div class="joystick-knob" id="knob-move"></div></div>
     <div id="joystick-look" class="joystick-zone"><div class="joystick-knob" id="knob-look"></div></div>
 
     <script>
 // ==========================================
-// 1. 全域變數與資料庫
+// 1. 基本設定與物品清單
 // ==========================================
-let isQuizOpen = false; 
 const clock = new THREE.Clock();
-
 const ITEM_REGISTRY = {
-    'wood': { n: '木頭', i: '🪵', type: 'block' }, 'stone': { n: '石頭', i: '🪨', type: 'block' }, 
-    'dirt': { n: '泥土', i: '🟤', type: 'block' }, 'leaves': { n: '樹葉', i: '🍃', type: 'block' }, 
-    'grass_bush': { n: '草叢', i: '🌿', type: 'block' }, 'salt_ore': { n: '鹽礦', i: '🧂', type: 'block' },
-    'sand': { n: '沙子', i: '⏳', type: 'block' }, 'coal': { n: '煤炭', i: '⚫', type: 'mat' },
-    'iron_ore': { n: '鐵礦', i: '⛓️', type: 'mat' }, 'gas': { n: '瓦斯', i: '💨', type: 'mat' },
-    'stick': { n: '木棍', i: '🦯', type: 'mat' }, 'plank': { n: '木板', i: '🪵', type: 'mat' },
-    'salt': { n: '鹽巴', i: '🧂', type: 'mat' }, 'diamond': { n: '鑽石', i: '💎', type: 'mat' },
-    'iron_ingot': { n: '鐵錠', i: '⚪', type: 'mat' }, 'glass': { n: '玻璃杯', i: '🥛', type: 'mat' },
-    'torch': { n: '火把', i: '🔦', type: 'mat' }, 'leather': { n: '皮革', i: '👞', type: 'mat' },
-    'meat_pig': { n: '生豬肉', i: '🥩', type: 'food', e: 10, h: -5 }, 'meat_cow': { n: '生牛肉', i: '🥩', type: 'food', e: 12, h: -5 },
-    'meat_chicken': { n: '生雞肉', i: '🍗', type: 'food', e: 8, h: -8 }, 'egg': { n: '雞蛋', i: '🥚', type: 'food', e: 5, h: 0 },
-    'milk': { n: '鮮乳', i: '🥛', type: 'food', e: 15, h: 10 }, 'cow_hide': { n: '牛皮', i: '📜', type: 'mat' }, 'wool': { n: '羊毛', i: '☁️', type: 'mat' },
-    'carrot': { n: '胡蘿蔔', i: '🥕', type: 'food', e: 15, h: 5 }, 'potato': { n: '馬鈴薯', i: '🥔', type: 'food', e: 15, h: 5 },
-    'tomato': { n: '番茄', i: '🍅', type: 'food', e: 10, h: 5 }, 'corn': { n: '玉米', i: '🌽', type: 'food', e: 20, h: 5 },
-    'cabbage': { n: '高麗菜', i: '🥬', type: 'food', e: 15, h: 5 }, 'onion': { n: '洋蔥', i: '🧅', type: 'food', e: 10, h: 5 },
-    'garlic': { n: '大蒜', i: '🧄', type: 'food', e: 5, h: 2 }, 'pumpkin': { n: '南瓜', i: '🎃', type: 'block', e: 25, h: 10 },
-    'eggplant': { n: '茄子', i: '🍆', type: 'food', e: 15, h: 5 }, 'chili': { n: '辣椒', i: '🌶️', type: 'food', e: 5, h: -5 },
-    'cucumber': { n: '小黃瓜', i: '🥒', type: 'food', e: 10, h: 5 }, 'apple': { n: '蘋果', i: '🍎', type: 'food', e: 20, h: 10 }, 
-    'banana': { n: '香蕉', i: '🍌', type: 'food', e: 25, h: 10 }, 'grape': { n: '葡萄', i: '🍇', type: 'food', e: 15, h: 8 }, 
-    'orange': { n: '橘子', i: '🍊', type: 'food', e: 18, h: 10 }, 'watermelon': { n: '西瓜', i: '🍉', type: 'food', e: 30, h: 15 }, 
-    'strawberry': { n: '草莓', i: '🍓', type: 'food', e: 12, h: 8 }, 'pineapple': { n: '鳳梨', i: '🍍', type: 'food', e: 25, h: 12 }, 
-    'peach': { n: '桃子', i: '🍑', type: 'food', e: 22, h: 10 }, 'lemon': { n: '檸檬', i: '🍋', type: 'food', e: 10, h: 15 }, 
-    'cherry': { n: '櫻桃', i: '🍒', type: 'food', e: 10, h: 5 },
-    'cooked_meat_pig': { n: '烤豬肉', i: '🍖', type: 'food', e: 50, h: 20 }, 'salted_meat_pig': { n: '鹽漬豬肉', i: '🥩', type: 'food', e: 45, h: 25 },
-    'cooked_meat_cow': { n: '戰斧牛排', i: '🥩', type: 'food', e: 60, h: 30 }, 'salted_meat_cow': { n: '鹽醃牛肉', i: '🥩', type: 'food', e: 55, h: 25 }, 
-    'cooked_chicken': { n: '烤雞腿', i: '🍗', type: 'food', e: 45, h: 20 }, 'boiled_egg': { n: '水煮蛋', i: '🥚', type: 'food', e: 20, h: 15 },
-    'bacon': { n: '煙燻培根', i: '🥓', type: 'food', e: 55, h: 15 }, 'salad_mixed': { n: '綜合沙拉', i: '🥗', type: 'food', e: 50, h: 35 },
-    'baked_potato': { n: '烤馬鈴薯', i: '🥔', type: 'food', e: 40, h: 15 }, 'corn_soup': { n: '玉米濃湯', i: '🥣', type: 'food', e: 50, h: 40 },
-    'pickled_cucumber': { n: '鹽漬小黃瓜', i: '🥒', type: 'food', e: 25, h: 15 }, 'fried_eggplant': { n: '油炸茄子', i: '🍆', type: 'food', e: 35, h: 10 }, 
-    'pumpkin_pie': { n: '南瓜派', i: '🥧', type: 'food', e: 60, h: 20 }, 'onion_rings': { n: '炸洋蔥圈', i: '🧅', type: 'food', e: 30, h: 5 }, 
-    'garlic_bread': { n: '大蒜麵包', i: '🥖', type: 'food', e: 40, h: 10 }, 'fruit_juice': { n: '綜合果汁', i: '🍹', type: 'food', e: 45, h: 30 },
-    'banana_milk': { n: '香蕉牛奶', i: '🥤', type: 'food', e: 50, h: 35 }, 'lemonade': { n: '檸檬氣泡飲', i: '🍹', type: 'food', e: 30, h: 50 },
-    'dried_grape': { n: '葡萄乾', i: '🍇', type: 'food', e: 30, h: 10 }, 'pineapple_slice': { n: '鳳梨切片', i: '🍍', type: 'food', e: 15, h: 5 }, 
-    'watermelon_bucket': { n: '西瓜桶', i: '🍉', type: 'food', e: 60, h: 30 }, 'peach_jam': { n: '桃子果醬', i: '🍯', type: 'food', e: 50, h: 20 },
-    'strawberry_cake': { n: '草莓蛋糕', i: '🍰', type: 'food', e: 70, h: 25 }, 'cooked_meat_salted': { n: '醃烤肉', i: '🍖', type: 'food', e: 60, h: 40 }
+    'wood': { n: '木頭', i: '🪵', type: 'block' }, 'dirt': { n: '泥土', i: '🟤', type: 'block' }, 
+    'leaves': { n: '樹葉', i: '🍃', type: 'block' }, 'stone': { n: '石頭', i: '🪨', type: 'block' },
+    'meat_pig': { n: '生豬肉', i: '🥩', type: 'food', e: 10, h: -5 }, 
+    'rotten_flesh': { n: '腐肉', i: '🧟', type: 'food', e: 5, h: -15 },
+    'apple': { n: '蘋果', i: '🍎', type: 'food', e: 20, h: 10 }
 };
 
-const RECIPES = [
-    { id: 'stick', n: '木棍 x4', req: [{id:'wood', count:1}], outCount: 4 }, { id: 'plank', n: '木板 x4', req: [{id:'wood', count:1}], outCount: 4 },
-    { id: 'salt', n: '精製鹽 x2', req: [{id:'salt_ore', count:1}], outCount: 2 }, { id: 'torch', n: '火把', req: [{id:'stick', count:1}, {id:'coal', count:1}], outCount: 1 },
-    { id: 'glass', n: '玻璃杯', req: [{id:'sand', count:2}], outCount: 1 }, { id: 'iron_ingot', n: '鐵錠', req: [{id:'iron_ore', count:1}, {id:'coal', count:1}], outCount: 1 },
-    { id: 'cooked_meat_pig', n: '烤豬肉', req: [{id:'meat_pig', count:1}, {id:'coal', count:1}], outCount: 1 }, { id: 'salted_meat_pig', n: '鹽漬豬肉', req: [{id:'meat_pig', count:1}, {id:'salt', count:1}], outCount: 1 },
-    { id: 'salad_mixed', n: '綜合沙拉', req: [{id:'cabbage', count:1}, {id:'tomato', count:1}, {id:'carrot', count:1}], outCount: 1 },
-    { id: 'fruit_juice', n: '綜合果汁', req: [{id:'apple', count:1}, {id:'orange', count:1}, {id:'strawberry', count:1}], outCount: 1 }
-];
-
-let inventory = { 'wood': 20, 'stone': 10, 'apple': 5, 'meat_pig': 3, 'salt': 10, 'carrot': 5, 'tomato': 5, 'cabbage': 5, 'diamond': 1, 'dirt': 10, 'salt_ore': 2 }; 
+let inventory = { 'wood': 20, 'dirt': 10, 'apple': 5 }; 
 let hotbarSlots = Object.keys(inventory); 
 let selectedSlotIndex = 0;
 let hp = 100, energy = 100;
 
-// 保底題庫
-let bossQuestions = [
-    { question: "國八理化：當冰塊融化成水時，下列何者「不變」？", options: ["體積", "密度", "質量", "狀態"], answer: 2 },
-    { question: "國八理化：密度(D)、質量(M)、體積(V)的關係為何？", options: ["D=M*V", "D=V/M", "D=M/V", "M=D/V"], answer: 2 }
-];
-let currentBossQ = null;
-
-// ==========================================
-// 2. UI 更新與狀態
-// ==========================================
 function showMsg(txt, color='#fbbf24') { 
     const m = document.getElementById('msg-box'); 
     m.innerText = txt; m.style.color = color; m.style.opacity = 1; 
@@ -199,181 +95,69 @@ function updateStats(hpChange, energyChange) {
     document.getElementById('hp-txt').innerText = Math.floor(hp);
     document.getElementById('energy-fill').style.width = `${energy}%`; 
     document.getElementById('energy-txt').innerText = Math.floor(energy);
-    if (hp <= 0) { showMsg("💀 你餓死/摔死了！", "red"); resetPlayer(); }
-}
-
-function resetPlayer() { camera.position.set(0, 5, 0); hp = 100; energy = 100; updateStats(0,0); }
-
-function consumeItem(itemId) {
-    const item = ITEM_REGISTRY[itemId];
-    if (item && item.type === 'food' && inventory[itemId] > 0) {
-        inventory[itemId]--;
-        updateStats(item.h||0, item.e);
-        showMsg(`😋 吃了 ${item.n}！`, '#10b981');
-        if (inventory[itemId] <= 0) delete inventory[itemId];
-        renderUI();
-    }
+    if (hp <= 0) { showMsg("💀 你死了！", "red"); setTimeout(() => { hp=100; energy=100; camera.position.set(0,5,0); updateStats(0,0); }, 2000); }
 }
 
 function renderUI() {
     hotbarSlots = Object.keys(inventory); 
-    const invDiv = document.getElementById('inventory-list'); invDiv.innerHTML = '';
-    Object.keys(inventory).forEach(key => {
-        if(inventory[key] > 0) {
-            const item = ITEM_REGISTRY[key] || { n: '未知', i: '❓' };
-            invDiv.innerHTML += `<div class="slot bg-slate-800" title="${item.n}">${item.i}<span class="slot-count">${inventory[key]}</span></div>`;
-        }
-    });
-
-    const recDiv = document.getElementById('recipe-list'); recDiv.innerHTML = '';
-    RECIPES.forEach(r => {
-        const canCraft = r.req.every(req => (inventory[req.id] || 0) >= req.count);
-        let reqHtml = r.req.map(req => `<span class="text-xs bg-black/40 px-1 rounded">${ITEM_REGISTRY[req.id].i}x${req.count}</span>`).join(' ');
-        recDiv.innerHTML += `
-            <div class="flex justify-between items-center p-2 rounded ${canCraft ? 'bg-blue-900/60' : 'bg-slate-800 opacity-50'}">
-                <div class="flex items-center gap-2"><span class="text-2xl">${ITEM_REGISTRY[r.id] ? ITEM_REGISTRY[r.id].i : '❓'}</span>
-                <div><div class="font-bold text-sm">${r.n}</div><div class="flex gap-1 mt-1">${reqHtml}</div></div></div>
-                <button onclick="craft('${r.id}')" class="px-3 py-1 bg-blue-600 rounded text-xs text-white ${!canCraft?'hidden':''}">合成</button>
-            </div>`;
-    });
-
     const hotbarDiv = document.getElementById('hotbar'); hotbarDiv.innerHTML = '';
     hotbarSlots.forEach((itemId, i) => {
         const item = ITEM_REGISTRY[itemId] || { n: '未知物品', i: '❓', type: 'none' };
         const div = document.createElement('div');
         div.className = `slot ${i === selectedSlotIndex ? 'active' : ''}`;
         div.innerHTML = `${item.i}<span class="slot-count">${inventory[itemId]}</span>`;
-        
-        div.onclick = (e) => {
-            if (selectedSlotIndex === i && item.type === 'food') consumeItem(itemId); 
-            else selectedSlotIndex = i; 
+        div.onclick = () => {
+            if (selectedSlotIndex === i && item.type === 'food') {
+                inventory[itemId]--; updateStats(item.h, item.e); showMsg(`吃了 ${item.n}！`, '#10b981');
+                if(inventory[itemId]<=0) delete inventory[itemId];
+            } else selectedSlotIndex = i; 
             renderUI();
-            div.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         };
         hotbarDiv.appendChild(div);
     });
-
-    const currentItem = hotbarSlots[selectedSlotIndex];
-    document.getElementById('view-model').innerText = currentItem ? (ITEM_REGISTRY[currentItem] ? ITEM_REGISTRY[currentItem].i : '❓') : '👊';
-}
-
-function craft(recipeId) {
-    const r = RECIPES.find(x => x.id === recipeId);
-    if(r.req.every(req => (inventory[req.id] || 0) >= req.count)) {
-        r.req.forEach(req => inventory[req.id] -= req.count);
-        inventory[r.id] = (inventory[r.id] || 0) + r.outCount;
-        showMsg(`🔨 合成了 ${ITEM_REGISTRY[r.id].n}`, '#3b82f6');
-        renderUI();
-    }
 }
 
 // ==========================================
-// 3. 👹 閻羅王題目方塊讀取邏輯 (核心升級)
-// ==========================================
-function openBossQuiz() {
-    if (isQuizOpen || energy < 20) return;
-    isQuizOpen = true;
-    document.getElementById('boss-quiz-overlay').style.display = 'block';
-    
-    // 定義所有科目庫
-    const allSubjects = [
-        'math', 'physics', 'chemistry', 'biology', 'earth_science', 
-        'english', 'chinese', 'history', 'geography', 'civics'
-    ];
-    // 隨機抽一個科目
-    const randomSubject = allSubjects[Math.floor(Math.random() * allSubjects.length)];
-
-    // 清空舊畫面
-    document.getElementById('boss-question').innerHTML = `正在向地府題庫讀取 [${randomSubject}] 題目...`;
-    const ops = document.getElementById('boss-options'); 
-    ops.innerHTML = '';
-
-    // 呼叫外部題庫引擎 (generator_engine)
-    if(typeof window.generatePaper === 'function') {
-        try {
-            console.log(`📡 正在請求科目: ${randomSubject}`);
-            const cloudQ = window.generatePaper({ 
-                subject: randomSubject, 
-                total: 1, 
-                tags: [] 
-            });
-            
-            if(cloudQ && cloudQ.length > 0) {
-                bossQuestions = cloudQ; // 覆蓋保底題目
-            }
-        } catch(e) {
-            console.error("題庫讀取失敗，使用預設保底題目", e);
-        }
-    }
-
-    // 選出一題並渲染
-    currentBossQ = bossQuestions[Math.floor(Math.random() * bossQuestions.length)];
-    
-    // 加上科目提示標籤
-    document.getElementById('boss-question').innerHTML = 
-        `<span style="color:#fbbf24; font-weight:bold;">[${randomSubject.toUpperCase()}]</span><br><br>` + 
-        currentBossQ.question.replace(/\n/g, '<br>');
-    
-    currentBossQ.options.forEach((opt, idx) => {
-        const btn = document.createElement('button');
-        btn.className = "quiz-btn w-full text-left p-3 rounded-lg bg-slate-800 border border-slate-700";
-        btn.innerHTML = `${String.fromCharCode(65+idx)}. ${opt}`;
-        btn.onclick = () => checkBossAnswer(idx);
-        ops.appendChild(btn);
-    });
-
-    // 解析數學公式
-    if(window.MathJax) MathJax.typesetPromise();
-}
-
-function checkBossAnswer(selectedIdx) {
-    if (selectedIdx === currentBossQ.answer) {
-        showMsg("🎉 正確！地府認證全能王！獲得獎勵", "#10b981");
-        inventory['diamond'] = (inventory['diamond'] || 0) + 2;
-        inventory['cooked_meat_salted'] = (inventory['cooked_meat_salted'] || 0) + 1;
-        setTimeout(() => { closeBossQuiz(true); }, 1500);
-    } else {
-        showMsg("💥 答錯了！受到地府的懲罰！", "red");
-        updateStats(-30, -10);
-        setTimeout(() => closeBossQuiz(false), 1500);
-    }
-}
-
-function closeBossQuiz(isVictory = false) {
-    document.getElementById('boss-quiz-overlay').style.display = 'none';
-    isQuizOpen = false;
-    if(!isVictory) updateStats(0, -10); 
-    renderUI();
-}
-
-// ==========================================
-// 4. Three.js: 世界建設與實體
+// 2. Three.js: 世界與光影建設 (變漂亮了！)
 // ==========================================
 const scene = new THREE.Scene(); 
-scene.fog = new THREE.FogExp2(0x87CEEB, 0.05);
+scene.background = new THREE.Color(0x87CEEB);
+scene.fog = new THREE.FogExp2(0x87CEEB, 0.04);
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
-const renderer = new THREE.WebGLRenderer({ antialias: false });
+
+// 🔥 開啟陰影渲染器
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio > 1 ? 1.5 : 1);
+renderer.shadowMap.enabled = true; // 開啟陰影
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 柔和陰影
 document.body.appendChild(renderer.domElement);
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.5); 
-dirLight.position.set(10, 20, 10); 
+// 🔥 加入帶有陰影的太陽光
+scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8); 
+dirLight.position.set(20, 50, 20); 
+dirLight.castShadow = true; 
+dirLight.shadow.mapSize.width = 1024;
+dirLight.shadow.mapSize.height = 1024;
+dirLight.shadow.camera.near = 0.5;
+dirLight.shadow.camera.far = 100;
+dirLight.shadow.camera.left = -30;
+dirLight.shadow.camera.right = 30;
+dirLight.shadow.camera.top = 30;
+dirLight.shadow.camera.bottom = -30;
 scene.add(dirLight);
 
 function createColorMat(color) { return new THREE.MeshLambertMaterial({ color }); }
 const MATS = {
     grass: createColorMat(0x55aa55), dirt: createColorMat(0x8b5a2b), stone: createColorMat(0x888888),
-    wood: createColorMat(0x5c4033), leaves: createColorMat(0x228b22), pig: createColorMat(0xffc0cb),
-    cow: createColorMat(0x7f4c1e), salt: createColorMat(0xffffff),
-    boss: new THREE.MeshPhongMaterial({ color: 0x220000, emissive: 0xef4444 })
+    wood: createColorMat(0x5c4033), leaves: createColorMat(0x228b22), 
+    pig: createColorMat(0xffb6c1), cow: createColorMat(0x654321),
+    zombie: createColorMat(0x2ca02c) // 殭屍顏色
 };
 const boxGeo = new THREE.BoxGeometry(1, 1, 1);
-
 const blocks = new Map();
 const entities = [];
-let bossEntity = null;
+const projectiles = []; // 儲存火球
 noise.seed(Math.random());
 
 function getBlockKey(x, y, z) { return `${Math.floor(x)},${Math.floor(y)},${Math.floor(z)}`; }
@@ -381,28 +165,22 @@ function getBlockKey(x, y, z) { return `${Math.floor(x)},${Math.floor(y)},${Math
 function addBlock(x, y, z, type) {
     const mesh = new THREE.Mesh(boxGeo, MATS[type] || MATS.dirt);
     mesh.position.set(x, y, z); mesh.userData.type = type;
+    mesh.castShadow = true; // 產生影子
+    mesh.receiveShadow = true; // 接收影子
     scene.add(mesh); blocks.set(getBlockKey(x, y, z), mesh);
-}
-
-function spawnBoss(x = 0, y = 10, z = -20) {
-    const boss = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.5, 1.5), MATS.boss);
-    boss.position.set(x, y, z);
-    boss.userData.isBoss = true;
-    boss.userData.type = 'boss_cube'; 
-    scene.add(boss);
-    if (!bossEntity) bossEntity = boss; 
-    blocks.set(getBlockKey(x, y, z), boss);
 }
 
 function spawnAnimal(type, pos) {
     const group = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 1.2), MATS[type]); body.position.y = 0.6; group.add(body);
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), MATS[type]); head.position.set(0, 0.8, -0.7); group.add(head);
-    if (pos) group.position.copy(pos);
-    else group.position.set((Math.random()-0.5)*30, 5, (Math.random()-0.5)*30);
-    group.userData = { type, velY: 0, isJumping: false };
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 1.2), MATS[type]); 
+    body.position.y = 0.6; body.castShadow = true; group.add(body);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), MATS[type]); 
+    head.position.set(0, 0.8, -0.7); head.castShadow = true; group.add(head);
+    
+    group.position.copy(pos);
+    group.userData = { type, velY: 0, hp: (type==='zombie'?3:1), lastAttack: 0 };
     scene.add(group);
-    entities.push({ group, velocity: new THREE.Vector3(0, 0, 0), nextStateTime: 0, state: 'idle' });
+    entities.push({ group, velocity: new THREE.Vector3(0, 0, 0), state: 'idle' });
 }
 
 function spawnTree(x, z, h) {
@@ -412,213 +190,101 @@ function spawnTree(x, z, h) {
 
 let lastChunkX = -999, lastChunkZ = -999;
 function updateInfiniteTerrain() {
-    const pX = Math.floor(camera.position.x);
-    const pZ = Math.floor(camera.position.z);
-    
-    const currChunkX = Math.floor(pX / 10);
-    const currChunkZ = Math.floor(pZ / 10);
+    const pX = Math.floor(camera.position.x); const pZ = Math.floor(camera.position.z);
+    const currChunkX = Math.floor(pX / 10); const currChunkZ = Math.floor(pZ / 10);
     if (currChunkX === lastChunkX && currChunkZ === lastChunkZ) return;
     lastChunkX = currChunkX; lastChunkZ = currChunkZ;
 
-    const range = 20; 
-    for (let x = pX - range; x < pX + range; x++) {
-        for (let z = pZ - range; z < pZ + range; z++) {
-            const key = getBlockKey(x, 0, z);
-            if (!blocks.has(key)) {
-                // 生成草地
+    for (let x = pX - 20; x < pX + 20; x++) {
+        for (let z = pZ - 20; z < pZ + 20; z++) {
+            if (!blocks.has(getBlockKey(x, 0, z))) {
                 addBlock(x, 0, z, 'grass');
-                
-                // 🌳 加入生成樹木 (2% 機率)
                 if (Math.random() < 0.02) spawnTree(x, z, 0); 
-                
-                if (Math.random() < 0.002) spawnBoss(x, 1, z); 
-                if (Math.random() < 0.02) {
-                    const plants = ['apple', 'banana', 'carrot', 'tomato', 'grass_bush'];
-                    addBlock(x, 1, z, plants[Math.floor(Math.random() * plants.length)]);
-                }
             }
         }
     }
 }
 
 // ==========================================
-// 5. 互動、移動與主循環
+// 3. 戰鬥系統：發射火球！
 // ==========================================
-let moveInput = { x: 0, y: 0 }, lookInput = { x: 0, y: 0 };
-const keysPressed = {};
+document.getElementById('btn-break').onclick = () => {
+    if (energy < 2) { showMsg("🔋 體力不足以發射火球！", "#ff4444"); return; }
+    
+    const vm = document.getElementById('view-model');
+    vm.classList.remove('swing'); void vm.offsetWidth; vm.classList.add('swing');
+    updateStats(0, -2); // 射擊耗費體力
+
+    // 🔴 生成一顆發光的紅色火球
+    const bulletGeo = new THREE.SphereGeometry(0.3, 8, 8);
+    const bulletMat = new THREE.MeshBasicMaterial({ color: 0xff3300 });
+    const bullet = new THREE.Mesh(bulletGeo, bulletMat);
+    
+    bullet.position.copy(camera.position);
+    // 計算面向的方向
+    const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+    
+    bullet.userData = { velocity: dir.multiplyScalar(0.8), life: 60 }; // 速度與壽命
+    scene.add(bullet);
+    projectiles.push(bullet);
+};
+
+// ==========================================
+// 4. 互動與放置
+// ==========================================
 const raycaster = new THREE.Raycaster();
 const center = new THREE.Vector2(0, 0);
 
-function updateCrosshairSystem() {
-    raycaster.setFromCamera(center, camera);
-    const allTargets = [ bossEntity, ...scene.children.filter(obj => obj.geometry && obj.geometry.type === 'BoxGeometry'), ...entities.map(e => e.group) ];
-    const intersects = raycaster.intersectObjects(allTargets, true);
-    
-    const crosshairEl = document.getElementById('crosshair');
-    const targetInfoEl = document.getElementById('target-info');
-
-    if (intersects.length > 0 && intersects[0].distance < 10) {
-        const target = intersects[0].object;
-        const dist = Math.floor(intersects[0].distance);
-        crosshairEl.style.transform = 'scale(1.3)'; 
-        targetInfoEl.style.opacity = '1';
-
-        if (target === bossEntity || target.userData.type === 'boss_cube') {
-            crosshairEl.style.color = '#ef4444'; 
-            targetInfoEl.innerText = `👹 閻羅王 (${dist}m)`;
-        } else if (target.parent && target.parent.userData.type) { 
-            crosshairEl.style.color = '#fbbf24'; 
-            targetInfoEl.innerText = `${target.parent.userData.type === 'pig' ? '🐷' : '🐮'} 動物 (${dist}m)`;
-        } else { 
-            crosshairEl.style.color = 'rgba(255,255,255,0.9)'; 
-            targetInfoEl.innerText = `🧱 ${ITEM_REGISTRY[target.userData.type] ? ITEM_REGISTRY[target.userData.type].n : '方塊'} (${dist}m)`;
-        }
-    } else {
-        crosshairEl.style.transform = 'scale(1)'; crosshairEl.style.color = 'rgba(255,255,255,0.8)'; targetInfoEl.style.opacity = '0';
-    }
-}
-
-function handleInteraction() {
-    if (isQuizOpen) return;
-    raycaster.setFromCamera(center, camera);
-    const intersects = raycaster.intersectObjects(scene.children, true);
-    
-    if(intersects.length > 0 && intersects[0].distance < 8) {
-        const target = intersects[0].object;
-        if (target.userData.isBoss || target === bossEntity) {
-            openBossQuiz();
-            return;
-        }
-        
-        const type = target.userData.type;
-        if (['apple', 'banana', 'carrot', 'leaves', 'grass_bush'].includes(type)) {
-            inventory[type] = (inventory[type] || 0) + 1;
-            scene.remove(target);
-            showMsg(`🌿 採集了 ${ITEM_REGISTRY[type].n}`);
-            renderUI();
-        } else if (type === 'salt_ore') {
-            showMsg("🧂 這是一塊鹽礦，請用紅色錘子開採！");
-        }
-    }
-}
-
-function swingHand() {
-    const vm = document.getElementById('view-model');
-    vm.classList.remove('swing'); void vm.offsetWidth; vm.classList.add('swing');
-    updateStats(0, -1); 
-}
-
-// 紅色錘子 - 攻擊/挖掘
-document.getElementById('btn-break').onclick = () => {
-    if (energy < 5) { showMsg("🔋 體力不足！需休息或吃東西", "#ff4444"); return; }
-    swingHand();
-
-    raycaster.setFromCamera(center, camera);
-    const intersects = raycaster.intersectObjects(scene.children, true);
-
-    // ⚔️ 已修正：將 distance 改為 8，確保打得到動物
-    if (intersects.length > 0 && intersects[0].distance < 8) {
-        const target = intersects[0].object;
-        let animalGroup = target;
-        while(animalGroup && !animalGroup.userData.type) animalGroup = animalGroup.parent;
-
-        if (animalGroup && ['pig', 'cow'].includes(animalGroup.userData.type)) {
-            const type = animalGroup.userData.type;
-            if (type === 'pig') {
-                inventory['meat_pig'] = (inventory['meat_pig'] || 0) + 1;
-                if (Math.random() > 0.5) inventory['gas'] = (inventory['gas'] || 0) + 1;
-            } else {
-                inventory['meat_cow'] = (inventory['meat_cow'] || 0) + 1;
-                inventory['leather'] = (inventory['leather'] || 0) + 1;
-                inventory['milk'] = (inventory['milk'] || 0) + 1;
-            }
-
-            scene.remove(animalGroup); 
-            const idx = entities.findIndex(e => e.group === animalGroup);
-            if(idx > -1) entities.splice(idx, 1);
-            
-            updateStats(0, -5); 
-            showMsg(`⚔️ 成功獵捕 ${type === 'pig' ? '豬' : '牛'}！`);
-            renderUI();
-            return;
-        }
-
-        if (target.userData.type && !target.userData.isBoss) {
-            const blockType = target.userData.type;
-            inventory[blockType] = (inventory[blockType] || 0) + 1;
-            scene.remove(target);
-            blocks.delete(getBlockKey(target.position.x, target.position.y, target.position.z));
-            updateStats(0, -2); 
-            showMsg(`⛏️ 獲得 ${ITEM_REGISTRY[blockType].n}`);
-            renderUI();
-        } else if (target.userData.isBoss) {
-            showMsg("👹 閻羅王不可破壞！", "red");
-        }
-    }
-};
-
-document.getElementById('btn-interact').onclick = handleInteraction;
-
 document.getElementById('btn-place').onclick = () => {
-    const currentItem = hotbarSlots[selectedSlotIndex];
-    if (!currentItem || ITEM_REGISTRY[currentItem].type !== 'block' || inventory[currentItem] <= 0) return;
+    const item = hotbarSlots[selectedSlotIndex];
+    if (!item || inventory[item] <= 0 || ITEM_REGISTRY[item].type !== 'block') return;
     raycaster.setFromCamera(center, camera);
     const intersects = raycaster.intersectObjects(scene.children).filter(i => i.object.geometry.type === 'BoxGeometry');
     if (intersects.length > 0 && intersects[0].distance < 8) {
-        swingHand();
-        const normal = intersects[0].face.normal;
-        const pos = intersects[0].object.position.clone().add(normal);
-        addBlock(pos.x, pos.y, pos.z, currentItem);
-        inventory[currentItem]--;
-        if(inventory[currentItem]<=0) delete inventory[currentItem];
+        const pos = intersects[0].object.position.clone().add(intersects[0].face.normal);
+        addBlock(pos.x, pos.y, pos.z, item);
+        inventory[item]--; if(inventory[item]<=0) delete inventory[item];
         renderUI();
     }
 };
 
-// 鍵盤移動與數字鍵
-document.addEventListener('keydown', e => {
-    keysPressed[e.key.toLowerCase()] = true;
-    if(['1','2','3','4','5','6','7','8'].includes(e.key)) {
-        selectedSlotIndex = parseInt(e.key) - 1;
-        if(selectedSlotIndex < hotbarSlots.length) { renderUI(); document.querySelector(`.slot:nth-child(${selectedSlotIndex+1})`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); }
+document.getElementById('btn-interact').onclick = () => {
+    raycaster.setFromCamera(center, camera);
+    const intersects = raycaster.intersectObjects(scene.children).filter(i => i.object.geometry.type === 'BoxGeometry');
+    if (intersects.length > 0 && intersects[0].distance < 6) {
+        const target = intersects[0].object;
+        if(target.userData.type) {
+            inventory[target.userData.type] = (inventory[target.userData.type] || 0) + 1;
+            scene.remove(target); blocks.delete(getBlockKey(target.position.x, target.position.y, target.position.z));
+            renderUI();
+        }
     }
-    if(e.key === ' ' && !isQuizOpen) { handleInteraction(); e.preventDefault(); } 
-});
-document.addEventListener('keyup', e => keysPressed[e.key.toLowerCase()] = false);
+};
 
-// 🖱️ 已新增：綁定電腦滑鼠點擊 (左鍵攻擊/挖礦，右鍵放置方塊)
+// 電腦滑鼠支援
 document.addEventListener('mousedown', (e) => {
-    // 防止點擊到 UI 時誤觸動作
-    if (e.target.tagName === 'BUTTON' || 
-        e.target.closest('.status-ui') || 
-        e.target.closest('#hotbar-outer') || 
-        e.target.closest('#sidebar') || 
-        e.target.closest('.overlay-box')) return;
-    
-    if (e.button === 0) { 
-        document.getElementById('btn-break').click();
-    } else if (e.button === 2) { 
-        document.getElementById('btn-place').click();
-    }
+    if (e.target.tagName === 'BUTTON' || e.target.closest('.status-ui') || e.target.closest('#hotbar-outer')) return;
+    if (e.button === 0) document.getElementById('btn-break').click(); // 左鍵發射火球
+    else if (e.button === 2) document.getElementById('btn-place').click(); // 右鍵放置
 });
 document.addEventListener('contextmenu', e => e.preventDefault());
 
-// 搖桿設置
+// ==========================================
+// 5. 控制與遊戲主循環
+// ==========================================
+let moveInput = { x: 0, y: 0 }, lookInput = { x: 0, y: 0 };
 function setupJoy(id, knobId, outObj) {
     const zone = document.getElementById(id), knob = document.getElementById(knobId);
     let activeId = null; let centerX, centerY;
     zone.addEventListener('touchstart', e => { e.preventDefault(); activeId = e.changedTouches[0].identifier; const r = zone.getBoundingClientRect(); centerX = r.left + r.width/2; centerY = r.top + r.height/2; }, {passive:false});
     zone.addEventListener('touchmove', e => {
         e.preventDefault();
-        for(let i=0; i<e.changedTouches.length; i++) {
-            if(e.changedTouches[i].identifier === activeId) {
-                const t = e.changedTouches[i];
-                let dx = t.clientX - centerX, dy = t.clientY - centerY;
-                const dist = Math.sqrt(dx*dx+dy*dy); const maxR = 40;
-                if(dist>maxR) { dx *= maxR/dist; dy *= maxR/dist; }
-                knob.style.transform = `translate(${dx}px, ${dy}px)`;
-                outObj.x = dx/maxR; outObj.y = dy/maxR;
-            }
+        for(let i=0; i<e.changedTouches.length; i++) if(e.changedTouches[i].identifier === activeId) {
+            let dx = e.changedTouches[i].clientX - centerX, dy = e.changedTouches[i].clientY - centerY;
+            const dist = Math.sqrt(dx*dx+dy*dy); const maxR = 40;
+            if(dist>maxR) { dx *= maxR/dist; dy *= maxR/dist; }
+            knob.style.transform = `translate(${dx}px, ${dy}px)`;
+            outObj.x = dx/maxR; outObj.y = dy/maxR;
         }
     }, {passive:false});
     zone.addEventListener('touchend', e => { for(let i=0; i<e.changedTouches.length; i++) if(e.changedTouches[i].identifier === activeId) { activeId=null; knob.style.transform='translate(0,0)'; outObj.x=0; outObj.y=0; } });
@@ -626,104 +292,103 @@ function setupJoy(id, knobId, outObj) {
 setupJoy('joystick-move', 'knob-move', moveInput);
 setupJoy('joystick-look', 'knob-look', lookInput);
 
-function updateEntities(delta) {
-    entities.forEach(entity => {
-        const { group } = entity;
-        if (Date.now() > entity.nextStateTime) {
-            const states = ['idle', 'walk', 'jump'];
-            entity.state = states[Math.floor(Math.random() * states.length)];
-            entity.nextStateTime = Date.now() + 2000 + Math.random() * 3000;
-
-            if (entity.state === 'walk') {
-                const angle = Math.random() * Math.PI * 2;
-                entity.velocity.set(Math.cos(angle) * 0.02, 0, Math.sin(angle) * 0.02);
-                group.rotation.y = -angle + Math.PI / 2;
-            } else if (entity.state === 'jump' && !group.userData.isJumping) {
-                group.userData.velY = 0.1;
-                group.userData.isJumping = true;
-            } else {
-                entity.velocity.set(0, 0, 0);
-            }
-        }
-
-        group.position.add(entity.velocity);
-        group.userData.velY -= 0.005; 
-        group.position.y += group.userData.velY;
-
-        if (group.position.y < 0) {
-            group.position.y = 0;
-            group.userData.velY = 0;
-            group.userData.isJumping = false;
-        }
-    });
-}
-
 function updateGame() {
     requestAnimationFrame(updateGame);
     const delta = clock.getDelta();
-    
-    if (isQuizOpen) { renderer.render(scene, camera); return; }
 
-    camera.rotation.y -= lookInput.x * 0.03;
-    camera.rotation.x -= lookInput.y * 0.03;
+    // 視角與移動
+    camera.rotation.y -= lookInput.x * 0.04;
+    camera.rotation.x -= lookInput.y * 0.04;
     camera.rotation.x = Math.max(-1.5, Math.min(1.5, camera.rotation.x));
     
-    const speed = 0.15; 
-    const dir = new THREE.Vector3();
-    
-    if(keysPressed['w']) dir.z -= 1; 
-    if(keysPressed['s']) dir.z += 1;
-    if(keysPressed['a']) dir.x -= 1; 
-    if(keysPressed['d']) dir.x += 1;
-    if(moveInput.x !== 0 || moveInput.y !== 0) { dir.x += moveInput.x; dir.z += moveInput.y; }
-
-    if(dir.length() > 0) {
-        const playerRotY = camera.rotation.y;
-        dir.normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), playerRotY);
-        camera.position.addScaledVector(dir, speed);
+    if(moveInput.x !== 0 || moveInput.y !== 0) {
+        const dir = new THREE.Vector3(moveInput.x, 0, moveInput.y).normalize();
+        dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), camera.rotation.y);
+        camera.position.addScaledVector(dir, 0.15);
         updateInfiniteTerrain();
     }
 
-    updateEntities(delta);
-    updateCrosshairSystem();
+    // 🚀 更新火球飛行與碰撞
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+        const p = projectiles[i];
+        p.position.add(p.userData.velocity);
+        p.userData.life--;
 
-    if (bossEntity) {
-        bossEntity.rotation.y += 0.01;
-        const pulse = 1 + Math.sin(Date.now() * 0.005) * 0.1;
-        bossEntity.scale.set(pulse, pulse, pulse);
-        const dist = Math.floor(camera.position.distanceTo(bossEntity.position));
-        document.getElementById('boss-dist').innerText = dist;
+        // 檢查是否打中怪物
+        let hit = false;
+        for (let j = entities.length - 1; j >= 0; j--) {
+            const ent = entities[j];
+            if (p.position.distanceTo(ent.group.position) < 1.5) {
+                ent.group.userData.hp--;
+                if(ent.group.userData.hp <= 0) {
+                    scene.remove(ent.group);
+                    if(ent.group.userData.type === 'zombie') {
+                        inventory['rotten_flesh'] = (inventory['rotten_flesh']||0)+1;
+                        showMsg("⚔️ 擊殺殭屍！", "#10b981");
+                    } else {
+                        inventory['meat_pig'] = (inventory['meat_pig']||0)+1;
+                        showMsg("🍖 獲得肉類！", "#10b981");
+                    }
+                    entities.splice(j, 1);
+                    renderUI();
+                } else {
+                    showMsg("💥 擊中怪物！", "orange");
+                }
+                hit = true; break;
+            }
+        }
+
+        if (hit || p.userData.life <= 0) {
+            scene.remove(p); projectiles.splice(i, 1);
+        }
     }
+
+    // 🧟 更新實體AI (加入殭屍追擊系統)
+    entities.forEach(entity => {
+        const type = entity.group.userData.type;
+        const distToPlayer = entity.group.position.distanceTo(camera.position);
+
+        if (type === 'zombie' && distToPlayer < 15) {
+            // 殭屍追趕玩家
+            const dir = new THREE.Vector3().subVectors(camera.position, entity.group.position).normalize();
+            entity.group.position.addScaledVector(dir, 0.04);
+            entity.group.lookAt(camera.position.x, entity.group.position.y, camera.position.z);
+            
+            // 攻擊玩家
+            if (distToPlayer < 2 && Date.now() > entity.group.userData.lastAttack) {
+                updateStats(-15, 0); showMsg("🩸 被殭屍咬了！扣血", "red");
+                entity.group.userData.lastAttack = Date.now() + 1500;
+            }
+        } else {
+            // 一般動物發呆或亂走
+            if (Math.random() < 0.01) {
+                const angle = Math.random() * Math.PI * 2;
+                entity.velocity.set(Math.cos(angle)*0.02, 0, Math.sin(angle)*0.02);
+                entity.group.rotation.y = -angle + Math.PI/2;
+            }
+            entity.group.position.add(entity.velocity);
+        }
+        
+        // 重力
+        if(entity.group.position.y > 0) entity.group.position.y -= 0.05;
+        if(entity.group.position.y < 0) entity.group.position.y = 0;
+    });
 
     renderer.render(scene, camera);
 }
 
-window.onload = () => { initGame(); };
-window.addEventListener('resize', () => { 
-    camera.aspect = window.innerWidth/window.innerHeight; 
-    camera.updateProjectionMatrix(); 
-    renderer.setSize(window.innerWidth, window.innerHeight); 
-});
-
-function initGame() {
-    console.log("🚀 正在啟動生存世界...");
-    renderUI();
-    updateStats(0,0);
+window.onload = () => {
+    renderUI(); updateStats(0,0);
     camera.position.set(0, 5, 10);
-    camera.lookAt(0, 0, 0);
-
-    lastChunkX = -999;
     updateInfiniteTerrain(); 
-    spawnBoss(0, 5, -10);
     
-    for(let i=0; i<15; i++) {
-        const type = (i % 2 === 0 ? 'pig' : 'cow');
-        const rx = (Math.random() - 0.5) * 40;
-        const rz = (Math.random() - 0.5) * 40;
-        spawnAnimal(type, new THREE.Vector3(rx, 5, rz)); 
-    }
+    // 生成一些豬和殭屍
+    for(let i=0; i<10; i++) spawnAnimal('pig', new THREE.Vector3((Math.random()-0.5)*30, 0, (Math.random()-0.5)*30));
+    for(let i=0; i<5; i++) spawnAnimal('zombie', new THREE.Vector3((Math.random()-0.5)*40, 0, (Math.random()-0.5)*40));
+    
     updateGame(); 
-}
+};
+window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
     </script>
 </body>
 </html>
