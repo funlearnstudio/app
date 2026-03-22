@@ -3043,16 +3043,19 @@ function vqProcessChunkQueue() {
     }));
   }
 
-  function vqUpdateNetCleanup() {
-    if (!vqInf.ws) return;
-    const stale = [];
-    const now = Date.now();
-    for (const [id, entry] of vqInf.remotePlayers.entries()) {
-      if (now - entry.lastSeen > 15000) stale.push(id);
-    }
-    stale.forEach(vqRemoveRemoteAvatar);
-  }
+function vqUpdateNetCleanup() {
+    // 檢查頻率控制：每 120 幀 (約 2 秒) 執行一次
+    if (!vqInf.ws || vqFrameCount % 120 !== 0) return;
 
+    const now = Date.now();
+    // 直接在遍歷時處理，不建立額外的 stale 陣列
+    for (const [id, entry] of vqInf.remotePlayers.entries()) {
+        if (now - entry.lastSeen > 15000) {
+            vqRemoveRemoteAvatar(id); 
+            // 這裡直接刪除 entry，視你的 vqRemoveRemoteAvatar 實作而定
+        }
+    }
+}
 // 1. 將變數移出循環，變成靜態預配置
 const _vel = new THREE.Vector3(); 
 const _dir = new THREE.Vector3();
@@ -3060,76 +3063,57 @@ const _dir = new THREE.Vector3();
 function vqUpdatePhysics(delta) {
     if (!vqControls || !vqControls.isLocked) return;
 
-    // 2. 限制 delta 最大值，防止因為卡頓導致的「穿牆」現象
     const dt = Math.min(delta, 0.1); 
-
-    // 3. 生存數值計算 (純數值計算很快，保留在這裡)
-    vqInf.hunger = Math.max(0, vqInf.hunger - dt * 0.45);
-    if (vqInf.hunger <= 0) vqInf.hp = Math.max(0, vqInf.hp - dt * 2.5);
-    if (vqInf.hp <= 0) {
-        vqInf.hp = 100; vqInf.hunger = 100;
-        vqControls.getObject().position.set(0, 80, 0);
-    }
-    vqInf.stamina = Math.min(100, vqInf.stamina + dt * 10);
-
-    // 🌟 注意：移除了 updateVoxelSurvivalHUD()，請改放到 animateVoxelWorld 的 % 10 邏輯中
-
-    // 4. 物理運動
     const velocity = window.__vqVelocity || (window.__vqVelocity = _vel);
-    
-    // 阻力與重力
+
+    // --- 1. 阻力與重力優化 ---
     velocity.x *= (1.0 - 10.0 * dt);
     velocity.z *= (1.0 - 10.0 * dt);
-    velocity.y -= 9.8 * 60.0 * dt;
+    velocity.y -= 588.0 * dt; // 預計算 9.8 * 60
 
-    const moveZ = Number(window.moveForward) - Number(window.moveBackward);
-    const moveX = Number(window.moveRight) - Number(window.moveLeft);
+    // 速度微小截斷 (防止 CPU 不斷處理極小浮點數)
+    if (Math.abs(velocity.x) < 0.001) velocity.x = 0;
+    if (Math.abs(velocity.z) < 0.001) velocity.z = 0;
 
-    if (moveZ !== 0 || moveX !== 0) {
-        _dir.set(moveX, 0, moveZ).normalize();
-        const speed = window.__vqMoveSpeed || 400.0;
-        velocity.z -= _dir.z * speed * dt;
-        velocity.x -= _dir.x * speed * dt;
+    // --- 2. 移動邏輯 ---
+    const mZ = Number(window.moveForward) - Number(window.moveBackward);
+    const mX = Number(window.moveRight) - Number(window.moveLeft);
+
+    if (mZ !== 0 || mX !== 0) {
+        const speed = (window.__vqMoveSpeed || 400.0) * dt;
+        // 簡單的歸一化模擬 (避免頻繁呼叫 Vector3.normalize)
+        const mag = Math.sqrt(mX * mX + mZ * mZ);
+        velocity.z -= (mZ / mag) * speed;
+        velocity.x -= (mX / mag) * speed;
     }
 
-    // 5. 碰撞偵測優化
+    // --- 3. 碰撞檢查 (最耗時的地方) ---
     const pos = vqControls.getObject().position;
     
-    // 預先計算下一幀位置
-    const dx = -velocity.x * dt;
-    const dz = -velocity.z * dt;
-    const dy = velocity.y * dt;
-
-    // X 軸檢查
-    if (vqCheckCollision(pos.x + dx, pos.y, pos.z)) {
+    // 建議將 vqCheckCollision 內部的邏輯簡化為「陣列索引查表」
+    if (vqCheckCollision(pos.x - velocity.x * dt, pos.y, pos.z)) {
         velocity.x = 0;
     } else {
-        vqControls.moveRight(dx);
+        vqControls.moveRight(-velocity.x * dt);
     }
 
-    // Z 軸檢查
-    if (vqCheckCollision(pos.x, pos.y, pos.z + dz)) {
+    if (vqCheckCollision(pos.x, pos.y, pos.z - velocity.z * dt)) {
         velocity.z = 0;
     } else {
-        vqControls.moveForward(dz);
+        vqControls.moveForward(-velocity.z * dt);
     }
 
-    // Y 軸檢查 (地面)
-    if (vqCheckCollision(pos.x, pos.y + dy, pos.z)) {
+    // 地面碰撞
+    const nextY = pos.y + velocity.y * dt;
+    if (vqCheckCollision(pos.x, nextY, pos.z)) {
         if (velocity.y < 0) {
             window.canJump = true;
-            // 修正位置防止陷入地板
-            pos.y = Math.ceil(pos.y / blockSize) * blockSize + 5;
+            // 修正位置：確保腳踩在方塊頂部 + 微小偏移防止再次碰撞
+            pos.y = Math.floor(pos.y / blockSize) * blockSize + 5; 
         }
         velocity.y = 0;
     } else {
-        pos.y += dy;
-    }
-
-    // 掉落虛空
-    if (pos.y < -50) {
-        velocity.y = 0;
-        pos.set(0, 80, 0);
+        pos.y = nextY;
     }
 }
   function vqUpdateTimeOfDay() {
