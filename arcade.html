@@ -225,7 +225,7 @@
         <i class="fas fa-play mr-2"></i> 啟動 3D 世界
     </button>
 </div>
-   <div id="game-voxel" class="hidden w-full max-w-6xl mx-auto h-[75vh] min-h-[500px] rounded-3xl bg-black mb-12 relative shadow-2xl overflow-hidden border-4 border-slate-700 transition-all">     
+  <div id="game-voxel" class="hidden w-full max-w-6xl mx-auto h-[75vh] min-h-[500px] rounded-3xl bg-black mb-12 relative shadow-2xl overflow-hidden border-4 border-slate-700 transition-all">     
         <div id="vq-blocker" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-20 text-white cursor-pointer transition-opacity backdrop-blur-sm">
             <h2 class="text-5xl font-black mb-6 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">點擊畫面開始探索</h2>
             <div class="flex gap-6 text-lg text-slate-300 mb-8 bg-black/50 p-6 rounded-2xl border border-slate-600">
@@ -234,15 +234,15 @@
                 <div class="flex flex-col items-center"><i class="fas fa-ruler-vertical mb-2 text-2xl text-indigo-400"></i>空白鍵 跳躍</div>
                 <div class="flex flex-col items-center"><i class="fas fa-bullseye mb-2 text-2xl text-indigo-400"></i>左鍵 觸發方塊</div>
             </div>
-            <button onclick="exitVoxelWorld()" class="absolute top-6 right-6 bg-red-500/80 hover:bg-red-500 px-6 py-2 rounded-full font-bold transition">離開 3D 世界</button>
+            <button onclick="backToMenu()" class="absolute top-6 right-6 bg-red-500/80 hover:bg-red-500 px-6 py-2 rounded-full font-bold transition">離開 3D 世界</button>
         </div>
         
         <div id="vq-hud" class="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-10 pointer-events-none hidden">
             <div class="bg-black/60 backdrop-blur-md px-6 py-3 rounded-2xl text-white font-bold text-xl border border-white/10 shadow-lg">
-                <i class="fas fa-cube text-yellow-400 mr-2 animate-pulse"></i> 收集進度: <span id="vq-score" class="text-yellow-400 text-2xl">0</span> / <span id="vq-total">10</span>
+                <i class="fas fa-cube text-yellow-400 mr-2 animate-pulse"></i> <span id="vq-stage">收集進度: 0 / 5</span>
             </div>
             <div class="bg-black/60 backdrop-blur-md px-6 py-3 rounded-2xl text-white font-bold border border-white/10 shadow-lg">
-                <span id="vq-subject-display">載入中...</span>
+                <i class="fas fa-star text-yellow-400 mr-2"></i> XP: <span id="vq-score" class="text-yellow-400 text-2xl">0</span>
             </div>
         </div>
 
@@ -252,11 +252,11 @@
             <div class="bg-white rounded-3xl p-8 max-w-3xl w-full text-slate-800 shadow-2xl border-4 border-indigo-200 transform scale-100 transition-transform">
                 <div class="flex justify-between items-center mb-6 pb-4 border-b-2 border-slate-100">
                     <h3 class="text-3xl font-black text-indigo-900 flex items-center"><i class="fas fa-brain text-indigo-500 mr-3"></i> 知識挑戰</h3>
-                    <div class="text-slate-400 text-sm">答對可獲得豐厚 XP</div>
+                    <div id="vq-quiz-stage" class="text-slate-500 font-bold">收集進度: 0 / 5</div>
                 </div>
                 <div id="vq-question" class="text-2xl font-bold mb-8 leading-relaxed text-slate-700 min-h-[80px]">題目載入中...</div>
                 <div id="vq-options" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    </div>
+                </div>
             </div>
         </div>
         
