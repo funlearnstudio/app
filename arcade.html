@@ -889,33 +889,30 @@ function toggleSidebar() {
     }
 
   function startGame(id) {
-    console.log("正在啟動遊戲 ID:", id); // 偵測點
-    
-    // 1. 隱藏主選單
-    const menu = document.getElementById('gameMenu');
-    if(menu) menu.classList.add('hidden');
+    console.log("正在啟動遊戲 ID:", id);
 
-    // 2. 隱藏所有遊戲區域 (注意：你的 HTML class 名稱要對)
+    const menu = document.getElementById('gameMenu');
+    if (menu) menu.classList.add('hidden');
+
     document.querySelectorAll('.game-section').forEach(el => {
         el.classList.add('hidden');
         el.classList.remove('active');
     });
-    
-    // 3. 顯示選中的遊戲區域
+
     const gameSection = document.getElementById(`game-${id}`);
-    if(gameSection) {
+    if (gameSection) {
         gameSection.classList.remove('hidden');
         gameSection.classList.add('active');
     } else {
         console.error(`找不到 ID 為 game-${id} 的元素！`);
     }
-    
-    // 4. 根據 ID 啟動對應的初始化函數 (請確認名稱與你下方的 init 函數一致)
-    if(id === 'math_rush' || id === 'mathRush') initMathRush();
-    if(id === 'memory_match' || id === 'memoryMatch') initMemoryMatch();
-    if(id === 'rpg_battle' || id === 'dragon') initRPG(); // 如果你的函數叫 initRPG
-    if(id === 'defuse_bomb' || id === 'bomb') initDefuseBomb();
-    if(id === 'lucky_wheel' || id === 'wheel') initLuckyWheel();
+
+    if (id === 'flashcard') initFlashcard();
+    else if (id === 'math_rush' || id === 'mathRush') initMathRush();
+    else if (id === 'memory_match' || id === 'memoryMatch') initMemoryMatch();
+    else if (id === 'rpg_battle' || id === 'dragon') initRPG();
+    else if (id === 'defuse_bomb' || id === 'bomb') initDefuseBomb();
+    else if (id === 'lucky_wheel' || id === 'wheel') initLuckyWheel();
 }
 
     function backToMenu() {
@@ -1402,52 +1399,30 @@ function initVoxel() {
 // ✅ 安全接管 startGame
 // ==========================================
 
-if (typeof window.startGame !== "function") {
-    window.startGame = function(id) {
-        console.warn("⚠️ startGame 尚未定義:", id);
-    };
-}
-
-
+const baseStartGame = window.startGame;
 window.startGame = function(id) {
-    if(id === 'voxel') {
-        document.getElementById('gameMenu').classList.add('hidden');
-        document.getElementById('voxelHeroBanner').classList.add('hidden');
-        document.querySelectorAll('.game-section').forEach(el => el.classList.add('hidden'));
-        document.getElementById('game-voxel').classList.remove('hidden');
-        initVoxel();
-    } else {
-        document.getElementById('voxelHeroBanner').classList.add('hidden');
-        if (originalStartGame) originalStartGame(id);
-    }
-};
-// 攔截 startGame
-// 攔截 startGame (加入安全檢查)
-const originalStartGame = window.startGame;
-window.startGame = function(id) {
-    if(id === 'voxel') {
-        // 1. 隱藏原選單 (如果有找到的話)
+    if (id === 'voxel') {
         const gameMenu = document.getElementById('gameMenu');
         if (gameMenu) gameMenu.classList.add('hidden');
-        
+
         const banner = document.getElementById('voxelHeroBanner');
         if (banner) banner.classList.add('hidden');
-        
+
         document.querySelectorAll('.game-section').forEach(el => el.classList.add('hidden'));
-        
-        // 2. 顯示 3D 遊戲區塊
+
         const voxelGame = document.getElementById('game-voxel');
         if (voxelGame) {
             voxelGame.classList.remove('hidden');
-            initVoxel();
+            if (typeof initVoxel === 'function') initVoxel();
         } else {
             alert("❌ 錯誤：找不到 3D 遊戲的顯示區塊！請確認 HTML 裡面有沒有 id='game-voxel' 的標籤。");
         }
-    } else {
-        const banner = document.getElementById('voxelHeroBanner');
-        if (banner) banner.classList.add('hidden');
-        if (originalStartGame) originalStartGame(id);
+        return;
     }
+
+    const banner = document.getElementById('voxelHeroBanner');
+    if (banner) banner.classList.add('hidden');
+    if (typeof baseStartGame === 'function') baseStartGame(id);
 };
 function setupThreeJS() {
     const container = document.getElementById('vq-canvas-container');
@@ -1828,6 +1803,8 @@ function backToMenu() {
     document.getElementById('voxelHeroBanner').classList.remove('hidden');
 }
 
+
+</script>
 
 <!-- VoxelQuest Pro extension (append-only) -->
 <script>
