@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D 學習世界｜ 雲端學院</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/gh/josephg/noisejs/perlin.js"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="mockdata/users.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/generator_engine.js"></script>
+    <script src="mockdata/generator_engine_polyfill.js"></script>
+    <script src="mockdata/AutoTemplateFissionFactory.js"></script>
+    <script src="mockdata/auto_fission_bootstrap.js"></script>
+    <script src="mockdata/paper_generator.js"></script>
+    <script src="mockdata/curriculum_integrated.js"></script>
+    
+    <script src="mockdata/templates_math_algebra_geometry.js"></script>
+    <script src="mockdata/templates_physics_multistep.js"></script>
+    <script src="mockdata/templates_chemistry_core.js"></script>
+    <script src="mockdata/templates_biology_core.js"></script>
+    <script src="mockdata/templates_earth_science_core.js"></script>
+    <script src="mockdata/templates_english_core.js"></script>
+    <script src="mockdata/templates_chinese_core.js"></script>
+    <script src="mockdata/templates_history_core.js"></script>
+    <script src="mockdata/templates_geography_core.js"></script>
+    <script src="mockdata/templates_civics_core.js"></script>
+
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Noto Sans TC', sans-serif; touch-action: none; background: #87CEEB; user-select: none; -webkit-user-select: none; }
+        #game-canvas { display: block; width: 100vw; height: 100vh; }
+        
+        /* UI 系統 - 半透明浮動 */
+        .ui-panel { position: absolute; pointer-events: auto; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); border-radius: 12px; color: white; padding: 12px; border: 1px solid rgba(255,255,255,0.2); text-shadow: 1px 1px 2px black; z-index: 20; }
+        .top-left { top: 10px; left: 10px; min-width: 200px; }
+        .top-right { top: 10px; right: 10px; min-width: 150px; text-align: right; }
+        .bottom-right { bottom: 10px; right: 10px; z-index: 20; }
+        
+        /* 能量條 */
+        .progress-bar { width: 100%; height: 12px; background: rgba(0,0,0,0.8); border-radius: 6px; overflow: hidden; margin-top: 5px; border: 1px solid #444; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #10b981, #3b82f6); transition: width 0.3s; width: 100%; }
+        
+        /* 物品欄 (置底置中) */
+        #inventory-container { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 8px; z-index: 20; pointer-events: auto; }
+        .inv-slot { width: 50px; height: 50px; border: 2px solid #555; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; cursor: pointer; position: relative; border-radius: 8px; }
+        .inv-slot.active { border-color: #ffd700; background: rgba(255,215,0,0.2); box-shadow: 0 0 10px rgba(255,215,0,0.5); }
+        .inv-count { position: absolute; bottom: 2px; right: 4px; font-size: 12px; font-weight: bold; text-shadow: 1px 1px 2px black; }
+        
+        /* 準心 */
+        #crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255,255,255,0.8); font-size: 24px; pointer-events: none; z-index: 10; text-shadow: 0 0 2px black; }
+        
+        /* 手機控制面板 */
+        #mobile-controls { position: absolute; bottom: 80px; left: 0; width: 100%; height: 150px; pointer-events: none; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; z-index: 20; }
+        #joystick-zone { width: 120px; height: 120px; background: rgba(255,255,255,0.15); border-radius: 50%; position: relative; pointer-events: auto; border: 2px solid rgba(255,255,255,0.3); backdrop-filter: blur(2px); }
+        #joystick-knob { width: 50px; height: 50px; background: rgba(255,255,255,0.7); border-radius: 50%; position: absolute; top: 35px; left: 35px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .action-btn { width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 50%; pointer-events: auto; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border: 2px solid rgba(255,255,255,0.4); margin-bottom: 10px; backdrop-filter: blur(2px); font-size: 12px; }
+        
+        /* 題目系統浮層 */
+        #quiz-overlay { display: none; position: absolute; top: 10%; left: 50%; transform: translateX(-50%); width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); border: 2px solid #3b82f6; border-radius: 16px; padding: 24px; color: white; z-index: 100; box-shadow: 0 20px 40px rgba(0,0,0,0.6); pointer-events: auto; }
+        .quiz-btn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.2); padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer; transition: 0.2s; width: 100%; text-align: left; color: white; font-size: 16px; }
+        .quiz-btn:hover { background: rgba(59, 130, 246, 0.5); border-color: #3b82f6; }
+
+        /* 小地圖 */
+        #minimap { width: 100px; height: 100px; border-radius: 50%; border: 2px solid #aaa; background: rgba(0,0,0,0.8); }
+        
+        /* 訊息提示 */
+        #msg-box { position: absolute; top: 20%; left: 50%; transform: translateX(-50%); color: #ffd700; font-weight: bold; text-shadow: 1px 1px 2px black; font-size: 20px; pointer-events: none; transition: opacity 0.5s; opacity: 0; z-index: 50; }
+        
+        .nav-btn { background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 6px; color: white; text-decoration: none; font-size: 12px; cursor: pointer; }
+        .nav-btn:hover { background: rgba(255,255,255,0.4); }
+    </style>
+</head>
+<body>
+
+    <div id="crosshair">✚</div>
+
+    <div class="ui-panel top-left">
+        <div class="flex justify-between items-center mb-2">
+            <div class="font-bold text-lg"><i class="fas fa-cube text-blue-400"></i> 學習世界</div>
+            <a href="arcade.html" class="nav-btn"><i class="fas fa-arrow-left"></i> 返回</a>
+        </div>
+        <div class="text-xs text-gray-300 mb-1" id="user-info">載入中...</div>
+        <div class="flex justify-between text-xs mt-2"><span>體力 Energy</span><span id="energy-val">100/100</span></div>
+        <div class="progress-bar"><div id="energy-bar" class="progress-fill"></div></div>
+        <button id="trigger-quiz-btn" class="mt-3 w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm py-2 rounded-lg transition shadow-lg flex items-center justify-center gap-2">
+            <i class="fas fa-book-open"></i> 進行學習挑戰 (-20 體力)
+        </button>
+        <div class="text-[10px] text-gray-400 mt-2 text-center">PC 按 E 鍵可自動合成料理</div>
+    </div>
+
+    <div class="ui-panel top-right">
+        <div class="mb-2">
+            <div class="text-xs text-gray-400">目前經驗值</div>
+            <div class="font-bold text-xl text-blue-400"><i class="fas fa-star text-yellow-400"></i> <span id="xpCount">0</span> XP</div>
+        </div>
+        <div>
+            <div class="text-xs text-gray-400">擁有金幣</div>
+            <div class="font-bold text-lg text-yellow-400"><i class="fas fa-coins text-yellow-500"></i> <span id="coinCount">0</span></div>
+        </div>
+    </div>
+
+    <div class="ui-panel bottom-right" style="padding: 5px;">
+        <canvas id="minimap"></canvas>
+    </div>
+
+    <div id="msg-box">系統訊息</div>
+
+    <div id="inventory-container"></div>
+
+    <div id="mobile-controls">
+        <div id="joystick-zone"><div id="joystick-knob"></div></div>
+        <div class="flex flex-col justify-end">
+            <div id="btn-place" class="action-btn bg-blue-500/30">放置</div>
+            <div id="btn-break" class="action-btn bg-red-500/30">破壞</div>
+        </div>
+    </div>
+
+    <div id="quiz-overlay">
+        <div class="flex justify-between items-center mb-4 border-b border-gray-600 pb-3">
+            <h2 class="text-xl font-bold text-blue-400"><i class="fas fa-brain"></i> 知識挑戰</h2>
+            <span class="bg-blue-900 text-blue-200 text-xs px-2 py-1 rounded">答對 +200 XP, +10 金幣</span>
+        </div>
+        <div id="quiz-question" class="text-lg mb-6 leading-relaxed">題目載入中...</div>
+        <div id="quiz-options"></div>
+        <div class="mt-6 text-right">
+            <button id="quiz-close" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm text-white transition">逃跑 (不退還體力)</button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 核心設定、整合主系統 Auth 與題庫
+        // ==========================================
+        let currentUser = null;
+        let targetTags = [];
+        let currentSubject = 'math';
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
+
+        window.onload = function() {
+            // 檢查 Auth
+            if (typeof Auth !== 'undefined') {
+                currentUser = Auth.getCurrentUser();
+                if (!currentUser) {
+                    alert("請先登入！");
+                    window.location.href = "index.html";
+                    return;
+                }
+                document.getElementById('user-info').innerText = `${currentUser.name || currentUser.username} (${currentUser.grade || '未設定年級'})`;
+                if(currentUser.grade) targetTags = [currentUser.grade];
+            } else {
+                currentUser = JSON.parse(localStorage.getItem('currentUser') || '{"username":"guest", "xp":0}');
+            }
+
+            // 讀取網址參數
+            const urlParams = new URLSearchParams(window.location.search);
+            currentSubject = urlParams.get('subject') || 'math';
+
+            // 讀取 XP 與 Coin
+            updateWealthUI();
+        };
+
+        // --- 雲端與本地財產同步機制 (從 arcade 複製) ---
+        function loadCoins() {
+            if(!currentUser) return 0;
+            const saved = localStorage.getItem(`coins_${currentUser.username}`);
+            return saved ? parseInt(saved) : 0;
+        }
+        function saveCoins(amount) {
+            if(!currentUser) return;
+            localStorage.setItem(`coins_${currentUser.username}`, amount);
+            document.getElementById('coinCount').innerText = amount;
+        }
+        function updateWealthUI() {
+            if(currentUser) document.getElementById('xpCount').innerText = currentUser.xp || 0;
+            document.getElementById('coinCount').innerText = loadCoins();
+        }
+
+        async function awardXPAndSync(xpAmount, gameName, scoreAmount) {
+            if (!xpAmount || xpAmount <= 0) return;
+            let user = currentUser || JSON.parse(localStorage.getItem('currentUser') || '{"username":"guest"}');
+            if (user.username === 'guest') return;
+
+            const oldXP = Number(user.xp) || 0;
+            const newTotalXP = oldXP + xpAmount;
+            
+            // 等級判斷
+            let title = "初級學徒";
+            if (newTotalXP >= 100000) title = "🌌 天神級導師";
+            else if (newTotalXP >= 50000) title = "🌀 神話級至尊";
+            else if (newTotalXP >= 30000) title = "⚡ 史詩級英雄";
+            else if (newTotalXP >= 20000) title = "📜 傳說級智者";
+            else if (newTotalXP >= 10000) title = "🔥 傳說級學霸"; 
+            else if (newTotalXP >= 5000) title = "💎 頂尖研究員";
+            else if (newTotalXP >= 1000) title = "🌟 進階學子";
+            else if (newTotalXP >= 100) title = "🔰 潛力菜鳥";
+
+            const numericLevel = Math.floor(newTotalXP / 100) + 1;
+
+            user.xp = newTotalXP;
+            user.level = numericLevel;
+            user.title = title;
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            currentUser = user; // 更新記憶體
+            updateWealthUI();
+
+            const payload = {
+                action: "save_record",
+                username: user.username,
+                activity: `【遊戲場】${gameName} (${title} Lv.${numericLevel})`, 
+                score: scoreAmount || 0,
+                xp: xpAmount,
+                detail: JSON.stringify({ unitName: gameName, xpGained: xpAmount, userLevel: numericLevel })
+            };
+
+            try {
+                await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+                console.log(`✅ XP 同步成功！稱號：${title}, 等級：Lv.${numericLevel}`);
+            } catch (e) {
+                console.error("❌ XP 同步失敗", e);
+            }
+        }
+
+        // ==========================================
+        // Minecraft 3D 世界系統設定
+        // ==========================================
+        const CONFIG = { chunkSize: 16, renderDistance: 2, blockSize: 1, maxEnergy: 100 };
+        let energy = 100;
+        
+        // --- 方塊與材質生成 ---
+        const BLOCK_TYPES = { AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, SAND: 4, WATER: 5, WOOD: 6, LEAVES: 7 };
+        
+        // 生物、植物、料理資料集
+        const ANIMALS = [
+            { id: 'chicken', name: '雞', drop: 'chicken_meat', icon: '🍗' },
+            { id: 'cow', name: '牛', drop: 'beef', icon: '🥩' },
+            { id: 'pig', name: '豬', drop: 'pork', icon: '🥓' }
+        ];
+        const PLANTS = [ 'wheat', 'apple', 'carrot', 'potato', 'mushroom' ];
+        const RECIPES = [
+            { req: ['beef', 'potato'], out: 'beef_stew', name: '馬鈴薯燉肉', energy: 40 },
+            { req: ['chicken_meat', 'wheat'], out: 'chicken_pie', name: '雞肉派', energy: 35 },
+            { req: ['apple'], out: 'apple_juice', name: '蘋果汁', energy: 15 }
+        ];
+
+        // Three.js 引擎
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        scene.fog = new THREE.Fog(0x87CEEB, 10, CONFIG.renderDistance * CONFIG.chunkSize * 1.2);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+        renderer.setPixelRatio(1);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        const sunLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        sunLight.position.set(50, 100, 50);
+        scene.add(sunLight);
+
+        // 程式化貼圖生成器 (無 CORS 問題)
+        function createPixelTexture(baseCol, noiseCol, noiseDensity) {
+            const cvs = document.createElement('canvas');
+            cvs.width = 16; cvs.height = 16;
+            const ctx = cvs.getContext('2d');
+            ctx.fillStyle = baseCol; ctx.fillRect(0,0,16,16);
+            ctx.fillStyle = noiseCol;
+            for(let i=0; i<256; i++) {
+                if(Math.random() < noiseDensity) ctx.fillRect(i%16, Math.floor(i/16), 1, 1);
+            }
+            const tex = new THREE.CanvasTexture(cvs);
+            tex.magFilter = THREE.NearestFilter;
+            return new THREE.MeshLambertMaterial({ map: tex });
+        }
+
+        const MATERIALS = {
+            [BLOCK_TYPES.GRASS]: createPixelTexture('#55aa55', '#449944', 0.3),
+            [BLOCK_TYPES.DIRT]: createPixelTexture('#8b5a2b', '#7a491a', 0.4),
+            [BLOCK_TYPES.STONE]: createPixelTexture('#888888', '#666666', 0.5),
+            [BLOCK_TYPES.SAND]: createPixelTexture('#eedd88', '#ddcc77', 0.2),
+            [BLOCK_TYPES.WATER]: new THREE.MeshLambertMaterial({ color: 0x4444ff, transparent: true, opacity: 0.6 }),
+            [BLOCK_TYPES.WOOD]: createPixelTexture('#5c4033', '#4b3022', 0.4),
+            [BLOCK_TYPES.LEAVES]: createPixelTexture('#228b22', '#117a11', 0.5)
+        };
+        const boxGeo = new THREE.BoxGeometry(1, 1, 1);
+
+        // 地形生成 (Perlin Noise)
+        noise.seed(Math.random());
+        const chunks = new Map();
+
+        function getNoiseHeight(x, z) {
+            let e = 1 * noise.perlin2(x/40, z/40) + 0.5 * noise.perlin2(x/20, z/20);
+            return Math.floor(Math.pow(e/1.5 * 1.2, 2) * 15) + 5;
+        }
+
+        function generateChunk(cx, cz) {
+            const chunkKey = `${cx},${cz}`;
+            if (chunks.has(chunkKey)) return chunks.get(chunkKey);
+            const blockCounts = {}; const posArray = [];
+
+            for (let x = 0; x < CONFIG.chunkSize; x++) {
+                for (let z = 0; z < CONFIG.chunkSize; z++) {
+                    const wx = cx * CONFIG.chunkSize + x;
+                    const wz = cz * CONFIG.chunkSize + z;
+                    const h = getNoiseHeight(wx, wz);
+                    
+                    for (let y = 0; y <= h; y++) {
+                        let type = (y === h) ? (h < 6 ? BLOCK_TYPES.SAND : BLOCK_TYPES.GRASS) : (y > h-3 ? BLOCK_TYPES.DIRT : BLOCK_TYPES.STONE);
+                        posArray.push({x: wx, y, z: wz, type});
+                        blockCounts[type] = (blockCounts[type] || 0) + 1;
+                    }
+                    if (h < 5) {
+                        for (let y = h+1; y <= 5; y++) {
+                            posArray.push({x: wx, y, z: wz, type: BLOCK_TYPES.WATER});
+                            blockCounts[BLOCK_TYPES.WATER] = (blockCounts[BLOCK_TYPES.WATER] || 0) + 1;
+                        }
+                    }
+                    // 偶爾生成樹木
+                    if (h > 6 && Math.random() < 0.015) {
+                        for(let ty=1; ty<=3; ty++) { posArray.push({x:wx, y:h+ty, z:wz, type:BLOCK_TYPES.WOOD}); blockCounts[BLOCK_TYPES.WOOD] = (blockCounts[BLOCK_TYPES.WOOD]||0)+1; }
+                        posArray.push({x:wx, y:h+4, z:wz, type:BLOCK_TYPES.LEAVES}); blockCounts[BLOCK_TYPES.LEAVES] = (blockCounts[BLOCK_TYPES.LEAVES]||0)+1;
+                    }
+                }
+            }
+
+            const chunkMeshes = new THREE.Group();
+            const instances = {}; const counters = {};
+            Object.keys(blockCounts).forEach(type => {
+                const iMesh = new THREE.InstancedMesh(boxGeo, MATERIALS[type], blockCounts[type]);
+                chunkMeshes.add(iMesh); instances[type] = iMesh; counters[type] = 0;
+            });
+
+            const dummy = new THREE.Object3D();
+            posArray.forEach(p => {
+                dummy.position.set(p.x, p.y, p.z);
+                dummy.updateMatrix();
+                instances[p.type].setMatrixAt(counters[p.type]++, dummy.matrix);
+            });
+
+            scene.add(chunkMeshes);
+            const chunkObj = { meshes: chunkMeshes, active: true };
+            chunks.set(chunkKey, chunkObj);
+            return chunkObj;
+        }
+
+        function updateWorld() {
+            const px = Math.floor(camera.position.x / CONFIG.chunkSize);
+            const pz = Math.floor(camera.position.z / CONFIG.chunkSize);
+            const activeKeys = new Set();
+            for (let x = -CONFIG.renderDistance; x <= CONFIG.renderDistance; x++) {
+                for (let z = -CONFIG.renderDistance; z <= CONFIG.renderDistance; z++) {
+                    const key = `${px+x},${pz+z}`; activeKeys.add(key);
+                    if (!chunks.has(key)) generateChunk(px+x, pz+z);
+                    else { const c = chunks.get(key); if(!c.active) { c.meshes.visible = true; c.active = true; } }
+                }
+            }
+            chunks.forEach((val, key) => {
+                if (!activeKeys.has(key) && val.active) { val.meshes.visible = false; val.active = false; }
+            });
+        }
+
+        // ==========================================
+        // 玩家控制與互動
+        // ==========================================
+        const player = {
+            direction: new THREE.Vector3(), speed: 6, selectedSlot: 0,
+            inventory: [
+                {id: 'wood', type: BLOCK_TYPES.WOOD, count: 10, icon: '🪵'},
+                {id: 'stone', type: BLOCK_TYPES.STONE, count: 10, icon: '🪨'},
+                {id: 'dirt', type: BLOCK_TYPES.DIRT, count: 10, icon: '🟤'}
+            ]
+        };
+        camera.position.set(0, 20, 0);
+
+        // 輸入控制 (鍵盤 + 虛擬搖桿)
+        const keys = { w: false, a: false, s: false, d: false };
+        let isDragging = false, touchStartPos = { x: 0, y: 0 };
+        
+        document.addEventListener('keydown', (e) => {
+            const k = e.key.toLowerCase(); if(keys.hasOwnProperty(k)) keys[k] = true;
+            if(k === 'e') autoCraft(); // 按 E 料理
+        });
+        document.addEventListener('keyup', (e) => {
+            const k = e.key.toLowerCase(); if(keys.hasOwnProperty(k)) keys[k] = false;
+        });
+
+        // PC 視角
+        document.addEventListener('mousedown', (e) => {
+            if(!e.target.closest('.ui-panel') && !e.target.closest('#mobile-controls') && !e.target.closest('#quiz-overlay')) isDragging = true;
+        });
+        document.addEventListener('mousemove', (e) => {
+            if(isDragging) {
+                camera.rotation.y -= (e.movementX || 0) * 0.005;
+                camera.rotation.x -= (e.movementY || 0) * 0.005;
+                camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
+                camera.rotation.order = 'YXZ';
+            }
+        });
+        document.addEventListener('mouseup', () => isDragging = false);
+
+        // 手機視角與搖桿
+        const joystick = document.getElementById('joystick-zone');
+        const knob = document.getElementById('joystick-knob');
+        let joyActive = false, joyVector = {x: 0, y: 0};
+        
+        joystick.addEventListener('touchstart', (e) => { joyActive = true; updateJoystick(e.touches[0]); });
+        joystick.addEventListener('touchmove', (e) => { if(joyActive) updateJoystick(e.touches[0]); });
+        joystick.addEventListener('touchend', () => {
+            joyActive = false; knob.style.transform = `translate(0px, 0px)`;
+            keys.w = keys.s = keys.a = keys.d = false;
+        });
+
+        function updateJoystick(touch) {
+            const rect = joystick.getBoundingClientRect();
+            let nx = touch.clientX - rect.left - 60, ny = touch.clientY - rect.top - 60;
+            const dist = Math.sqrt(nx*nx + ny*ny);
+            if(dist > 60) { nx = nx/dist*60; ny = ny/dist*60; }
+            knob.style.transform = `translate(${nx}px, ${ny}px)`;
+            keys.w = ny / 60 < -0.3; keys.s = ny / 60 > 0.3;
+            keys.a = nx / 60 < -0.3; keys.d = nx / 60 > 0.3;
+        }
+
+        document.addEventListener('touchstart', (e) => {
+            for(let t of e.touches) {
+                if(t.clientX > window.innerWidth/2 && !t.target.closest('.ui-panel') && !t.target.closest('#mobile-controls')) {
+                    touchStartPos = { x: t.clientX, y: t.clientY };
+                }
+            }
+        });
+        document.addEventListener('touchmove', (e) => {
+            for(let t of e.touches) {
+                if(t.clientX > window.innerWidth/2 && !t.target.closest('.ui-panel') && !t.target.closest('#mobile-controls')) {
+                    camera.rotation.y -= (t.clientX - touchStartPos.x) * 0.005;
+                    camera.rotation.x -= (t.clientY - touchStartPos.y) * 0.005;
+                    camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
+                    camera.rotation.order = 'YXZ';
+                    touchStartPos = { x: t.clientX, y: t.clientY };
+                }
+            }
+        });
+
+        // 互動邏輯
+        function performAction(isPlace) {
+            if (energy < 2) { showMsg("體力不足！請吃食物或答題"); return; }
+            modifyEnergy(-2);
+
+            // 模擬隨機採集與攻擊
+            if(!isPlace && Math.random() < 0.3) {
+                if(Math.random() < 0.5) {
+                    const ani = ANIMALS[Math.floor(Math.random()*ANIMALS.length)];
+                    addItem(ani.drop, 1, ani.icon); showMsg(`狩獵了 ${ani.name}`);
+                } else {
+                    const plant = PLANTS[Math.floor(Math.random()*PLANTS.length)];
+                    addItem(plant, 1, '🌿'); showMsg(`採集到 ${plant}`);
+                }
+                return;
+            }
+
+            if(isPlace) {
+                const item = player.inventory[player.selectedSlot];
+                if(item && item.count > 0 && item.type) {
+                    item.count--; updateInventoryUI(); showMsg(`放置了方塊`);
+                } else showMsg("未選中可放置方塊");
+            } else {
+                showMsg("破壞了方塊"); addItem('stone', 1, '🪨');
+            }
+        }
+        document.getElementById('btn-place').addEventListener('click', () => performAction(true));
+        document.getElementById('btn-break').addEventListener('click', () => performAction(false));
+
+        // UI 邏輯
+        function showMsg(txt) {
+            const m = document.getElementById('msg-box'); m.innerText = txt;
+            m.style.opacity = 1; setTimeout(() => m.style.opacity = 0, 2000);
+        }
+
+        function modifyEnergy(amt) {
+            energy = Math.max(0, Math.min(CONFIG.maxEnergy, energy + amt));
+            document.getElementById('energy-val').innerText = `${energy}/${CONFIG.maxEnergy}`;
+            document.getElementById('energy-bar').style.width = `${(energy/CONFIG.maxEnergy)*100}%`;
+        }
+
+        function updateInventoryUI() {
+            const con = document.getElementById('inventory-container'); con.innerHTML = '';
+            player.inventory.forEach((item, idx) => {
+                if(item.count <= 0) return;
+                const d = document.createElement('div');
+                d.className = `inv-slot ${idx === player.selectedSlot ? 'active' : ''}`;
+                d.innerHTML = `${item.icon}<span class="inv-count">${item.count}</span>`;
+                d.onclick = () => { player.selectedSlot = idx; updateInventoryUI(); };
+                d.ondblclick = () => {
+                    if(!item.type) { modifyEnergy(15); item.count--; showMsg(`吃掉 ${item.id} 恢復體力`); updateInventoryUI(); }
+                };
+                con.appendChild(d);
+            });
+        }
+
+        function addItem(id, count, icon) {
+            let found = player.inventory.find(i => i.id === id);
+            if(found) found.count += count; else player.inventory.push({id, count, icon});
+            updateInventoryUI();
+        }
+
+        function autoCraft() {
+            for(let r of RECIPES) {
+                let hasAll = r.req.every(reqItem => player.inventory.find(i => i.id === reqItem && i.count > 0));
+                if(hasAll) {
+                    r.req.forEach(reqItem => player.inventory.find(i => i.id === reqItem).count--);
+                    addItem(r.out, 1, '🍲'); showMsg(`合成了 ${r.name}！`);
+                    updateInventoryUI(); return;
+                }
+            }
+            showMsg("材料不足，無法合成料理");
+        }
+
+        // ==========================================
+        // 題目系統 (整合雲端學院引擎)
+        // ==========================================
+        const quizOverlay = document.getElementById('quiz-overlay');
+        
+        document.getElementById('trigger-quiz-btn').addEventListener('click', () => {
+            if(energy >= 20) { modifyEnergy(-20); loadQuiz(); }
+            else alert("體力不足！請採集食物來恢復。");
+        });
+        document.getElementById('quiz-close').addEventListener('click', () => quizOverlay.style.display = 'none');
+
+        function loadQuiz() {
+            quizOverlay.style.display = 'block';
+            const qDiv = document.getElementById('quiz-question');
+            const optDiv = document.getElementById('quiz-options');
+            optDiv.innerHTML = '<div class="text-center text-gray-400 py-4"><i class="fas fa-spinner fa-spin"></i> 載入題庫中...</div>';
+
+            // 🌟 呼叫主網站的 generatePaper
+            let qList = [];
+            if(typeof window.generatePaper === 'function') {
+                qList = window.generatePaper({ subject: currentSubject, total: 1, tags: targetTags });
+            }
+            
+            if(!qList || qList.length === 0) {
+                qDiv.innerHTML = "無法取得題目，請確認題庫系統連線狀態。";
+                optDiv.innerHTML = "";
+                return;
+            }
+
+            const q = qList[0];
+            qDiv.innerHTML = q.question.replace(/\n/g, '<br>');
+            optDiv.innerHTML = '';
+
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-btn';
+                btn.innerHTML = `<span class="font-bold text-blue-400 mr-2">${['A','B','C','D'][idx]}.</span> ${opt}`;
+                btn.onclick = () => {
+                    let isCorrect = (typeof q.answer === 'number' ? idx === q.answer : opt === q.answer);
+                    if(isCorrect) {
+                        alert("🎉 答對了！獲得 200 點 XP 與 10 枚金幣！");
+                        // 獎勵發放與雲端同步
+                        let currentCoins = loadCoins();
+                        saveCoins(currentCoins + 10);
+                        awardXPAndSync(200, '3D學習世界', 200);
+                        modifyEnergy(50); // 答對也回覆體力
+                    } else {
+                        alert(`💥 答錯了... 正確答案是: ${typeof q.answer === 'number' ? q.options[q.answer] : q.answer}`);
+                    }
+                    quizOverlay.style.display = 'none';
+                };
+                optDiv.appendChild(btn);
+            });
+            if(window.MathJax) MathJax.typesetPromise();
+        }
+
+        // ==========================================
+        // 主循環更新
+        // ==========================================
+        const mmCtx = document.getElementById('minimap').getContext('2d');
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = Math.min(clock.getDelta(), 0.1);
+
+            player.direction.z = Number(keys.w) - Number(keys.s);
+            player.direction.x = Number(keys.d) - Number(keys.a);
+            player.direction.normalize();
+
+            if (keys.w || keys.s) camera.translateZ(-player.direction.z * player.speed * delta);
+            if (keys.a || keys.d) camera.translateX(player.direction.x * player.speed * delta);
+
+            // 簡易重力/地形跟隨
+            const currentY = getNoiseHeight(camera.position.x, camera.position.z);
+            camera.position.y += ((currentY + 2.5) - camera.position.y) * 0.1;
+
+            updateWorld();
+
+            // 更新小地圖
+            mmCtx.fillStyle = '#449944'; mmCtx.fillRect(0,0,100,100);
+            mmCtx.fillStyle = 'red'; mmCtx.beginPath(); mmCtx.arc(50, 50, 3, 0, Math.PI*2); mmCtx.fill();
+            mmCtx.strokeStyle = 'rgba(255,255,255,0.8)'; mmCtx.beginPath(); mmCtx.moveTo(50, 50);
+            mmCtx.lineTo(50 + Math.sin(camera.rotation.y)*10, 50 - Math.cos(camera.rotation.y)*10); mmCtx.stroke();
+
+            // 緩慢日夜循環
+            const time = Date.now() * 0.00005;
+            sunLight.position.x = Math.cos(time) * 100; sunLight.position.y = Math.sin(time) * 100;
+            sunLight.intensity = sunLight.position.y < 0 ? 0.2 : 0.6;
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        updateInventoryUI();
+        animate();
+
+    </script>
+</body>
+</html>
