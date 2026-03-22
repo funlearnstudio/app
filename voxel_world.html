@@ -735,6 +735,44 @@ const ITEM_REGISTRY = {
         window.onload = () => { renderUI(); updateStats(0,0); updateGame(); };
         window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
 // 1. 真正的啟動引擎 (每秒執行 60 次)
+        // 🐂 動物 AI 更新邏輯
+        function updateEntities(delta) {
+            entities.forEach(entity => {
+                const { group, velocity } = entity;
+
+                // 簡單的隨機遊走 AI
+                if (Date.now() > entity.nextStateTime) {
+                    const states = ['idle', 'walk', 'jump'];
+                    entity.state = states[Math.floor(Math.random() * states.length)];
+                    entity.nextStateTime = Date.now() + 2000 + Math.random() * 3000;
+
+                    if (entity.state === 'walk') {
+                        const angle = Math.random() * Math.PI * 2;
+                        entity.velocity.set(Math.cos(angle) * 0.02, 0, Math.sin(angle) * 0.02);
+                        group.rotation.y = -angle + Math.PI / 2;
+                    } else if (entity.state === 'jump' && !group.userData.isJumping) {
+                        group.userData.velY = 0.1;
+                        group.userData.isJumping = true;
+                    } else {
+                        entity.velocity.set(0, 0, 0);
+                    }
+                }
+
+                // 物理位移
+                group.position.add(entity.velocity);
+
+                // 重力與跳躍
+                group.userData.velY -= 0.005; // 重力加速度
+                group.position.y += group.userData.velY;
+
+                // 簡易地面檢測 (假設地面在 y=0)
+                if (group.position.y < 0) {
+                    group.position.y = 0;
+                    group.userData.velY = 0;
+                    group.userData.isJumping = false;
+                }
+            });
+        }
 function animate() {
     requestAnimationFrame(animate);
     
