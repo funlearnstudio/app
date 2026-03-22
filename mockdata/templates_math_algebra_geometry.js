@@ -713,28 +713,45 @@
             };
         }
     },
-    // 二次函數 - 最大值與最小值（開口方向）
-    {
-        id: "k9_quadratic_extreme",
-        tags: ["數學","二次函數","最大最小","國九"],
-        generate: () => {
-            const a = Utils.rnd(-3,3);
-            if (a === 0) a = 1;
-            const b = Utils.rnd(-6,6);
-            const c = Utils.rnd(-5,5);
-            const nature = a > 0 ? "最小值" : "最大值";
-            return {
-                question: `【二次函數】函數 y = ${a}x^2 + ${b}x + ${c} 的開口方向為何，且有何極值？`,
-                options: [nature, a>0?"向上開口":"向下開口", "無極值", "恆為常數"],
-                correctValue: nature,
-                concept: "最大值與最小值",
-                explanation: [
-                    `二次函數係數 a > 0 時向上開口，頂點為最小值；a < 0 時向下開口，頂點為最大值。`,
-                    `此題 a = ${a}，所以為 ${nature}。`
-                ]
-            };
-        }
-    },
+{
+    id: "k9_quadratic_extreme",
+    tags: ["數學", "二次函數", "最大最小", "國九"],
+    generate: () => {
+        // 1. 修正 const 錯誤，改用 let，並確保 a 不為 0
+        let a = Utils.rnd(-3, 3);
+        if (a === 0) a = 1; 
+        
+        const b = Utils.rnd(-6, 6);
+        const c = Utils.rnd(-5, 5);
+        
+        // 2. 判斷性質
+        const opening = a > 0 ? "向上" : "向下";
+        const nature = a > 0 ? "最小值" : "最大值";
+        const correctAns = `${opening}，有${nature}`;
+
+        // 3. 處理方程式顯示 (美化)
+        const termA = a === 1 ? "x^2" : (a === -1 ? "-x^2" : `${a}x^2`);
+        const termB = b === 0 ? "" : ` ${Utils.formatOp(b)}x`;
+        const termC = c === 0 ? "" : ` ${Utils.formatOp(c)}`;
+
+        return {
+            question: `【二次函數】函數 y = ${termA}${termB}${termC} 的開口方向為何，且頂點處有何極值？`,
+            options: [
+                `${opening}，有${nature}`,
+                `${opening === "向上" ? "向下" : "向上"}，有${nature}`,
+                `${opening}，有${nature === "最大值" ? "最小值" : "最大值"}`,
+                "無極值"
+            ],
+            correctValue: correctAns,
+            concept: "開口方向與最大最小值",
+            explanation: [
+                `1. 係數 a = ${a}。`,
+                `2. 因為 a ${a > 0 ? "> 0" : "< 0"}，故開口${opening}。`,
+                `3. 開口${opening}的拋物線，其頂點處有${nature}。`
+            ]
+        };
+    }
+}
 
     // 單元 2：統計與機率 - 四分位數與盒狀圖（簡單計算 Q1/Q3）
     {
