@@ -814,6 +814,89 @@ function initGame() {
 
 // 執行！
 initGame();
+        // ==========================================
+// 🛠️ 互動系統：挖掘、採集、狩獵
+// ==========================================
+
+// 挖掘/攻擊按鈕 (紅色錘子)
+document.getElementById('btn-break').onclick = () => {
+    if (energy < 5) { showMsg("🔋 體力不足！需休息或吃東西", "#ff4444"); return; }
+    
+    // 播放揮動動畫
+    const viewModel = document.getElementById('view-model');
+    viewModel.classList.add('swing');
+    setTimeout(() => viewModel.classList.remove('swing'), 200);
+
+    // 使用 Raycaster 檢查準心瞄準的東西
+    raycaster.setFromCamera(center, camera);
+    const intersects = raycaster.intersectObjects(scene.children, true);
+
+    if (intersects.length > 0 && intersects[0].distance < 5) {
+        const target = intersects[0].object;
+        
+        // 1. 擊殺動物 (檢查是否有 parent 且 userData 有 type)
+        if (target.parent && target.parent.userData.type) {
+            const type = target.parent.userData.type;
+            handleAnimalDrop(type, target.parent.position);
+            scene.remove(target.parent); // 從場景移除動物
+            // 從 entities 陣列移除，避免報錯
+            const idx = entities.findIndex(e => e.group === target.parent);
+            if(idx > -1) entities.splice(idx, 1);
+            
+            updateStats(0, -5); // 扣體力
+            showMsg(`⚔️ 獲得了來自 ${type === 'pig' ? '豬' : '牛'} 的材料！`);
+            renderUI();
+            return;
+        }
+
+        // 2. 挖掘方塊 (礦石、泥土、木頭)
+        if (target.userData.type) {
+            const blockType = target.userData.type;
+            inventory[blockType] = (inventory[blockType] || 0) + 1;
+            
+            // 移除方塊
+            scene.remove(target);
+            blocks.delete(getBlockKey(target.position.x, target.position.y, target.position.z));
+            
+            updateStats(0, -2); // 挖掘扣體力
+            showMsg(`⛏️ 獲得 ${ITEM_REGISTRY[blockType].n}`);
+            renderUI();
+        }
+    }
+};
+
+// 採集按鈕 (藍色手掌)
+document.getElementById('btn-interact').onclick = () => {
+    raycaster.setFromCamera(center, camera);
+    const intersects = raycaster.intersectObjects(scene.children, true);
+
+    if (intersects.length > 0 && intersects[0].distance < 5) {
+        const target = intersects[0].object;
+        const type = target.userData.type;
+
+        // 檢查是否是植物或蔬果類
+        if (['apple', 'banana', 'carrot', 'leaves', 'grass_bush'].includes(type)) {
+            inventory[type] = (inventory[type] || 0) + 1;
+            scene.remove(target);
+            showMsg(`🌿 採集了 ${ITEM_REGISTRY[type].n}`);
+            renderUI();
+        } else if (target === bossEntity) {
+            openBossQuiz(); // 點擊魔王開啟題目
+        }
+    }
+};
+
+// 處理動物掉落物邏輯
+function handleAnimalDrop(type, pos) {
+    if (type === 'pig') {
+        inventory['meat_pig'] = (inventory['meat_pig'] || 0) + 1;
+        if (Math.random() > 0.5) inventory['gas'] = (inventory['gas'] || 0) + 1; // 隨機掉瓦斯(腸氣)
+    } else if (type === 'cow') {
+        inventory['meat_cow'] = (inventory['meat_cow'] || 0) + 1;
+        inventory['leather'] = (inventory['leather'] || 0) + 1;
+        inventory['milk'] = (inventory['milk'] || 0) + 1;
+    }
+}
     </script>
 </body>
 </html>
