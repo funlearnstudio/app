@@ -1510,6 +1510,50 @@ window.startGame = function(id) {
 // ==========================================
 // 🚀 4. 終極合併版 initVoxel (題庫 + 3D世界)
 // ==========================================
+    // ==========================================
+// 🌟 終極物理防護網 & 實體草地
+// ==========================================
+function vqGenerateSafeFloor() {
+    // 生成一塊 60x60 的綠色實體草地
+    const size = 60; 
+    const geo = new THREE.BoxGeometry(10, 10, 10);
+    const mat = new THREE.MeshLambertMaterial({ color: 0x4CAF50 }); // 穩定的草地綠
+    const instanced = new THREE.InstancedMesh(geo, mat, size * size);
+    let dummy = new THREE.Object3D();
+    let index = 0;
+    
+    for(let x = -size/2; x < size/2; x++) {
+        for(let z = -size/2; z < size/2; z++) {
+            dummy.position.set(x * 10, 0, z * 10);
+            dummy.updateMatrix();
+            instanced.setMatrixAt(index, dummy.matrix);
+            index++;
+        }
+    }
+    instanced.instanceMatrix.needsUpdate = true;
+    
+    // 強制加進場景！
+    if (typeof vqScene !== 'undefined') {
+        vqScene.add(instanced);
+    } else if (typeof scene !== 'undefined') {
+        scene.add(instanced);
+    }
+}
+
+// 🛡️ 最霸道的碰撞偵測：不查方塊了，只要高度低於 15，一律視為踩到地板！
+window.vqCheckCollision = function(x, y, z) {
+    if (y <= 15) return true; // 絕對不可能再掉下去了！
+    
+    // 讓你依然可以跳到題目方塊上
+    let bx = Math.round(x / 10);
+    let by = Math.round((y - 5) / 10);
+    let bz = Math.round(z / 10);
+    if (typeof getBlock === 'function') {
+        if (getBlock(bx, by, bz) || getBlock(bx, by + 1, bz)) return true;
+    }
+    return false;
+};
+window.checkCollision = window.vqCheckCollision;
 function initVoxel() {
     // --- 第一部分：遊戲邏輯與題庫檢查 ---
     if(!currentSubject) { 
@@ -1529,7 +1573,8 @@ function initVoxel() {
     cubesFound = 0;
     if(document.getElementById('vq-stage')) document.getElementById('vq-stage').textContent = `收集進度: ${cubesFound} / ${TARGET_COUNT}`;
     if(document.getElementById('vq-score')) document.getElementById('vq-score').textContent = vqTotalXP;
-
+// 👇 加上這一行！強制生成實體草地！
+    vqGenerateSafeFloor();
     // --- 第二部分：建立 3D 世界 ---
     const container = document.getElementById('vq-canvas-container');
     if (!container) return;
