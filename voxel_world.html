@@ -505,14 +505,20 @@ const ITEM_REGISTRY = {
             scene.add(mesh); blocks.set(getBlockKey(x, y, z), mesh);
         }
 
-        // 👹 建立閻羅王 Boss (題目方塊) - 黑紅色巨大方塊
-        function spawnBoss() {
-            bossEntity = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), MATS.boss);
-            bossEntity.position.set(0, 10, -20); // 初始座標
-            bossEntity.userData.isBoss = true;
-            scene.add(bossEntity);
-        }
-
+       // 👹 改良版：在指定位置生成閻羅王方塊
+function spawnBoss(x, y, z) {
+    const boss = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.5, 1.5), MATS.boss);
+    boss.position.set(x, y, z);
+    boss.userData.isBoss = true;
+    boss.userData.type = 'boss_cube'; // 給它一個類型方便辨識
+    scene.add(boss);
+    
+    // 如果這是第一個生成的，把它設為導航目標
+    if (!bossEntity) bossEntity = boss; 
+    
+    // 把魔王方塊也加入碰撞檢測列表（選做，如果要讓它能被擋住）
+    blocks.set(getBlockKey(x, y, z), boss);
+}
         // 🐖🐄 動物 (流暢 AI 與自動跳躍)
         function spawnAnimal(type) {
             const group = new THREE.Group();
@@ -535,18 +541,34 @@ const ITEM_REGISTRY = {
         const generatedChunks = new Set();
         const CHUNK_SIZE = 8;
 
-        function updateInfiniteTerrain() {
-            const px = Math.floor(camera.position.x / CHUNK_SIZE); const pz = Math.floor(camera.position.z / CHUNK_SIZE);
-            const viewDist = 2;
-            for (let x = px - viewDist; x <= px + viewDist; x++) {
-                for (let z = pz - viewDist; z <= pz + viewDist; z++) {
-                    const chunkKey = `${x},${z}`;
-                    if (!generatedChunks.has(chunkKey)) {
-                        generateChunk(x, z); generatedChunks.add(chunkKey);
-                    }
+        // 在你放置草地或樹木的地方加入這段
+function updateInfiniteTerrain() {
+    const pX = Math.floor(camera.position.x);
+    const pZ = Math.floor(camera.position.z);
+    const range = 20; // 偵測範圍
+
+    for (let x = pX - range; x < pX + range; x++) {
+        for (let z = pZ - range; z < pZ + range; z++) {
+            const key = getBlockKey(x, 0, z);
+            if (!blocks.has(key)) {
+                // 1. 先生成地面 (草地)
+                addBlock(x, 0, z, 'grass');
+
+                // 2. 隨機生成魔王方塊 (機率設為 0.5%)
+                if (Math.random() < 0.005) {
+                    spawnBoss(x, 1, z); // 放在草地上方
+                }
+
+                // 3. 隨機生成植物與蔬果 (機率 2%)
+                if (Math.random() < 0.02) {
+                    const plants = ['apple', 'banana', 'carrot', 'tomato', 'grass_bush'];
+                    const pType = plants[Math.floor(Math.random() * plants.length)];
+                    addBlock(x, 1, z, pType);
                 }
             }
         }
+    }
+}
 
         function generateChunk(cx, cz) {
             for (let x = 0; x < CHUNK_SIZE; x++) {
