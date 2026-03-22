@@ -1393,7 +1393,7 @@ function initVoxel() {
     document.getElementById('vq-stage').textContent = `收集進度: ${cubesFound} / ${TARGET_COUNT}`;
     document.getElementById('vq-score').textContent = vqTotalXP;
 
-    setupThreeJS();
+    ;
 }
 // ==========================================
 // ✅ 安全接管 startGame
@@ -1424,8 +1424,9 @@ window.startGame = function(id) {
     if (banner) banner.classList.add('hidden');
     if (typeof baseStartGame === 'function') baseStartGame(id);
 };
-function setupThreeJS() {
+function initVoxel() {
     const container = document.getElementById('vq-canvas-container');
+    if (!container) return;
     container.innerHTML = ''; 
     worldGrid = {}; 
 
@@ -1447,170 +1448,113 @@ function setupThreeJS() {
     vqControls = new THREE.PointerLockControls(vqCamera, document.body);
     
     const blocker = document.getElementById('vq-blocker');
-    blocker.addEventListener('click', function () {
-        if(!document.getElementById('vq-quiz-overlay').classList.contains('hidden')) return;
-        vqControls.lock();
-    });
+    if (blocker) {
+        blocker.addEventListener('click', function () {
+            const quiz = document.getElementById('vq-quiz-overlay');
+            if (quiz && !quiz.classList.contains('hidden')) return;
+            vqControls.lock();
+        });
+    }
 
     vqControls.addEventListener('lock', function () {
-        blocker.style.display = 'none';
-        document.getElementById('vq-hud').classList.remove('hidden');
-        document.getElementById('vq-crosshair').classList.remove('hidden');
+        if (blocker) blocker.style.display = 'none';
+        const hud = document.getElementById('vq-hud');
+        const cross = document.getElementById('vq-crosshair');
+        if (hud) hud.classList.remove('hidden');
+        if (cross) cross.classList.remove('hidden');
     });
 
     vqControls.addEventListener('unlock', function () {
-        if(document.getElementById('vq-quiz-overlay').classList.contains('hidden')) {
-            blocker.style.display = 'flex';
-            document.getElementById('vq-crosshair').classList.add('hidden');
+        const quiz = document.getElementById('vq-quiz-overlay');
+        if (quiz && quiz.classList.contains('hidden')) {
+            if (blocker) blocker.style.display = 'flex';
+            const cross = document.getElementById('vq-crosshair');
+            if (cross) cross.classList.add('hidden');
         }
     });
     vqScene.add(vqControls.getObject());
 
-    // 鍵盤控制
-    const onKeyDown = function (event) {
-        switch (event.code) {
-            case 'ArrowUp': case 'KeyW': moveForward = true; break;
-            case 'ArrowLeft': case 'KeyA': moveLeft = true; break;
-            case 'ArrowDown': case 'KeyS': moveBackward = true; break;
-            case 'ArrowRight': case 'KeyD': moveRight = true; break;
-            case 'Space': if (canJump) velocity.y += 150; canJump = false; break; 
-        }
-    };
-    const onKeyUp = function (event) {
-        switch (event.code) {
-            case 'ArrowUp': case 'KeyW': moveForward = false; break;
-            case 'ArrowLeft': case 'KeyA': moveLeft = false; break;
-            case 'ArrowDown': case 'KeyS': moveBackward = false; break;
-            case 'ArrowRight': case 'KeyD': moveRight = false; break;
-        }
-    };
-    document.addEventListener('keydown', onKeyDown);
-    document.addEventListener('keyup', onKeyUp);
-
     // ==========================================
-    // 🌍 生成 150+ 方塊世界 & 撒下 5 顆方塊
+    // 🛡️ 防止事件重複綁定的安全鎖 (非常重要！)
     // ==========================================
-    generateWorldData();
-    renderWorldInstanced();
-    spawnTargetCubes(TARGET_COUNT); // 🌟 一次產生 5 顆目標
+    if (!window.__VQ_EVENTS_BOUND__) {
+        window.__VQ_EVENTS_BOUND__ = true;
 
-    vqControls.getObject().position.set(0, 80, 0); 
+        const onKeyDown = function (event) {
+            switch (event.code) {
+                case 'ArrowUp': case 'KeyW': moveForward = true; break;
+                case 'ArrowLeft': case 'KeyA': moveLeft = true; break;
+                case 'ArrowDown': case 'KeyS': moveBackward = true; break;
+                case 'ArrowRight': case 'KeyD': moveRight = true; break;
+                case 'Space': 
+                    if (canJump) {
+                        velocity.y += 150; 
+                        canJump = false; 
+                    }
+                    break; 
+            }
+        };
+        const onKeyUp = function (event) {
+            switch (event.code) {
+                case 'ArrowUp': case 'KeyW': moveForward = false; break;
+                case 'ArrowLeft': case 'KeyA': moveLeft = false; break;
+                case 'ArrowDown': case 'KeyS': moveBackward = false; break;
+                case 'ArrowRight': case 'KeyD': moveRight = false; break;
+            }
+        };
+        document.addEventListener('keydown', onKeyDown);
+        document.addEventListener('keyup', onKeyUp);
 
-    // 互動射線 (偵測多顆方塊)
-    const interactionRaycaster = new THREE.Raycaster();
-    document.addEventListener('mousedown', (event) => {
-        if(vqControls.isLocked && event.button === 0 && vqTargetCubes.length > 0) {
-            interactionRaycaster.setFromCamera(new THREE.Vector2(0,0), vqCamera);
-            const intersects = interactionRaycaster.intersectObjects(vqTargetCubes);
-            
-            if(intersects.length > 0) {
-                const hitObj = intersects[0].object;
-                if(vqCamera.position.distanceTo(hitObj.position) < 80) {
-                    currentHitCube = hitObj; // 記錄點到了哪一顆
-                    triggerVoxelQuiz();
+        // 互動射線 (偵測多顆方塊)
+        const interactionRaycaster = new THREE.Raycaster();
+        document.addEventListener('mousedown', (event) => {
+            if(vqControls && vqControls.isLocked && event.button === 0 && window.vqTargetCubes && vqTargetCubes.length > 0) {
+                interactionRaycaster.setFromCamera(new THREE.Vector2(0,0), vqCamera);
+                const intersects = interactionRaycaster.intersectObjects(vqTargetCubes);
+                
+                if(intersects.length > 0) {
+                    const hitObj = intersects[0].object;
+                    if(vqCamera.position.distanceTo(hitObj.position) < 80) {
+                        currentHitCube = hitObj; // 記錄點到了哪一顆
+                        if (typeof triggerVoxelQuiz === 'function') triggerVoxelQuiz();
+                    }
                 }
             }
-        }
-    });
+        });
 
-    vqRenderer = new THREE.WebGLRenderer({ antialias: true });
-    vqRenderer.setPixelRatio(1); // 這是效能提升最明顯的一行
+        window.addEventListener('resize', function() {
+            if (!vqCamera || !vqRenderer) return;
+            const c = document.getElementById('vq-canvas-container');
+            if (!c) return;
+            vqCamera.aspect = c.clientWidth / c.clientHeight;
+            vqCamera.updateProjectionMatrix();
+            vqRenderer.setSize(c.clientWidth, c.clientHeight);
+        });
+    }
+
+    // ==========================================
+    // 🌍 撒下 5 顆目標方塊
+    // ==========================================
+    if (typeof spawnTargetCubes === 'function') spawnTargetCubes(TARGET_COUNT || 5); 
+    vqControls.getObject().position.set(0, 80, 0); 
+
+    // ==========================================
+    // 🚀 渲染器優化 (解決超慢問題的關鍵)
+    // ==========================================
+    vqRenderer = new THREE.WebGLRenderer({ antialias: false }); // 關閉抗鋸齒
+    vqRenderer.setPixelRatio(1); // 絕對不要用 window.devicePixelRatio！強制填 1
     vqRenderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(vqRenderer.domElement);
-    window.addEventListener('resize', onWindowResize);
 
+    // ==========================================
+    // 🛡️ 啟動動畫並防止循環疊加
+    // ==========================================
+    if (window.vqAnimationId) {
+        cancelAnimationFrame(window.vqAnimationId);
+    }
     prevTime = performance.now();
-    animateVoxelWorld();
+    if (typeof animateVoxelWorld === 'function') animateVoxelWorld();
 }
-
-function generateWorldData() {
-    const half = worldSize / 2;
-    for (let x = -half; x < half; x++) {
-        for (let z = -half; z < half; z++) {
-            let height = Math.floor(Math.sin(x/5) * 3 + Math.cos(z/4) * 2) + 2;
-            for(let y = -3; y < height; y++) {
-                if(y < -1) setBlock(x, y, z, 'stone');
-                else if(y < height-1) setBlock(x, y, z, 'dirt');
-                else setBlock(x, y, z, 'grass');
-            }
-            let surfaceY = height;
-            let rand = Math.random();
-
-            if(rand < 0.02) generateTree(x, surfaceY, z);
-            else if(rand < 0.05) setBlock(x, surfaceY, z, 'tall_grass');
-            else if(rand < 0.06) setBlock(x, surfaceY, z, 'red_flower');
-            else if(rand < 0.08) generateAnimal(x, surfaceY, z);
-            
-            if(x % 15 === 0 && z % 15 === 0 && Math.random() < 0.5) generateHouse(x, surfaceY, z);
-        }
-    }
-}
-
-function generateTree(bx, by, bz) {
-    let height = Math.floor(Math.random() * 3) + 4;
-    for(let y=0; y<height; y++) setBlock(bx, by+y, bz, 'oak_log');
-    for(let lx=-2; lx<=2; lx++) {
-        for(let lz=-2; lz<=2; lz++) {
-            for(let ly=height-2; ly<=height+1; ly++) {
-                if(Math.abs(lx)===2 && Math.abs(lz)===2 && ly===height+1) continue;
-                if(!getBlock(bx+lx, by+ly, bz+lz)) setBlock(bx+lx, by+ly, bz+lz, 'oak_leaves');
-            }
-        }
-    }
-}
-
-function generateHouse(bx, by, bz) {
-    const w = 5, h = 4, d = 5;
-    for(let x=0; x<w; x++) {
-        for(let y=0; y<h; y++) {
-            for(let z=0; z<d; z++) {
-                if(x===0 || x===w-1 || z===0 || z===d-1) setBlock(bx+x, by+y, bz+z, 'wood_plank');
-                if(y===h-1) setBlock(bx+x, by+y+1, bz+z, 'roof_tile');
-                if(y===0) setBlock(bx+x, by-1, bz+z, 'stone_brick');
-            }
-        }
-    }
-    setBlock(bx+2, by, bz, 'door_bottom');
-    setBlock(bx+2, by+1, bz, 'door_top');
-    setBlock(bx+1, by+1, bz+d-1, 'glass');
-    setBlock(bx+1, by, bz+1, 'bed_red');
-}
-
-function generateAnimal(bx, by, bz) {
-    setBlock(bx, by, bz, 'pig_pink');
-    setBlock(bx+1, by, bz, 'pig_nose');
-}
-
-function renderWorldInstanced() {
-    let totalBlocks = 0;
-    for(let x in worldGrid) {
-        for(let y in worldGrid[x]) {
-            totalBlocks += Object.keys(worldGrid[x][y]).length;
-        }
-    }
-    const geometry = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
-    const material = new THREE.MeshLambertMaterial({ color: 0xffffff });
-    const instancedMesh = new THREE.InstancedMesh(geometry, material, totalBlocks);
-    let dummy = new THREE.Object3D();
-    let colorObj = new THREE.Color();
-    let index = 0;
-    for(let x in worldGrid) {
-        for(let y in worldGrid[x]) {
-            for(let z in worldGrid[x][y]) {
-                dummy.position.set(x * blockSize, y * blockSize, z * blockSize);
-                dummy.updateMatrix();
-                instancedMesh.setMatrixAt(index, dummy.matrix);
-                colorObj.setHex(worldGrid[x][y][z]);
-                instancedMesh.setColorAt(index, colorObj);
-                index++;
-            }
-        }
-    }
-    instancedMesh.instanceMatrix.needsUpdate = true;
-    instancedMesh.instanceColor.needsUpdate = true;
-    vqScene.add(instancedMesh);
-}
-
 // 🎯 生成多顆目標方塊 (5 顆)
 function spawnTargetCubes(count) {
     // 先清除舊的
@@ -2011,13 +1955,18 @@ let lastPlayerChunk = { x: null, z: null };
   function vqIsSolidBlock(typeKey) {
     return !!typeKey && typeKey !== 'water';
   }
-
-  function vqCheckCollision(x, y, z) {
+// ✅ 正確寫法：
+function vqCheckCollision(x, y, z) {
     const gridX = Math.round(x / blockSize);
     const gridY = Math.round((y - 5) / blockSize);
     const gridZ = Math.round(z / blockSize);
-    return vqIsSolidBlock(vqGetBlock(gridX, gridY, gridZ)) || vqIsSolidBlock(vqGetBlock(gridX, gridY + 1, gridZ));
-  }
+    
+    // 直接呼叫你程式碼裡已有的 vqGetBlock 來查表
+    const block1 = vqGetBlock(gridX, gridY, gridZ);
+    const block2 = vqGetBlock(gridX, gridY + 1, gridZ);
+    
+    return vqIsSolidBlock(block1) || vqIsSolidBlock(block2);
+}
 
   function vqAddBlockToChunk(chunk, wx, wy, wz, typeKey) {
     if (!typeKey) return;
