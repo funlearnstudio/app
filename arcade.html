@@ -1393,15 +1393,6 @@ function checkCollision(x, y, z) {
     return false;
 }
 
-// ==========================================
-// 🚫 2. 封印舊版生態系 (阻止背景迴圈在天上種樹、生怪！)
-// ==========================================
-// 把原本動畫迴圈裡會呼叫的舊函數全部變成「空殼」，這樣它們就不會做事了
-window.vqEnsureChunksAroundPlayer = function() {}; 
-window.vqSpawnMonsterNearPlayer = function() {};
-window.vqUpdateAnimals = function() {};
-window.vqUpdateMonsters = function() {};
-window.generateWorldData = function() {};
 
 // ==========================================
 // 🌱 2. 超輕量級平坦地板 (生成綠色草地)
@@ -1577,7 +1568,7 @@ function initVoxel() {
 
     // 🌟 生成草地與目標方塊！
     if (typeof spawnTargetCubes === 'function') spawnTargetCubes(TARGET_COUNT || 5); 
-    generateFastVoxelFloor(); // 呼叫草地生成
+ 
 
     vqControls.getObject().position.set(0, 80, 0); // 玩家降落！
 
@@ -1858,13 +1849,14 @@ let lastPlayerChunk = { x: null, z: null };
     const n = Math.sin(x * 12.9898 + z * 78.233 + seed * 37.719) * 43758.5453123;
     return n - Math.floor(n);
   }
-
-  function vqTerrainHeight(wx, wz) {
+// ==========================================
+// 🌍 1. 恢復真實地形起伏
+// ==========================================
+function vqTerrainHeight(wx, wz) {
     const base = Math.sin(wx / 11) * 3.5 + Math.cos(wz / 13) * 2.9 + Math.sin((wx + wz) / 19) * 1.8;
     const hills = Math.floor((vqHash2D(wx, wz, 17) + vqHash2D(wx * 2, wz * 2, 23)) * 3.5);
-    return Math.floor(base + hills + 2.5);
-  }
-
+    return Math.floor(base + hills + 2.5); // 讓世界有高山和低谷！
+}
   function vqBiome(wx, wz) {
     const n = vqHash2D(wx, wz, 101);
     if (n < 0.18) return 'desert';
@@ -1878,7 +1870,27 @@ let lastPlayerChunk = { x: null, z: null };
     const v = BLOCK_TYPES[typeKey];
     return typeof v === 'number' ? v : 0xffffff;
   }
-
+// 🌳 效能優化版的樹木生成
+  function vqGenerateVoxelTree(chunk, wx, wz) {
+    let by = 0; // 樹根從草地 (Y=0) 開始
+    let height = 4 + Math.floor(Math.random() * 2); // 樹幹高度 4~5
+    
+    // 生成樹幹
+    for(let y = 1; y <= height; y++) {
+      vqAddBaseBlock(chunk, wx, y, wz, 'oak_log');
+    }
+    
+    // 生成樹葉 (簡化版 Canopy，極省效能)
+    let canopyY = by + height;
+    for(let lx = -1; lx <= 1; lx++) {
+      for(let lz = -1; lz <= 1; lz++) {
+        for(let ly = 0; ly <= 1; ly++) {
+          if(lx === 0 && lz === 0 && ly === 0) continue; // 中間留給樹幹
+          vqAddBaseBlock(chunk, wx + lx, canopyY + ly, wz + lz, 'oak_leaves');
+        }
+      }
+    }
+  }
   function vqAddBaseBlock(chunk, wx, wy, wz, typeKey) {
     const block = { x: wx, y: wy, z: wz, type: typeKey };
     chunk.baseBlocks.push(block);
@@ -1990,17 +2002,42 @@ let lastPlayerChunk = { x: null, z: null };
   function vqIsSolidBlock(typeKey) {
     return !!typeKey && typeKey !== 'water';
   }
-// ✅ 正確寫法：
-function vqCheckCollision(x, y, z) {
-    const gridX = Math.round(x / blockSize);
-    const gridY = Math.round((y - 5) / blockSize);
-    const gridZ = Math.round(z / blockSize);
-    
-    // 直接呼叫你程式碼裡已有的 vqGetBlock 來查表
-    const block1 = vqGetBlock(gridX, gridY, gridZ);
-    const block2 = vqGetBlock(gridX, gridY + 1, gridZ);
-    
-    return vqIsSolidBlock(block1) || vqIsSolidBlock(block2);
+// ==========================================
+// 🛡️ 2. 終極碰撞偵測 (完美支援無限區塊系統)
+// ==========================================
+function checkCollision(x, y, z) {
+    // 絕對防護網：萬一掉太深，強制托住 (通常不會發生了)
+    if (y < -100) return true;
+
+    // 將真實座標轉換為方塊網格座標
+    let bx = Math.round(x / blockSize);
+    let by = Math.round((y - 5) / blockSize); // 玩家腳底的格子
+    let bz = Math.round(z / blockSize);
+
+    // 內部查表函數：檢查某個座標是否有實體方塊
+    function checkSolid(wx, wy, wz) {
+        // 1. 檢查是不是撞到我們的「5顆題目方塊」
+        if (typeof getBlock === 'function' && getBlock(wx, wy, wz)) return true;
+        
+        // 2. 檢查是不是撞到「動態生成的生態區塊」
+        const VQ_CHUNK_SIZE = 16; 
+        const cx = Math.floor(wx / VQ_CHUNK_SIZE);
+        const cz = Math.floor(wz / VQ_CHUNK_SIZE);
+        const chunk = vqInf.chunks.get(`${cx},${cz}`); // 從擴充系統抓取區塊
+        
+        if (chunk && chunk.baseLookup) {
+            const blockType = chunk.baseLookup.get(`${wx}|${wy}|${wz}`);
+            // 如果該位置有方塊，且不是水或可穿透的花草，就判定為撞牆/踩到地板！
+            if (blockType && blockType !== 'water' && blockType !== 'tall_grass' && 
+                blockType !== 'red_flower' && blockType !== 'yellow_flower') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // 檢查腳底 (by) 和 身體 (by+1) 是否撞到東西
+    return checkSolid(bx, by, bz) || checkSolid(bx, by + 1, bz);
 }
 
   function vqAddBlockToChunk(chunk, wx, wy, wz, typeKey) {
