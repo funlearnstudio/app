@@ -37,16 +37,16 @@
         #recipe-list::-webkit-scrollbar-thumb, #inventory-list::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
 
         /* 快捷列 */
-        #hotbar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; background: rgba(0,0,0,0.6); padding: 8px; border-radius: 12px; z-index: 20; }
-        .slot { width: 50px; height: 50px; border: 2px solid #555; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; position: relative; cursor: pointer; background: rgba(255,255,255,0.1); }
+        #hotbar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; background: rgba(0,0,0,0.6); padding: 8px; border-radius: 12px; z-index: 30; }
+        .slot { width: 50px; height: 50px; border: 2px solid #555; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; position: relative; cursor: pointer; background: rgba(255,255,255,0.1); pointer-events: auto; }
         .slot.active { border-color: #fbbf24; background: rgba(251, 191, 36, 0.2); box-shadow: 0 0 10px rgba(251,191,36,0.6); }
         .slot-count { position: absolute; bottom: 2px; right: 4px; font-size: 12px; font-weight: bold; text-shadow: 1px 1px 2px black; }
 
         /* 手機控制 */
-        #controls { position: fixed; bottom: 90px; right: 20px; z-index: 20; display: flex; flex-direction: column; gap: 10px; }
-        .action-btn { width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.5); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; backdrop-filter: blur(4px); }
-        #joystick-bg { position: fixed; bottom: 40px; left: 20px; width: 120px; height: 120px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; z-index: 20; backdrop-filter: blur(4px); }
-        #joystick-knob { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(255,255,255,0.7); border-radius: 50%; }
+        #controls { position: fixed; bottom: 90px; right: 20px; z-index: 30; display: flex; flex-direction: column; gap: 10px; }
+        .action-btn { width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.5); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; backdrop-filter: blur(4px); pointer-events: auto; }
+        #joystick-bg { position: fixed; bottom: 40px; left: 20px; width: 120px; height: 120px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; z-index: 30; backdrop-filter: blur(4px); pointer-events: auto; }
+        #joystick-knob { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(255,255,255,0.7); border-radius: 50%; pointer-events: none; }
 
         /* 沉浸式 UI 特效 */
         #crosshair { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255,255,255,0.8); font-size: 24px; pointer-events: none; z-index: 10; text-shadow: 0 0 2px black; }
@@ -83,14 +83,14 @@
 
         <div class="mb-4">
             <div class="flex justify-between items-center border-b border-gray-600 pb-1 mb-2">
-                <h3 class="text-sm text-gray-400">生存背包 (200+物品)</h3>
+                <h3 class="text-sm text-gray-400">生存背包</h3>
                 <span id="inv-count" class="text-xs text-gray-500">0/200</span>
             </div>
             <div id="inventory-list" class="grid grid-cols-5 gap-2"></div>
         </div>
 
         <div>
-            <h3 class="text-sm text-gray-400 mb-2 border-b border-gray-600 pb-1">萬物合成台 (150+配方)</h3>
+            <h3 class="text-sm text-gray-400 mb-2 border-b border-gray-600 pb-1">萬物合成台</h3>
             <div id="recipe-list" class="flex flex-col gap-2"></div>
         </div>
     </div>
@@ -133,7 +133,7 @@
 
     <script>
         // ==========================================
-        // 1. 完整資料庫 (200物品, 150配方)
+        // 1. 資料庫 (物品、合成)
         // ==========================================
         const ITEM_REGISTRY = {}; const RECIPES = []; let playerInventory = {};
         const baseMats = [
@@ -142,62 +142,22 @@
             { id: 'diamond_ore', n: '鑽石礦', i: '💎' }, { id: 'stick', n: '木棍', i: '🦯' },
             { id: 'iron_ingot', n: '鐵錠', i: '⚪' }, { id: 'gold_ingot', n: '金錠', i: '🟡' },
             { id: 'diamond', n: '鑽石', i: '💎' }, { id: 'slime', n: '粘液', i: '💧' },
-            { id: 'string', n: '蜘蛛絲', i: '🧵' }, { id: 'leather', n: '皮革', i: '🐄' },
             { id: 'coal', n: '煤炭', i: '⚫' }
         ];
         const foodMats = [
             { id: 'apple', n: '蘋果', i: '🍎', r: 10 }, { id: 'wheat', n: '小麥', i: '🌾', r: 5 },
-            { id: 'seeds', n: '種子', i: '🌱', r: 0 }, { id: 'meat', n: '生肉', i: '🥩', r: 5 },
-            { id: 'mushroom', n: '蘑菇', i: '🍄', r: 5 }, { id: 'carrot', n: '胡蘿蔔', i: '🥕', r: 15 },
-            { id: 'potato', n: '馬鈴薯', i: '🥔', r: 10 }, { id: 'egg', n: '雞蛋', i: '🥚', r: 5 }
+            { id: 'seeds', n: '種子', i: '🌱', r: 0 }, { id: 'meat', n: '生肉', i: '🥩', r: 5 }
         ];
 
         [...baseMats, ...foodMats].forEach(m => ITEM_REGISTRY[m.id] = { name: m.n, icon: m.i, type: m.r !== undefined ? (m.r>0?'food':'farm') : 'mat', restore: m.r });
-
-        const tiers = [{id:'wood', n:'木', mat:'wood'}, {id:'stone', n:'石', mat:'stone'}, {id:'iron', n:'鐵', mat:'iron_ingot'}, {id:'gold', n:'金', mat:'gold_ingot'}, {id:'diamond', n:'鑽石', mat:'diamond'}];
-        const tools = [{id:'pickaxe', n:'鎬', i:'⛏️', q:3}, {id:'axe', n:'斧', i:'🪓', q:3}, {id:'sword', n:'劍', i:'🗡️', q:2}, {id:'hoe', n:'鋤', i:'🪨', q:2}, {id:'shovel', n:'鏟', i:'🥄', q:1}];
-        tiers.forEach(t => {
-            tools.forEach(tool => {
-                const itemId = `${t.id}_${tool.id}`; ITEM_REGISTRY[itemId] = { name: `${t.n}${tool.n}`, icon: tool.i, type: 'tool' };
-                RECIPES.push({ id: itemId, name: `${t.n}${tool.n}`, icon: tool.i, req: [{ id: t.mat, count: tool.q }, { id: 'stick', count: 2 }], count: 1 });
-            });
-            const armors = [{id:'helmet', n:'頭盔', i:'🪖', q:5}, {id:'chestplate', n:'胸甲', i:'👕', q:8}, {id:'leggings', n:'護腿', i:'👖', q:7}, {id:'boots', n:'靴子', i:'🥾', q:4}];
-            armors.forEach(a => {
-                const itemId = `${t.id}_${a.id}`; ITEM_REGISTRY[itemId] = { name: `${t.n}${a.n}`, icon: a.i, type: 'armor' };
-                RECIPES.push({ id: itemId, name: `${t.n}${a.n}`, icon: a.i, req: [{ id: t.mat, count: a.q }], count: 1 });
-            });
-        });
-
-        const advFood = [
-            { id: 'bread', n: '香烤麵包', i: '🍞', req: [{id:'wheat',count:3}], r: 30 },
-            { id: 'cooked_meat', n: '牛排', i: '🍖', req: [{id:'meat',count:1}, {id:'coal',count:1}], r: 40 },
-            { id: 'mushroom_stew', n: '蘑菇燉肉', i: '🍲', req: [{id:'mushroom',count:2}, {id:'meat',count:1}, {id:'wood',count:1}], r: 60 },
-            { id: 'cake', n: '節慶蛋糕', i: '🎂', req: [{id:'wheat',count:3}, {id:'egg',count:1}, {id:'apple',count:2}], r: 100 },
-            { id: 'golden_apple', n: '附魔金蘋果', i: '🍏', req: [{id:'apple',count:1}, {id:'gold_ingot',count:8}], r: 100 }
-        ];
-        advFood.forEach(f => { ITEM_REGISTRY[f.id] = { name: f.n, icon: f.i, type: 'food', restore: f.r }; RECIPES.push({ id: f.id, name: f.n, icon: f.i, req: f.req, count: 1 }); });
-
+        
         RECIPES.push({ id: 'stick', name: '木棍 x4', icon: '🦯', req: [{id:'wood', count:2}], count: 4 });
         RECIPES.push({ id: 'torch', name: '火把 x4', icon: '🔥', req: [{id:'stick', count:1}, {id:'coal', count:1}], count: 4 });
-        RECIPES.push({ id: 'iron_ingot', name: '熔煉鐵錠', icon: '⚪', req: [{id:'iron_ore', count:1}, {id:'coal', count:1}], count: 1 });
-        RECIPES.push({ id: 'gold_ingot', name: '熔煉金錠', icon: '🟡', req: [{id:'gold_ore', count:1}, {id:'coal', count:1}], count: 1 });
         ITEM_REGISTRY['torch'] = { name: '火把', icon: '🔥', type: 'block' };
 
-        const colors = ['紅','橙','黃','綠','藍','靛','紫','黑','白','灰','粉','青','棕','銀','金','彩'];
-        colors.forEach((c, idx) => {
-            ITEM_REGISTRY[`wool_${idx}`] = { name: `${c}色羊毛`, icon: '🐑', type: 'block' }; ITEM_REGISTRY[`glass_${idx}`] = { name: `${c}色玻璃`, icon: '🧊', type: 'block' }; ITEM_REGISTRY[`dye_${idx}`] = { name: `${c}色染料`, icon: '🎨', type: 'mat' };
-            RECIPES.push({ id: `dye_${idx}`, name: `${c}色染料`, icon: '🎨', req: [{id:'apple', count:1}, {id:'stone', count:1}], count: 2 });
-            RECIPES.push({ id: `wool_${idx}`, name: `${c}色羊毛`, icon: '🐑', req: [{id:'string', count:4}, {id:`dye_${idx}`, count:1}], count: 1 });
-            RECIPES.push({ id: `glass_${idx}`, name: `${c}色玻璃`, icon: '🧊', req: [{id:'stone', count:1}, {id:'coal', count:1}, {id:`dye_${idx}`, count:1}], count: 1 });
-        });
-
         const NPCS = [
-            { id: 'mayor', name: '村長 阿爾伯特', icon: '👴', lore: ['年輕人，這個村子需要你。', '多讀書，多看報。', '那邊的遺跡裡藏著寶藏。'], quest: { req: [{id:'wood', c:10}, {id:'stone', c:10}], reward: [{id:'iron_pickaxe', c:1}], txt: '幫我收集建材，我給你一把鐵鎬！' } },
-            { id: 'blacksmith', name: '鐵匠 銅鬚', icon: '🧔', lore: ['我的鐵鎚可是祖傳的！', '有煤炭嗎？爐子快熄了。'], quest: { req: [{id:'coal', c:5}, {id:'iron_ore', c:5}], reward: [{id:'iron_ingot', c:5}], txt: '給我礦石跟煤炭，我幫你免費熔煉！' } },
-            { id: 'farmer', name: '農夫 麥田', icon: '👩‍🌾', lore: ['春種一粒粟，秋收萬顆子。', '要記得用鋤頭翻土才能種小麥喔！'], quest: { req: [{id:'wheat', c:10}], reward: [{id:'bread', c:5}], txt: '幫我收割 10 個小麥，我請你吃熱騰騰的麵包！' } },
-            { id: 'chef', name: '大廚 戈登', icon: '👨‍🍳', lore: ['這塊肉生到還在吃草！', '蘑菇燉肉的秘訣在於火候。'], quest: { req: [{id:'meat', c:5}, {id:'mushroom', c:5}], reward: [{id:'cake', c:1}], txt: '給我頂級食材，我做一個節慶蛋糕給你！' } },
-            { id: 'scholar', name: '學者 達文西', icon: '🧙‍♂️', lore: ['知識就是力量！', '答題方塊是古代智慧的結晶。'], quest: { req: [{id:'slime_jelly', c:3}], reward: [{id:'diamond', c:1}], txt: '幫我收集史萊姆果凍做實驗，我給你鑽石！' } }
-        ]; // 為節省空間，僅顯示前五名代表，實際依舊完整運作
+            { id: 'mayor', name: '村長 阿爾伯特', icon: '👴', lore: ['年輕人，這個村子需要你。', '多讀書，多看報。'], quest: { req: [{id:'wood', c:10}], reward: [{id:'apple', c:5}], txt: '幫我收集建材，我給你蘋果！' } }
+        ];
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSnd(t) {
@@ -208,13 +168,14 @@
             if(t==='hit') { osc.type='square'; osc.frequency.setValueAtTime(120, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime+0.1); }
             else if(t==='success') { osc.type='sine'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.setValueAtTime(800, audioCtx.currentTime+0.1); d=0.2; }
             else if(t==='error') { osc.type='sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime+0.3); d=0.3; }
-            else if(t==='splash') { osc.type='triangle'; osc.frequency.setValueAtTime(80, audioCtx.currentTime); osc.frequency.linearRampToValueAtTime(40, audioCtx.currentTime+0.3); d=0.3; gain.gain.value = 0.2;}
             osc.start(); gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+d); osc.stop(audioCtx.currentTime+d);
         }
 
         let currentUser = { username: "guest", xp: 0 };
         window.onload = () => {
-            if (typeof Auth !== 'undefined' && Auth.getCurrentUser()) currentUser = Auth.getCurrentUser();
+            try {
+                if (typeof Auth !== 'undefined' && Auth.getCurrentUser()) currentUser = Auth.getCurrentUser();
+            } catch(e) { console.warn("Auth system not found, using default."); }
             document.getElementById('user-name').innerText = currentUser.username;
             document.getElementById('xp-val').innerText = currentUser.xp || 0;
             renderUI();
@@ -250,21 +211,10 @@
 
             if(invKeys.length > 0 && selectedSlot < invKeys.length) document.getElementById('view-model').innerText = ITEM_REGISTRY[invKeys[selectedSlot]].icon;
             else document.getElementById('view-model').innerText = '👊';
-
-            const rList = document.getElementById('recipe-list'); rList.innerHTML = '';
-            RECIPES.forEach(r => {
-                const canCraft = r.req.every(req => (playerInventory[req.id] || 0) >= req.count);
-                const d = document.createElement('div'); d.className = `flex justify-between items-center p-2 rounded ${canCraft ? 'bg-blue-900/60' : 'bg-slate-800 opacity-40'}`;
-                let reqHtml = r.req.map(req => `<span class="text-[10px] bg-black/30 px-1 rounded">${ITEM_REGISTRY[req.id].icon}x${req.count}</span>`).join(' ');
-                d.innerHTML = `<div class="flex items-center gap-2"><span class="text-2xl">${r.icon}</span><div><div class="font-bold text-sm">${r.name} x${r.count}</div><div class="flex gap-1 mt-1 flex-wrap">${reqHtml}</div></div></div>
-                               <button class="px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded text-xs text-white ${!canCraft?'hidden':''}">合成</button>`;
-                if(canCraft) d.querySelector('button').onclick = () => { r.req.forEach(req => playerInventory[req.id] -= req.count); playerInventory[r.id] = (playerInventory[r.id] || 0) + r.count; playSnd('success'); renderUI(); };
-                rList.appendChild(d);
-            });
         }
 
         // ==========================================
-        // 2. Three.js: 山水、樹木、草叢、題目 完全回歸
+        // 2. Three.js: 地形生成與修復
         // ==========================================
         const scene = new THREE.Scene(); scene.fog = new THREE.Fog(0x87CEEB, 2, 40);
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 100);
@@ -294,10 +244,13 @@
 
         noise.seed(Math.random());
         function getH(x, z) {
-            // 史詩級地形生成 (高山與深谷)
             let e = noise.perlin2(x/40, z/40) + 0.5 * noise.perlin2(x/20, z/20);
             return Math.floor(Math.pow((e+1.5)/2, 2) * 12) + 1; 
         }
+
+        // 🚀 關鍵修復：計算出生點地形高度，防活埋！
+        const startH = getH(0, 0);
+        camera.position.set(0, startH + 5, 0); // 保證出生在空中並降落
 
         function genChunk(cx, cz) {
             const key = `${cx},${cz}`; if(chunks.has(key)) return chunks.get(key);
@@ -309,25 +262,22 @@
                     const wx=cx*16+x, wz=cz*16+z;
                     const h = getH(wx, wz);
                     
-                    // 水體生成 (y <= 3)
                     for(let y=0; y<=3; y++) {
                         if(y > h) { poses.push({x:wx, y, z:wz, t:BLOCK.WATER}); counts[BLOCK.WATER]++; }
                     }
 
-                    // 實體方塊
                     for(let y=0; y<=h; y++) {
                         let t = (y === h) ? (h < 4 ? BLOCK.DIRT : BLOCK.GRASS) : (y > h-3 ? BLOCK.DIRT : BLOCK.STONE);
                         poses.push({x:wx, y, z:wz, t}); counts[t]++;
                     }
 
-                    // 🌳 樹木、❓ 題目、🌿 芒草
                     if(h >= 4 && Math.random() < 0.02) { // 樹
                         for(let ty=1; ty<=3; ty++) { poses.push({x:wx, y:h+ty, z:wz, t:BLOCK.WOOD}); counts[BLOCK.WOOD]++; }
                         poses.push({x:wx, y:h+4, z:wz, t:BLOCK.LEAVES}); counts[BLOCK.LEAVES]++;
-                    } else if(h >= 4 && Math.random() < 0.015) { // 題目方塊
+                    } else if(h >= 4 && Math.random() < 0.003) { // 🚀 關鍵修復：大幅下調題目方塊出現率 (0.015 -> 0.003)
                         const q = new THREE.Mesh(box, MATS[BLOCK.QUESTION]);
                         q.position.set(wx, h+1, wz); q.userData = { isQ:true, wy:h+1 }; scene.add(q); interactables.push(q);
-                    } else if(h >= 4 && Math.random() < 0.08) { // 芒草叢
+                    } else if(h >= 4 && Math.random() < 0.08) { // 芒草
                         poses.push({x:wx, y:h+1, z:wz, t:BLOCK.TALLGRASS}); counts[BLOCK.TALLGRASS]++;
                     }
                 }
@@ -342,7 +292,6 @@
             const dummy = new THREE.Object3D();
             poses.forEach(p => { 
                 if(insts[p.t]) {
-                    // 草叢縮小一點點比較真實
                     if(p.t === BLOCK.TALLGRASS) { dummy.scale.set(0.6, 0.6, 0.6); dummy.position.set(p.x, p.y-0.2, p.z); }
                     else { dummy.scale.set(1,1,1); dummy.position.set(p.x, p.y, p.z); }
                     dummy.updateMatrix(); insts[p.t].setMatrixAt(ptrs[p.t]++, dummy.matrix); 
@@ -352,19 +301,9 @@
             scene.add(group); chunks.set(key, {group, active:true}); return chunks.get(key);
         }
 
-        // 放置 NPC
-        NPCS.forEach((npcData, idx) => {
-            const angle = (idx / 5) * Math.PI * 2; const dist = 8 + Math.random()*5;
-            const nx = Math.cos(angle)*dist, nz = Math.sin(angle)*dist;
-            const npcMesh = new THREE.Mesh(box, gTex('#3b82f6', '#1d4ed8', npcData.icon));
-            npcMesh.position.set(nx, 10, nz); npcMesh.userData = { isNPC: true, data: npcData };
-            scene.add(npcMesh); interactables.push(npcMesh);
-        });
-
         // ==========================================
-        // 3. 互動邏輯 (挖礦機率、NPC對話)
+        // 3. 互動邏輯 (電腦與手機視角/滑桿拆分防干擾)
         // ==========================================
-        camera.position.set(0, 15, 0);
         const raycaster = new THREE.Raycaster();
 
         function interact(action) {
@@ -373,9 +312,7 @@
 
             raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
             const intersects = raycaster.intersectObjects(interactables);
-            const invKeys = Object.keys(playerInventory).filter(k => playerInventory[k] > 0);
-            const currentItem = invKeys.length > 0 ? invKeys[selectedSlot] : null;
-
+            
             if(intersects.length > 0 && intersects[0].distance < 6) {
                 const obj = intersects[0].object;
                 if(action === 'interact') {
@@ -388,73 +325,55 @@
             if(action === 'break') {
                 modifyEnergy(-2); playSnd('hit');
                 const rnd = Math.random();
-                let mult = (currentItem && currentItem.includes('pickaxe')) ? 2 : 1; 
-                
-                if(rnd < 0.05) { playerInventory['diamond_ore'] = (playerInventory['diamond_ore']||0)+1; showMsg('挖到 💎鑽石礦！'); }
-                else if(rnd < 0.15) { playerInventory['gold_ore'] = (playerInventory['gold_ore']||0)+mult; showMsg('挖到 🟡金礦石'); }
-                else if(rnd < 0.3) { playerInventory['iron_ore'] = (playerInventory['iron_ore']||0)+mult; showMsg('挖到 ⚪鐵礦石'); }
-                else if(rnd < 0.4) { playerInventory['coal'] = (playerInventory['coal']||0)+mult; showMsg('挖到 ⚫煤炭'); }
-                else if(rnd < 0.5) { playerInventory['seeds'] = (playerInventory['seeds']||0)+mult; showMsg('除草獲得 🌱種子'); }
-                else if(rnd < 0.6) { playerInventory['stone'] = (playerInventory['stone']||0)+mult; showMsg('挖到 🪨石頭'); }
-                else if(rnd < 0.8) { playerInventory['wood'] = (playerInventory['wood']||0)+mult; showMsg('砍伐 🪵木頭'); }
-                else { playerInventory['slime'] = (playerInventory['slime']||0)+1; showMsg('打倒隱形史萊姆！獲得 💧粘液'); }
+                if(rnd < 0.3) { playerInventory['stone'] = (playerInventory['stone']||0)+1; showMsg('挖到 🪨石頭'); }
+                else if(rnd < 0.6) { playerInventory['wood'] = (playerInventory['wood']||0)+1; showMsg('砍伐 🪵木頭'); }
                 renderUI();
             }
         }
 
         document.getElementById('btn-interact').onclick = () => interact('interact');
         document.getElementById('btn-break').onclick = () => interact('break');
-        
-        function openNpc(data) {
-            activeInteractObj = data; document.getElementById('npc-dialog').style.display = 'block';
-            document.getElementById('npc-name').innerHTML = `${data.icon} ${data.name}`;
-            document.getElementById('npc-lore').innerText = `"${data.lore[Math.floor(Math.random()*data.lore.length)]}"`;
-            let reqTxt = data.quest.req.map(r => `${ITEM_REGISTRY[r.id].icon}${ITEM_REGISTRY[r.id].name} x${r.c}`).join(', ');
-            let rewTxt = data.quest.reward.map(r => `${ITEM_REGISTRY[r.id].icon}${ITEM_REGISTRY[r.id].name} x${r.c}`).join(', ');
-            document.getElementById('npc-quest').innerText = `${data.quest.txt} (需要: ${reqTxt})`;
-            document.getElementById('npc-reward').innerText = `任務獎勵: ${rewTxt}`;
-            document.getElementById('npc-submit').onclick = () => {
-                if(data.quest.req.every(r => (playerInventory[r.id] || 0) >= r.c)) {
-                    data.quest.req.forEach(r => playerInventory[r.id] -= r.c); data.quest.reward.forEach(r => playerInventory[r.id] = (playerInventory[r.id]||0) + r.c);
-                    playSnd('success'); showMsg(`完成任務！`, '#10b981'); renderUI(); closeUI();
-                } else { showMsg("材料不足！", '#ef4444'); playSnd('error'); }
-            };
-        }
 
-        function openQuiz(obj) {
-            activeInteractObj = obj; document.getElementById('quiz-overlay').style.display = 'block';
-            document.getElementById('quiz-options').innerHTML = '載入中...';
-            let currentSubject = new URLSearchParams(window.location.search).get('subject') || 'math';
-            let qList = typeof window.generatePaper === 'function' ? window.generatePaper({ subject: currentSubject, total: 1 }) : [{ question: "測試: 1+1=?", options: ["1", "2", "3", "4"], answer: 1 }];
-            const q = qList[0]; document.getElementById('quiz-question').innerHTML = q.question;
-            const optDiv = document.getElementById('quiz-options'); optDiv.innerHTML = '';
-            q.options.forEach((opt, idx) => {
-                const btn = document.createElement('button'); btn.className = 'quiz-btn'; btn.innerHTML = `${['A','B','C','D'][idx]}. ${opt}`;
-                btn.onclick = () => {
-                    if((typeof q.answer === 'number' ? idx === q.answer : opt === q.answer)) {
-                        playSnd('success'); showMsg("🎉 答對！獲得物資與經驗", '#10b981'); modifyEnergy(20);
-                        playerInventory['apple'] = (playerInventory['apple']||0)+2; playerInventory['diamond'] = (playerInventory['diamond']||0)+1;
-                        if(typeof window.awardXPAndSync === 'function') window.awardXPAndSync(200, '生存世界', 200);
-                        scene.remove(activeInteractObj); interactables.splice(interactables.indexOf(activeInteractObj), 1); closeUI(); renderUI();
-                    } else { playSnd('error'); modifyEnergy(-20); showMsg("💥 答錯！扣除體力", '#ef4444'); closeUI(); }
-                };
-                optDiv.appendChild(btn);
-            });
-            if(window.MathJax) MathJax.typesetPromise();
-        }
-
-        // ==========================================
-        // 4. 移動、物理與水下特效
-        // ==========================================
+        // ==== 控制器變數 ====
         const keys = {w:false, a:false, s:false, d:false};
         const joyBg = document.getElementById('joystick-bg'), joyKnob = document.getElementById('joystick-knob');
-        let isDragging = false, touchStart = {x:0, y:0};
+        
+        // 🚀 關鍵修復：電腦滑鼠拖曳視角
+        let isMouseDragging = false;
+        document.addEventListener('mousedown', e => { if(e.target.tagName === 'CANVAS') isMouseDragging = true; });
+        document.addEventListener('mousemove', e => { 
+            if(isMouseDragging) { 
+                camera.rotation.y -= e.movementX*0.005; 
+                camera.rotation.x -= e.movementY*0.005; 
+                camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x)); 
+                camera.rotation.order='YXZ'; 
+            } 
+        });
+        document.addEventListener('mouseup', () => isMouseDragging = false);
 
+        // 🚀 關鍵修復：手機觸控拖曳視角 (避開 UI 按鈕與搖桿)
+        let isTouchDragging = false; let lastTouch = {x:0, y:0};
+        document.addEventListener('touchstart', e => {
+            if(e.target.tagName === 'BUTTON' || e.target.closest('#joystick-bg') || e.target.closest('.overlay-box')) return;
+            isTouchDragging = true; lastTouch = {x: e.touches[0].clientX, y: e.touches[0].clientY};
+        }, {passive: false});
+
+        document.addEventListener('touchmove', e => {
+            if(isTouchDragging) {
+                const dx = e.touches[0].clientX - lastTouch.x;
+                const dy = e.touches[0].clientY - lastTouch.y;
+                camera.rotation.y -= dx * 0.005; 
+                camera.rotation.x -= dy * 0.005; 
+                camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x)); 
+                camera.rotation.order='YXZ';
+                lastTouch = {x: e.touches[0].clientX, y: e.touches[0].clientY};
+            }
+        }, {passive: false});
+        document.addEventListener('touchend', () => isTouchDragging = false);
+
+        // ==== 鍵盤與虛擬搖桿移動控制 ====
         document.addEventListener('keydown', e => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; });
         document.addEventListener('keyup', e => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false; });
-        document.addEventListener('mousedown', e => { if(e.target.tagName === 'CANVAS') isDragging = true; });
-        document.addEventListener('mousemove', e => { if(isDragging) { camera.rotation.y -= e.movementX*0.005; camera.rotation.x -= e.movementY*0.005; camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x)); camera.rotation.order='YXZ'; } });
-        document.addEventListener('mouseup', () => isDragging = false);
 
         joyBg.addEventListener('touchstart', e => handleJoy(e.touches[0]));
         joyBg.addEventListener('touchmove', e => { handleJoy(e.touches[0]); e.preventDefault(); }, {passive:false});
@@ -462,28 +381,29 @@
         function handleJoy(t) {
             const rect = joyBg.getBoundingClientRect(); let nx=t.clientX-rect.left-60, ny=t.clientY-rect.top-60;
             const dist = Math.sqrt(nx*nx + ny*ny); if(dist>60) { nx=nx/dist*60; ny=ny/dist*60; }
-            joyKnob.style.transform = `translate(${nx}px, ${ny}px)`; keys.w=ny<-15; keys.s=ny>15; keys.a=nx<-15; keys.d=nx>15;
+            joyKnob.style.transform = `translate(${nx}px, ${ny}px)`; 
+            keys.w=ny<-15; keys.s=ny>15; keys.a=nx<-15; keys.d=nx>15;
         }
 
         const clock = new THREE.Clock();
-        let wasInWater = false;
         
         function animate() {
             requestAnimationFrame(animate); const delta = Math.min(clock.getDelta(), 0.1); const time = Date.now();
             
-            // 水下判定
-            const py = camera.position.y;
-            const inWater = py <= 4.0;
-            document.getElementById('water-overlay').style.opacity = inWater ? 1 : 0;
-            if(inWater && !wasInWater) { playSnd('splash'); wasInWater = true; }
-            else if(!inWater && wasInWater) { wasInWater = false; }
-
-            // 速度計算 (水裡或沒體力變慢)
-            let speed = (energy > 0 ? 6 : 2) * (inWater ? 0.4 : 1);
+            // 速度計算
+            let speed = (energy > 0 ? 6 : 2);
             let dz = Number(keys.w) - Number(keys.s); let dx = Number(keys.d) - Number(keys.a);
-            camera.translateZ(-dz * speed * delta); camera.translateX(dx * speed * delta);
             
-            // 物理高度跟隨
+            // 🚀 關鍵修復：絕對水平移動 (不被上下視角干擾)
+            if(dz !== 0 || dx !== 0) {
+                const euler = new THREE.Euler(0, camera.rotation.y, 0, 'YXZ');
+                const velocity = new THREE.Vector3(dx * speed, 0, -dz * speed);
+                velocity.applyEuler(euler);
+                camera.position.x += velocity.x * delta;
+                camera.position.z += velocity.z * delta;
+            }
+            
+            // 物理高度跟隨 (吸附地表)
             const px = camera.position.x, pz = camera.position.z;
             const h = getH(px, pz);
             camera.position.y += ((h + 2) - camera.position.y) * 0.1;
@@ -492,14 +412,9 @@
             const cx = Math.floor(px/16), cz = Math.floor(pz/16);
             for(let x=-2; x<=2; x++) for(let z=-2; z<=2; z++) { const key = `${cx+x},${cz+z}`; if(!chunks.has(key)) genChunk(cx+x, cz+z); else chunks.get(key).group.visible = true; }
 
-            // 實體浮動動畫
+            // 實體動畫
             interactables.forEach(b => {
                 if(b.userData.isQ) { b.rotation.y += 0.02; b.position.y = b.userData.wy + Math.sin(time*0.002)*0.2; }
-                if(b.userData.isNPC) { 
-                    const npcBaseH = getH(b.position.x, b.position.z);
-                    b.position.y = npcBaseH+1 + Math.abs(Math.sin(time*0.002 + b.position.x))*0.2; 
-                    b.lookAt(camera.position.x, b.position.y, camera.position.z);
-                }
             });
 
             renderer.render(scene, camera);
