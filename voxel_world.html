@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D 生存學習世界 - 終極完全體</title>
+    <title>3D 生存學習世界 - 雲端學院</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -53,7 +53,6 @@
         .slot.active { border-color: #fbbf24; background: rgba(251, 191, 36, 0.2); box-shadow: 0 0 10px rgba(251,191,36,0.6); }
         .slot-count { position: absolute; bottom: 2px; right: 4px; font-size: 12px; font-weight: bold; text-shadow: 1px 1px 2px black; }
 
-        /* 行動版雙搖桿與動作按鈕 */
         #controls { position: fixed; top: 50%; right: 20px; transform: translateY(-50%); z-index: 30; display: flex; flex-direction: column; gap: 15px; }
         .action-btn { width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.5); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; backdrop-filter: blur(4px); pointer-events: auto; }
         
@@ -64,7 +63,6 @@
         #joystick-aim-knob { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(255,100,100,0.7); border-radius: 50%; pointer-events: none; }
         .aim-label { position: absolute; top: -25px; left: 50%; transform: translateX(-50%); color: white; font-size: 12px; font-weight: bold; text-shadow: 1px 1px 2px black; pointer-events: none; }
 
-        /* 動態準心 */
         #crosshair { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255,255,255,0.9); font-size: 28px; pointer-events: none; z-index: 10; text-shadow: 0 0 3px black; transition: left 0.05s, top 0.05s; }
         
         #msg-box { position: fixed; top: 20%; left: 50%; transform: translateX(-50%); font-size: 24px; font-weight: bold; color: #fbbf24; text-shadow: 2px 2px 4px black; z-index: 100; opacity: 0; transition: opacity 0.3s; pointer-events: none; width: 100%; text-align: center; }
@@ -92,13 +90,13 @@
     <button class="toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i> 選單</button>
 
     <div id="sidebar">
-        <h2 class="text-xl font-bold mb-4"><i class="fas fa-cube text-blue-400"></i> 終極生存選單</h2>
+        <h2 class="text-xl font-bold mb-4"><i class="fas fa-cube text-blue-400"></i> 生存選單</h2>
         <a href="arcade.html" class="return-btn"><i class="fas fa-sign-out-alt"></i> 返回學習遊戲場</a>
         
         <div class="mb-4 bg-slate-800 p-3 rounded-lg">
             <p class="text-sm">玩家: <span id="user-name" class="text-yellow-400 font-bold">載入中</span></p>
             <p class="text-sm">XP: <span id="xp-val" class="text-blue-400 font-bold">0</span></p>
-            <p class="text-[10px] text-gray-400 mt-1">XP 會自動儲存至雲端 GAS</p>
+            <p class="text-[10px] text-gray-400 mt-1">時間: <span id="time-display">白晝</span></p>
         </div>
 
         <div class="mb-4">
@@ -124,15 +122,8 @@
 
     <div id="hotbar"></div>
     
-    <div id="joystick-bg">
-        <div class="aim-label" style="color:#10b981;">移動</div>
-        <div id="joystick-knob"></div>
-    </div>
-    
-    <div id="joystick-aim-bg">
-        <div class="aim-label" style="color:#ef4444;">轉視角 / 瞄準</div>
-        <div id="joystick-aim-knob"></div>
-    </div>
+    <div id="joystick-bg"><div class="aim-label" style="color:#10b981;">移動</div><div id="joystick-knob"></div></div>
+    <div id="joystick-aim-bg"><div class="aim-label" style="color:#ef4444;">轉視角</div><div id="joystick-aim-knob"></div></div>
 
     <div id="controls">
         <button id="btn-interact" class="action-btn" style="background: rgba(59, 130, 246, 0.4);"><i class="fas fa-hand-pointer"></i></button>
@@ -171,18 +162,14 @@
         
         async function syncGASXP(xpToAdd, reason) {
             if (!currentUser || currentUser.username === 'guest') return;
-            
             currentUser.xp = (Number(currentUser.xp) || 0) + xpToAdd;
             document.getElementById('xp-val').innerText = currentUser.xp;
             try { localStorage.setItem('currentUser', JSON.stringify(currentUser)); } catch(e){}
 
-            const payload = {
-                action: "save_record", username: currentUser.username, activity: `【3D生存】${reason}`,
-                score: xpToAdd, xp: xpToAdd, detail: JSON.stringify({ unitName: 'VoxelWorld', xpGained: xpToAdd })
-            };
-
-            fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) })
-              .then(r => console.log(`✅ GAS 儲存成功`)).catch(e => console.error('❌ GAS 失敗', e));
+            fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "save_record", username: currentUser.username, activity: `【3D生存】${reason}`, score: xpToAdd, xp: xpToAdd, detail: JSON.stringify({ unitName: 'VoxelWorld', xpGained: xpToAdd }) })
+            }).catch(e => console.error(e));
 
             if(typeof window.awardXPAndSync === 'function') window.awardXPAndSync(xpToAdd, `3D生存-${reason}`, xpToAdd);
         }
@@ -191,21 +178,32 @@
         // 2. 遊戲資料與介面初始化
         // ==========================================
         const ITEM_REGISTRY = {}; const RECIPES = []; let playerInventory = {};
+        
+        // 擴增基礎材料
         const baseMats = [
             { id: 'wood', n: '木頭', i: '🪵', isBlock: true, bType: 4 }, 
             { id: 'stone', n: '石頭', i: '🪨', isBlock: true, bType: 3 },
             { id: 'dirt', n: '泥土', i: '🟤', isBlock: true, bType: 2 },
             { id: 'iron_ore', n: '鐵礦石', i: '🪨' }, { id: 'diamond_ore', n: '鑽石礦', i: '💎' }, 
-            { id: 'iron_ingot', n: '鐵錠', i: '⚪' }, { id: 'diamond', n: '鑽石', i: '💎' }, 
-            { id: 'slime', n: '粘液', i: '💧' }, { id: 'coal', n: '煤炭', i: '⚫' }
+            { id: 'coal', n: '煤炭', i: '⚫' }, { id: 'wool', n: '羊毛', i: '🧶' }, { id: 'leather', n: '皮革', i: '🐄' }
         ];
+        // 擴增食物
         const foodMats = [
-            { id: 'apple', n: '蘋果', i: '🍎', r: 10, h: 10 }, { id: 'meat', n: '生肉', i: '🥩', r: 5 },
-            { id: 'cooked_meat', n: '烤肉', i: '🍖', r: 30, h: 25 }
+            { id: 'apple', n: '蘋果', i: '🍎', r: 10, h: 10 }, 
+            { id: 'meat', n: '豬肉', i: '🥩', r: 5 },
+            { id: 'beef', n: '生牛肉', i: '🥩', r: 5 },
+            { id: 'chicken_meat', n: '生雞肉', i: '🍗', r: 5 },
+            { id: 'egg', n: '雞蛋', i: '🥚', r: 2 },
+            { id: 'cooked_meat', n: '烤肉', i: '🍖', r: 30, h: 25 },
+            { id: 'cooked_beef', n: '牛排', i: '🥩', r: 40, h: 30 },
+            { id: 'cooked_chicken', n: '烤雞', i: '🍗', r: 25, h: 20 }
         ];
 
         [...baseMats, ...foodMats].forEach(m => ITEM_REGISTRY[m.id] = { name: m.n, icon: m.i, type: m.r !== undefined ? 'food' : 'mat', restore: m.r, heal: m.h||0, isBlock: m.isBlock, bType: m.bType });
+        
         RECIPES.push({ id: 'cooked_meat', name: '烤肉', icon: '🍖', req: [{id:'meat', count:1}, {id:'coal', count:1}], count: 1 });
+        RECIPES.push({ id: 'cooked_beef', name: '牛排', icon: '🥩', req: [{id:'beef', count:1}, {id:'coal', count:1}], count: 1 });
+        RECIPES.push({ id: 'cooked_chicken', name: '烤雞', icon: '🍗', req: [{id:'chicken_meat', count:1}, {id:'coal', count:1}], count: 1 });
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSnd(t) {
@@ -219,6 +217,7 @@
             else if(t==='success') { osc.type='sine'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.setValueAtTime(800, audioCtx.currentTime+0.1); d=0.2; }
             else if(t==='error') { osc.type='sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime+0.3); d=0.3; }
             else if(t==='hurt') { osc.type='square'; osc.frequency.setValueAtTime(100, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime+0.2); d=0.2; gain.gain.value=0.8; }
+            else if(t==='egg') { osc.type='sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime+0.1); d=0.1; }
             osc.start(); gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+d); osc.stop(audioCtx.currentTime+d);
         }
 
@@ -290,13 +289,18 @@
         }
 
         // ==========================================
-        // 3. Three.js: 地形、實體與粒子
+        // 3. Three.js: 藍天、地形、茂密樹林與動物
         // ==========================================
-        const scene = new THREE.Scene(); scene.fog = new THREE.Fog(0x87CEEB, 2, 40);
+        const scene = new THREE.Scene(); 
+        scene.background = new THREE.Color(0x87CEEB); // 🌤️ 修復天空變成死黑的問題！
+        scene.fog = new THREE.Fog(0x87CEEB, 2, 40);
+        
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 100);
         const renderer = new THREE.WebGLRenderer({ antialias: false });
         renderer.setPixelRatio(1); renderer.setSize(window.innerWidth, window.innerHeight); document.body.appendChild(renderer.domElement);
-        scene.add(new THREE.AmbientLight(0xffffff, 0.6)); const dirLight = new THREE.DirectionalLight(0xffffff, 0.8); dirLight.position.set(20, 50, 20); scene.add(dirLight);
+        
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); scene.add(ambientLight); 
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8); dirLight.position.set(20, 50, 20); scene.add(dirLight);
 
         function gTex(base, noise, char='') {
             const cvs = document.createElement('canvas'); cvs.width=16; cvs.height=16; const ctx = cvs.getContext('2d');
@@ -330,7 +334,9 @@
 
         noise.seed(Math.random());
         function getH(x, z) { return Math.floor(Math.pow((noise.perlin2(x/40, z/40)+1.5)/2, 2) * 12) + 1; }
-        const startH = getH(0, 0); camera.position.set(0, startH + 5, 0);
+        
+        const startH = getH(0, 0); 
+        camera.position.set(0, startH + 5, 0); // 防活埋出生點
 
         function genChunk(cx, cz) {
             const key = `${cx},${cz}`; if(chunks.has(key)) return chunks.get(key);
@@ -338,11 +344,21 @@
 
             for(let x=0; x<16; x++) for(let z=0; z<16; z++) {
                 const wx=cx*16+x, wz=cz*16+z; const h = getH(wx, wz);
+                
+                // 地面
                 for(let y=0; y<=h; y++) { let t = (y === h) ? (h < 4 ? BLOCK.DIRT : BLOCK.GRASS) : (y > h-3 ? BLOCK.DIRT : BLOCK.STONE); poses.push({x:wx, y, z:wz, t}); counts[t]++; }
-                if(h >= 4 && Math.random() < 0.02) { 
-                    for(let ty=1; ty<=3; ty++) { poses.push({x:wx, y:h+ty, z:wz, t:BLOCK.WOOD}); counts[BLOCK.WOOD]++; }
-                    poses.push({x:wx, y:h+4, z:wz, t:BLOCK.LEAVES}); counts[BLOCK.LEAVES]++;
-                } else if(h >= 4 && Math.random() < 0.005) { 
+                
+                // 🌳 茂密的森林 (機率提升並增加樹冠)
+                if(h >= 4 && Math.random() < 0.08) { 
+                    for(let ty=1; ty<=4; ty++) { poses.push({x:wx, y:h+ty, z:wz, t:BLOCK.WOOD}); counts[BLOCK.WOOD]++; } // 樹幹
+                    poses.push({x:wx, y:h+5, z:wz, t:BLOCK.LEAVES}); counts[BLOCK.LEAVES]++; // 頂端樹葉
+                    poses.push({x:wx+1, y:h+4, z:wz, t:BLOCK.LEAVES}); counts[BLOCK.LEAVES]++; // 四周樹葉
+                    poses.push({x:wx-1, y:h+4, z:wz, t:BLOCK.LEAVES}); counts[BLOCK.LEAVES]++;
+                    poses.push({x:wx, y:h+4, z:wz+1, t:BLOCK.LEAVES}); counts[BLOCK.LEAVES]++;
+                    poses.push({x:wx, y:h+4, z:wz-1, t:BLOCK.LEAVES}); counts[BLOCK.LEAVES]++;
+                } 
+                // 題目方塊
+                else if(h >= 4 && Math.random() < 0.005) { 
                     const q = new THREE.Mesh(box, MATS[BLOCK.QUESTION]); q.position.set(wx, h+1, wz); q.userData = { isQ:true, wy:h+1 }; scene.add(q); interactables.push(q);
                 }
             }
@@ -356,60 +372,44 @@
         }
 
         // ==========================================
-        // 🌟 新增：Minecraft 風格「人形 NPC」生成器
+        // 🐄 豐富的動物系統 (豬、牛、羊、雞會生蛋)
         // ==========================================
-        function createHumanoidNPC(px, pz, data) {
-            const h = getH(px, pz);
-            const npcGroup = new THREE.Group();
-            npcGroup.position.set(px, h+1, pz);
-            
-            // 定義皮膚顏色 (村民服裝)
-            const skinMat = new THREE.MeshLambertMaterial({color: 0xffccaa});
-            const shirtMat = new THREE.MeshLambertMaterial({color: 0x2563eb});
-            const pantsMat = new THREE.MeshLambertMaterial({color: 0x475569});
+        const ANIMALS = [
+            { type: 'pig', icon: '🐷', hp: 2, drop: 'meat' },
+            { type: 'cow', icon: '🐮', hp: 3, drop: 'beef' },
+            { type: 'sheep', icon: '🐑', hp: 2, drop: 'wool' },
+            { type: 'chicken', icon: '🐔', hp: 1, drop: 'chicken_meat' }
+        ];
+        const animalMats = {};
+        ANIMALS.forEach(a => animalMats[a.type] = gTex('#ffffff', '#eeeeee', a.icon));
 
-            // 臉部加上 Emoji 的特製材質
-            const faceMat = gTex('#ffccaa', '#e2b392', data.icon);
-
-            // 頭 (0.5 x 0.5 x 0.5)
-            const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), [skinMat, skinMat, skinMat, skinMat, faceMat, skinMat]);
-            head.position.set(0, 1.5, 0); npcGroup.add(head);
-
-            // 身體 (0.5 x 0.75 x 0.25)
-            const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.75, 0.25), shirtMat);
-            body.position.set(0, 0.875, 0); npcGroup.add(body);
-
-            // 手腳 (0.25 x 0.75 x 0.25)
-            const armL = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.75, 0.25), skinMat);
-            armL.position.set(-0.375, 0.875, 0); npcGroup.add(armL);
-            const armR = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.75, 0.25), skinMat);
-            armR.position.set(0.375, 0.875, 0); npcGroup.add(armR);
-            
-            const legL = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.75, 0.25), pantsMat);
-            legL.position.set(-0.125, 0.375, 0); npcGroup.add(legL);
-            const legR = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.75, 0.25), pantsMat);
-            legR.position.set(0.125, 0.375, 0); npcGroup.add(legR);
-
-            // 加入隱形的 Hitbox 方便點擊互動
-            const hitbox = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshBasicMaterial({visible: false}));
-            hitbox.position.set(0, 1, 0);
-            hitbox.userData = { isNPC: true, data: data, parentGroup: npcGroup };
-            npcGroup.add(hitbox);
-
-            scene.add(npcGroup); 
-            interactables.push(hitbox); // 加入射線檢測
-            return npcGroup;
+        function spawnAnimal() {
+            let a = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
+            let px = camera.position.x + (Math.random()-0.5)*40;
+            let pz = camera.position.z + (Math.random()-0.5)*40;
+            let h = getH(px, pz);
+            let mesh = new THREE.Mesh(box, animalMats[a.type]);
+            mesh.scale.set(0.8, 0.8, 0.8);
+            mesh.position.set(px, h+1, pz);
+            mesh.userData = { isMob:true, type: a.type, drop: a.drop, hp: a.hp, lastEgg: Date.now() };
+            scene.add(mesh); interactables.push(mesh);
         }
 
-        // 在出生點附近生成村長
-        const mayorData = { id: 'mayor', name: '村長 阿爾伯特', icon: '👴', lore: ['年輕人，這個村子需要你。', '看到地上的黃色方塊了嗎？敲碎它！'], quest: { req: [{id:'wood', c:10}], reward: [{id:'apple', c:5}], txt: '幫我收集建材，我給你蘋果！' } };
-        const theMayor = createHumanoidNPC(startH + 3, startH + 3, mayorData);
-
-        const pigMat = gTex('#fca5a5', '#f87171', '🐷'); const bossMat = gTex('#991b1b', '#7f1d1d', '👹');
+        // 維持場上一直有很多動物
         setInterval(() => {
-            if(Math.random()<0.3) { const p = new THREE.Mesh(box, pigMat); p.scale.set(0.8,0.8,0.8); p.position.set(camera.position.x+(Math.random()-0.5)*30, 20, camera.position.z+(Math.random()-0.5)*30); p.userData={isMob:true, type:'pig'}; scene.add(p); interactables.push(p); }
-            if(Math.random()<0.05) { const b = new THREE.Mesh(box, bossMat); b.scale.set(2,2,2); b.position.set(camera.position.x+(Math.random()-0.5)*30, 20, camera.position.z+(Math.random()-0.5)*30); b.userData={isMob:true, type:'boss', hp:3}; scene.add(b); interactables.push(b); showMsg("⚠️ 知識巨魔出現！", '#ef4444'); }
-        }, 10000);
+            let animalCount = interactables.filter(i => i.userData.isMob && ANIMALS.find(at=>at.type===i.userData.type)).length;
+            if(animalCount < 15) spawnAnimal(); 
+        }, 3000);
+
+        // 巨魔 Boss (低機率)
+        const bossMat = gTex('#991b1b', '#7f1d1d', '👹');
+        setInterval(() => {
+            if(Math.random() < 0.1) {
+                let px = camera.position.x+(Math.random()-0.5)*40, pz = camera.position.z+(Math.random()-0.5)*40;
+                let b = new THREE.Mesh(box, bossMat); b.scale.set(2,2,2); b.position.set(px, getH(px,pz)+2, pz); 
+                b.userData={isMob:true, type:'boss', hp:3, wy:getH(px,pz)+2}; scene.add(b); interactables.push(b); showMsg("⚠️ 知識巨魔出現！", '#ef4444');
+            }
+        }, 60000);
 
         // ==========================================
         // 4. 動態準心與雙搖桿互動控制 (極致操作體驗)
@@ -427,14 +427,8 @@
                     const mat = new THREE.Matrix4(); currentIntersect.object.getMatrixAt(currentIntersect.instanceId, mat);
                     targetBox.position.setFromMatrixPosition(mat);
                 } else {
-                    // 如果碰到的是 NPC 的 hitbox，將瞄準框放大到 1x2x1
-                    if(currentIntersect.object.userData.isNPC) {
-                        targetBox.scale.set(1, 2, 1);
-                        targetBox.position.copy(currentIntersect.object.parent.position).add(new THREE.Vector3(0, 1, 0));
-                    } else {
-                        targetBox.scale.set(1, 1, 1);
-                        targetBox.position.copy(currentIntersect.object.position);
-                    }
+                    targetBox.scale.set(1, 1, 1);
+                    targetBox.position.copy(currentIntersect.object.position);
                 }
             } else { currentIntersect = null; targetBox.visible = false; }
         }
@@ -448,6 +442,11 @@
             if(action === 'interact') {
                 if(obj.userData.isNPC) { openNpc(obj.userData.data); return; }
                 if(obj.userData.isQ || obj.userData.isMob) { openQuiz(obj); return; }
+                // 撿起雞蛋
+                if(obj.userData.isItem && obj.userData.id === 'egg') {
+                    playSnd('success'); playerInventory['egg'] = (playerInventory['egg']||0) + 1; showMsg('撿起 🥚雞蛋');
+                    scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); renderUI(); return;
+                }
             }
             if(action === 'break') {
                 modifyStat('energy', -2); playSnd('break');
@@ -468,9 +467,7 @@
                 const itemId = invKeys[selectedSlot]; const itemDef = ITEM_REGISTRY[itemId];
                 if(itemDef && itemDef.isBlock && !obj.userData.isNPC) {
                     playerInventory[itemId]--; renderUI(); playSnd('place'); modifyStat('energy', -1);
-                    // 如果碰到的是地形，則在其表面放置
                     const placePos = targetBox.position.clone().add(currentIntersect.face ? currentIntersect.face.normal : new THREE.Vector3(0,1,0));
-                    // 修正 targetBox scale 影響
                     targetBox.scale.set(1,1,1);
                     const newBlock = new THREE.Mesh(box, MATS[itemDef.bType]); newBlock.position.copy(placePos); scene.add(newBlock); interactables.push(newBlock);
                 }
@@ -505,7 +502,7 @@
             aimVector.x = nx / 60; aimVector.y = ny / 60; 
         }
 
-        // ==== 電腦滑鼠控制 ====
+        // ==== 電腦控制 (防呆鍵盤 + 游標瞄準) ====
         const crosshairEl = document.getElementById('crosshair');
         document.addEventListener('mousemove', e => {
             crosshairEl.style.left = e.clientX + 'px'; crosshairEl.style.top = e.clientY + 'px';
@@ -516,40 +513,29 @@
             if (e.target.tagName === 'CANVAS') { interact('interact'); interact('break'); }
         });
 
+        // 🚀 關鍵修復：防大寫/防中文輸入法卡死
+        document.addEventListener('keydown', e => { 
+            let k = e.key.toLowerCase();
+            if(keys.hasOwnProperty(k)) keys[k] = true; 
+        });
+        document.addEventListener('keyup', e => { 
+            let k = e.key.toLowerCase();
+            if(keys.hasOwnProperty(k)) keys[k] = false; 
+        });
+
         // ==========================================
         // 5. 答題獲得 XP 與 GAS 寫入 (含防當機機制)
         // ==========================================
-        function openNpc(data) {
-            activeInteractObj = data; document.getElementById('npc-dialog').style.display = 'block';
-            document.getElementById('npc-name').innerHTML = `${data.icon} ${data.name}`;
-            document.getElementById('npc-lore').innerText = `"${data.lore[Math.floor(Math.random()*data.lore.length)]}"`;
-            document.getElementById('npc-submit').onclick = () => {
-                if(data.quest.req.every(r => (playerInventory[r.id] || 0) >= r.c)) {
-                    data.quest.req.forEach(r => playerInventory[r.id] -= r.c); data.quest.reward.forEach(r => playerInventory[r.id] = (playerInventory[r.id]||0) + r.c);
-                    playSnd('success'); showMsg(`完成任務！`, '#10b981'); renderUI(); closeUI();
-                } else { showMsg("材料不足！", '#ef4444'); playSnd('error'); }
-            };
-        }
-
         function openQuiz(obj) {
             activeInteractObj = obj; document.getElementById('quiz-overlay').style.display = 'block';
             let title = obj.userData.type === 'boss' ? `👹 知識巨魔 (剩餘血量: ${obj.userData.hp})` : "❓ 知識挑戰 (+200 XP)";
             document.getElementById('quiz-title').innerHTML = title;
             document.getElementById('quiz-options').innerHTML = '載入中...';
             
-            // 🚀 關鍵防呆機制：確保如果沒抓到題目，給一題預設題目，絕不當機！
             let currentSubject = new URLSearchParams(window.location.search).get('subject') || 'math';
             let qList = [];
-            
-            try {
-                if(typeof window.generatePaper === 'function') {
-                    qList = window.generatePaper({ subject: currentSubject, total: 1 });
-                }
-            } catch(e) { console.error("題庫生成失敗:", e); }
-            
-            if (!qList || qList.length === 0 || !qList[0]) {
-                qList = [{ question: "系統連線異常，這是一題備用測試題: 1+1=?", options: ["1", "2", "3", "4"], answer: 1 }];
-            }
+            try { if(typeof window.generatePaper === 'function') qList = window.generatePaper({ subject: currentSubject, total: 1 }); } catch(e) {}
+            if (!qList || qList.length === 0 || !qList[0]) qList = [{ question: "測試題: 1+1=?", options: ["1", "2", "3", "4"], answer: 1 }];
 
             const q = qList[0]; 
             document.getElementById('quiz-question').innerHTML = q.question.replace(/\n/g, '<br>');
@@ -563,17 +549,22 @@
                         if(obj.userData.type === 'boss') {
                             obj.userData.hp--;
                             if(obj.userData.hp <= 0) {
-                                showMsg("🎉 擊退巨魔！獲得 100 XP 與鑽石！", '#10b981'); spawnParticles(obj.position);
+                                showMsg("🎉 擊退巨魔！獲得 1000 XP 與鑽石！", '#10b981'); spawnParticles(obj.position);
                                 playerInventory['diamond'] = (playerInventory['diamond']||0)+5;
-                                syncGASXP(100, "擊退知識巨魔"); 
+                                syncGASXP(1000, "擊退知識巨魔"); 
                                 scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); closeUI(); renderUI();
                             } else { showMsg(`✅ 攻擊成功！巨魔剩血：${obj.userData.hp}`, '#fbbf24'); openQuiz(obj); }
-                        } else if(obj.userData.type === 'pig') {
-                            showMsg("🍖 獲得生肉！", '#10b981'); playerInventory['meat'] = (playerInventory['meat']||0)+2; spawnParticles(obj.position);
+                        } else if(ANIMALS.find(a => a.type === obj.userData.type)) {
+                            // 打倒動物掉落專屬肉類/毛皮
+                            let dropItem = obj.userData.drop;
+                            let dropName = ITEM_REGISTRY[dropItem].name;
+                            showMsg(`🍖 獲得 ${dropName}！`, '#10b981'); 
+                            playerInventory[dropItem] = (playerInventory[dropItem]||0)+2; 
+                            spawnParticles(obj.position);
                             scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); closeUI(); renderUI();
                         } else {
-                            showMsg("🎉 答對！獲得物資與 20 XP", '#10b981'); modifyStat('energy', 20); playerInventory['apple'] = (playerInventory['apple']||0)+2;
-                            syncGASXP(20, "解開知識方塊"); 
+                            showMsg("🎉 答對！獲得物資與 200 XP", '#10b981'); modifyStat('energy', 20); playerInventory['apple'] = (playerInventory['apple']||0)+2;
+                            syncGASXP(200, "解開知識方塊"); 
                             spawnParticles(obj.position); scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); closeUI(); renderUI();
                         }
                     } else { 
@@ -586,10 +577,19 @@
         }
 
         const clock = new THREE.Clock();
+        let dayTime = 8; // 遊戲時間 (0~24)
         
         function animate() {
             requestAnimationFrame(animate); const delta = Math.min(clock.getDelta(), 0.1); const time = Date.now();
             
+            // 🌤️ 日夜循環系統
+            dayTime = (dayTime + delta * 0.1) % 24;
+            let isNight = dayTime > 18 || dayTime < 6;
+            document.getElementById('time-display').innerText = isNight ? '黑夜 (危險)' : '白晝';
+            scene.background.setHSL(0.6, 0.5, isNight ? 0.05 : 0.6);
+            scene.fog.color.setHSL(0.6, 0.5, isNight ? 0.05 : 0.6);
+            dirLight.intensity = isNight ? 0.1 : 0.8;
+
             if(isAiming) {
                 camera.rotation.y -= aimVector.x * 0.03; camera.rotation.x -= aimVector.y * 0.03;
                 camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x)); camera.rotation.order = 'YXZ';
@@ -598,8 +598,11 @@
 
             updateRaycast();
 
+            // 🚀 電腦移動完全修復 (防呆三元運算子)
             let speed = (energy > 0 ? 6 : 2);
-            let dz = Number(keys.w) - Number(keys.s); let dx = Number(keys.d) - Number(keys.a);
+            let dz = (keys.w ? 1 : 0) - (keys.s ? 1 : 0); 
+            let dx = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
+            
             if(dz !== 0 || dx !== 0) {
                 const euler = new THREE.Euler(0, camera.rotation.y, 0, 'YXZ');
                 const velocity = new THREE.Vector3(dx * speed, 0, -dz * speed);
@@ -613,15 +616,25 @@
             const cx = Math.floor(px/16), cz = Math.floor(pz/16);
             for(let x=-2; x<=2; x++) for(let z=-2; z<=2; z++) { const key = `${cx+x},${cz+z}`; if(!chunks.has(key)) genChunk(cx+x, cz+z); else chunks.get(key).group.visible = true; }
 
-            // NPC 永遠面向攝影機
-            if (theMayor) {
-                theMayor.lookAt(camera.position.x, theMayor.position.y, camera.position.z);
-            }
-
+            // 🐔 動物行為與雞下蛋
             interactables.forEach(b => {
                 if(b.userData.isQ) { b.rotation.y += 0.02; b.position.y = b.userData.wy + Math.sin(time*0.002)*0.2; }
                 if(b.userData.isMob) {
-                    if(b.userData.type === 'pig') { b.position.x += Math.sin(time*0.001+b.id)*0.02; b.position.z += Math.cos(time*0.001+b.id)*0.02; b.position.y = getH(b.position.x, b.position.z)+1; } 
+                    if(ANIMALS.find(a=>a.type===b.userData.type)) { 
+                        b.position.x += Math.sin(time*0.001+b.id)*0.02; b.position.z += Math.cos(time*0.001+b.id)*0.02; b.position.y = getH(b.position.x, b.position.z)+1; 
+                        
+                        // 雞下蛋機制 (每 15 秒機率下蛋)
+                        if(b.userData.type === 'chicken' && time - b.userData.lastEgg > 15000) {
+                            b.userData.lastEgg = time;
+                            if(Math.random() < 0.5) {
+                                playSnd('egg');
+                                let egg = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.4,0.4), gTex('#ffffff', '#eeeeee', '🥚'));
+                                egg.position.set(b.position.x, b.position.y - 0.2, b.position.z);
+                                egg.userData = { isItem: true, id: 'egg' };
+                                scene.add(egg); interactables.push(egg);
+                            }
+                        }
+                    } 
                     else if(b.userData.type === 'boss') { b.rotation.y += 0.01; b.position.y = b.userData.wy + Math.sin(time*0.005)*0.5; }
                 }
             });
