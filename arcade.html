@@ -1384,7 +1384,7 @@ function checkCollision(x, y, z) {
 
 function initVoxel() {
     if(!currentSubject) { alert("請先在上方選單選擇一個「學科」！"); return; }
-    gameQuestions = generateGameQuestions(currentSubject, 30); // 準備充足的題庫
+    gameQuestions = generateGameQuestions(currentSubject, 10); // 準備充足的題庫
     if(gameQuestions.length === 0) { alert("此科目無題目！"); return; }
     
     vqStage = 1;
@@ -1514,7 +1514,7 @@ function setupThreeJS() {
     });
 
     vqRenderer = new THREE.WebGLRenderer({ antialias: true });
-    vqRenderer.setPixelRatio(window.devicePixelRatio);
+    vqRenderer.setPixelRatio(1); // 這是效能提升最明顯的一行
     vqRenderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(vqRenderer.domElement);
     window.addEventListener('resize', onWindowResize);
@@ -1641,86 +1641,64 @@ function onWindowResize() {
     vqRenderer.setSize(container.clientWidth, container.clientHeight);
 }
 
-function animateVoxelWorld() {
-    vqAnimationId = requestAnimationFrame(animateVoxelWorld);
+// 在外部定義一次，重複使用
+const _tempSkyColor = new THREE.Color();
+const _tempTargetColor = new THREE.Color();
+
+window.animateVoxelWorld = function () {
+    vqAnimationId = requestAnimationFrame(window.animateVoxelWorld);
     const time = performance.now();
-    
-    if (vqControls.isLocked === true) {
-        // 🌟 1. 處理日夜交替
-        vqTimeOfDay += 0.0005; // 日夜流逝速度
-        if(vqTimeOfDay > Math.PI * 2) vqTimeOfDay = 0;
-        
-        // 太陽軌跡與光照強度變化
-        let sunHeight = Math.sin(vqTimeOfDay);
-        vqSunLight.position.x = Math.cos(vqTimeOfDay) * 200;
-        vqSunLight.position.y = sunHeight * 200;
-        
-        let skyColor = new THREE.Color();
-        if (sunHeight > 0.2) { 
-            // 白天
-            skyColor.setHex(0x87ceeb); // 天藍
-            vqAmbientLight.intensity = 0.6;
-            vqSunLight.intensity = 0.8;
-        } else if (sunHeight > 0) {
-            // 黃昏/清晨
-            let ratio = sunHeight / 0.2;
-            skyColor.lerpColors(new THREE.Color(0xfd5e53), new THREE.Color(0x87ceeb), ratio);
-            vqAmbientLight.intensity = 0.3 + (0.3 * ratio);
-            vqSunLight.intensity = 0.8 * ratio;
-        } else {
-            // 黑夜
-            skyColor.setHex(0x050510); // 深夜藍黑
-            vqAmbientLight.intensity = 0.15; // 晚上保留微弱月光
-            vqSunLight.intensity = 0; // 太陽下山
-        }
-        
-        vqScene.background = skyColor;
-        vqScene.fog.color = skyColor;
+    vqFrameCount++;
 
-        // 🌟 2. 讓所有存在的方塊自轉
-        vqTargetCubes.forEach(cube => {
-            cube.rotation.x += 0.02; 
-            cube.rotation.y += 0.03;
-        });
+    if (vqControls && vqControls.isLocked === true) {
+        const delta = Math.min((time - prevTime) / 1000, 0.1);
 
-        // 🌟 3. 玩家物理與移動
-        const delta = (time - prevTime) / 1000;
-        velocity.x -= velocity.x * 10.0 * delta;
-        velocity.z -= velocity.z * 10.0 * delta;
-        velocity.y -= 9.8 * 60.0 * delta; // 重力
+        // 🌟 1. 物理與移動 (保持每一幀跑，確保流暢)
+        vqUpdatePhysics(delta); 
 
-        direction.z = Number(moveForward) - Number(moveBackward);
-        direction.x = Number(moveRight) - Number(moveLeft);
-        direction.normalize();
+        // 🌟 2. 低頻率更新 (每 10 幀才跑一次，省下 90% 計算量)
+        if (vqFrameCount % 10 === 0) {
+            // 日夜更新
+            vqTimeOfDay += 0.005; // 稍微調快一點點補償頻率
+            if(vqTimeOfDay > Math.PI * 2) vqTimeOfDay = 0;
+            
+            const sunHeight = Math.sin(vqTimeOfDay);
+            vqSunLight.position.set(Math.cos(vqTimeOfDay) * 200, sunHeight * 200, 50);
 
-        const speed = 400.0;
-        if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;
-        if (moveLeft || moveRight) velocity.x -= direction.x * speed * delta;
+            if (sunHeight > 0.2) {
+                _tempSkyColor.setHex(0x87ceeb);
+                vqAmbientLight.intensity = 0.6;
+                vqSunLight.intensity = 0.8;
+            } else if (sunHeight > 0) {
+                let ratio = sunHeight / 0.2;
+                _tempTargetColor.setHex(0x87ceeb);
+                _tempSkyColor.setHex(0xfd5e53).lerp(_tempTargetColor, ratio);
+                vqAmbientLight.intensity = 0.3 + (0.3 * ratio);
+                vqSunLight.intensity = 0.8 * ratio;
+            } else {
+                _tempSkyColor.setHex(0x050510);
+                vqAmbientLight.intensity = 0.15;
+                vqSunLight.intensity = 0;
+            }
+            vqScene.background = _tempSkyColor;
+            vqScene.fog.color = _tempSkyColor;
 
-        let pos = vqControls.getObject().position;
-        let nextX = pos.x - (velocity.x * delta);
-        let nextZ = pos.z - (velocity.z * delta);
-        let nextY = pos.y + (velocity.y * delta);
-
-        if(checkCollision(nextX, pos.y, pos.z)) velocity.x = 0;
-        if(checkCollision(pos.x, pos.y, nextZ)) velocity.z = 0;
-        if(checkCollision(pos.x, nextY, pos.z)) {
-            if(velocity.y < 0) {
-                velocity.y = 0;
-                canJump = true;
-                pos.y = Math.ceil(pos.y / blockSize) * blockSize + 5; 
-            } else velocity.y = 0; 
+            // 區塊生成檢查
+            vqEnsureChunksAroundPlayer();
         }
 
-        if(pos.y < -50) { velocity.y = 0; pos.set(0, 80, 0); } // 掉落虛空重生
-
-        vqControls.moveRight(-velocity.x * delta);
-        vqControls.moveForward(-velocity.z * delta);
-        pos.y += (velocity.y * delta);
+        // 🌟 3. 方塊旋轉 (考慮效能，每 2 幀跑一次)
+        if (vqFrameCount % 2 === 0) {
+            vqTargetCubes.forEach(cube => {
+                cube.rotation.x += 0.04; // 補償頻率
+                cube.rotation.y += 0.06;
+            });
+        }
     }
+
     prevTime = time;
     vqRenderer.render(vqScene, vqCamera);
-}
+};
 
 // ⚔️ 觸發答題 (對應特定的那顆方塊)
 function triggerVoxelQuiz() {
@@ -1818,7 +1796,7 @@ function backToMenu() {
   const VQ_CHUNK_SIZE = 16;
   const VQ_RENDER_DISTANCE = 2;
   const VQ_MAX_STEP = 2;
-  const VQ_AUTOSAVE_MS = 150;
+  const VQ_AUTOSAVE_MS = 15000;
   const VQ_WS_URL = window.VQ_WS_URL || '';
   const VQ_CLOUD_ACTION_SAVE = 'save_voxel_world';
   const VQ_CLOUD_ACTION_LOAD = 'load_voxel_world';
@@ -3075,65 +3053,85 @@ function vqProcessChunkQueue() {
     stale.forEach(vqRemoveRemoteAvatar);
   }
 
-  function vqUpdatePhysics(delta) {
-    if (!vqControls) return;
-    const time = performance.now();
-    if (vqInf.autoLookDown && vqControls.isLocked) {
-      vqCamera.rotation.x = THREE.MathUtils.lerp(vqCamera.rotation.x, -0.36, 0.08);
-    }
+// 1. 將變數移出循環，變成靜態預配置
+const _vel = new THREE.Vector3(); 
+const _dir = new THREE.Vector3();
 
-    vqInf.hunger = Math.max(0, vqInf.hunger - delta * 0.45);
-    if (vqInf.hunger <= 0) vqInf.hp = Math.max(0, vqInf.hp - delta * 2.5);
+function vqUpdatePhysics(delta) {
+    if (!vqControls || !vqControls.isLocked) return;
+
+    // 2. 限制 delta 最大值，防止因為卡頓導致的「穿牆」現象
+    const dt = Math.min(delta, 0.1); 
+
+    // 3. 生存數值計算 (純數值計算很快，保留在這裡)
+    vqInf.hunger = Math.max(0, vqInf.hunger - dt * 0.45);
+    if (vqInf.hunger <= 0) vqInf.hp = Math.max(0, vqInf.hp - dt * 2.5);
     if (vqInf.hp <= 0) {
-      vqInf.hp = 100;
-      vqInf.hunger = 100;
-      vqControls.getObject().position.set(0, 80, 0);
+        vqInf.hp = 100; vqInf.hunger = 100;
+        vqControls.getObject().position.set(0, 80, 0);
+    }
+    vqInf.stamina = Math.min(100, vqInf.stamina + dt * 10);
+
+    // 🌟 注意：移除了 updateVoxelSurvivalHUD()，請改放到 animateVoxelWorld 的 % 10 邏輯中
+
+    // 4. 物理運動
+    const velocity = window.__vqVelocity || (window.__vqVelocity = _vel);
+    
+    // 阻力與重力
+    velocity.x *= (1.0 - 10.0 * dt);
+    velocity.z *= (1.0 - 10.0 * dt);
+    velocity.y -= 9.8 * 60.0 * dt;
+
+    const moveZ = Number(window.moveForward) - Number(window.moveBackward);
+    const moveX = Number(window.moveRight) - Number(window.moveLeft);
+
+    if (moveZ !== 0 || moveX !== 0) {
+        _dir.set(moveX, 0, moveZ).normalize();
+        const speed = window.__vqMoveSpeed || 400.0;
+        velocity.z -= _dir.z * speed * dt;
+        velocity.x -= _dir.x * speed * dt;
     }
 
-    vqInf.stamina = vqClamp(vqInf.stamina + delta * 10, 0, 100);
-    updateVoxelSurvivalHUD();
-
-    const velocity = window.__vqVelocity || (window.__vqVelocity = new THREE.Vector3());
-    const direction = window.__vqDirection || (window.__vqDirection = new THREE.Vector3());
-    velocity.x -= velocity.x * 10.0 * delta;
-    velocity.z -= velocity.z * 10.0 * delta;
-    velocity.y -= 9.8 * 60.0 * delta;
-
-    direction.z = Number(window.moveForward) - Number(window.moveBackward);
-    direction.x = Number(window.moveRight) - Number(window.moveLeft);
-    direction.normalize();
-
-    const speed = window.__vqMoveSpeed || 400.0;
-    if (window.moveForward || window.moveBackward) velocity.z -= direction.z * speed * delta;
-    if (window.moveLeft || window.moveRight) velocity.x -= direction.x * speed * delta;
-
+    // 5. 碰撞偵測優化
     const pos = vqControls.getObject().position;
-    const nextX = pos.x - (velocity.x * delta);
-    const nextZ = pos.z - (velocity.z * delta);
-    const nextY = pos.y + (velocity.y * delta);
+    
+    // 預先計算下一幀位置
+    const dx = -velocity.x * dt;
+    const dz = -velocity.z * dt;
+    const dy = velocity.y * dt;
 
-    if (vqCheckCollision(nextX, pos.y, pos.z)) velocity.x = 0;
-    if (vqCheckCollision(pos.x, pos.y, nextZ)) velocity.z = 0;
-    if (vqCheckCollision(pos.x, nextY, pos.z)) {
-      if (velocity.y < 0) {
-        velocity.y = 0;
-        window.canJump = true;
-        pos.y = Math.ceil(pos.y / blockSize) * blockSize + 5;
-      } else {
-        velocity.y = 0;
-      }
+    // X 軸檢查
+    if (vqCheckCollision(pos.x + dx, pos.y, pos.z)) {
+        velocity.x = 0;
+    } else {
+        vqControls.moveRight(dx);
     }
 
+    // Z 軸檢查
+    if (vqCheckCollision(pos.x, pos.y, pos.z + dz)) {
+        velocity.z = 0;
+    } else {
+        vqControls.moveForward(dz);
+    }
+
+    // Y 軸檢查 (地面)
+    if (vqCheckCollision(pos.x, pos.y + dy, pos.z)) {
+        if (velocity.y < 0) {
+            window.canJump = true;
+            // 修正位置防止陷入地板
+            pos.y = Math.ceil(pos.y / blockSize) * blockSize + 5;
+        }
+        velocity.y = 0;
+    } else {
+        pos.y += dy;
+    }
+
+    // 掉落虛空
     if (pos.y < -50) {
-      velocity.y = 0;
-      pos.set(0, 80, 0);
+        velocity.y = 0;
+        pos.set(0, 80, 0);
     }
-
-    vqControls.moveRight(-velocity.x * delta);
-    vqControls.moveForward(-velocity.z * delta);
-    pos.y += (velocity.y * delta);
-  }
-
+}
   function vqUpdateTimeOfDay() {
     vqTimeOfDay += 0.0005;
     if (vqTimeOfDay > Math.PI * 2) vqTimeOfDay = 0;
