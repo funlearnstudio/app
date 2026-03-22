@@ -1816,9 +1816,9 @@ function backToMenu() {
   const _origTriggerVoxelQuiz = window.triggerVoxelQuiz;
 
   const VQ_CHUNK_SIZE = 16;
-  const VQ_RENDER_DISTANCE = 3;
+  const VQ_RENDER_DISTANCE = 2;
   const VQ_MAX_STEP = 2;
-  const VQ_AUTOSAVE_MS = 15000;
+  const VQ_AUTOSAVE_MS = 150;
   const VQ_WS_URL = window.VQ_WS_URL || '';
   const VQ_CLOUD_ACTION_SAVE = 'save_voxel_world';
   const VQ_CLOUD_ACTION_LOAD = 'load_voxel_world';
@@ -3355,31 +3355,47 @@ function vqProcessChunkQueue() {
     prevTime = performance.now();
     window.animateVoxelWorld();
   };
+let vqFrameCount = 0; // 在函數外定義計數器
 
-  window.animateVoxelWorld = function () {
+window.animateVoxelWorld = function () {
     vqAnimationId = requestAnimationFrame(window.animateVoxelWorld);
     const time = performance.now();
+    vqFrameCount++;
 
     if (vqControls && vqControls.isLocked === true) {
-      const delta = (time - prevTime) / 1000;
-      vqUpdateTimeOfDay();
-      vqEnsureChunksAroundPlayer();
-      vqSpawnMonsterNearPlayer();
-      vqUpdateAnimals(delta);
-      vqUpdateMonsters(delta);
-      vqUpdateFallingPieces(delta);
-      vqUpdateHighlight();
-      vqUpdatePhysics(delta);
-      vqSendLocalState();
-      vqUpdateNetCleanup();
-      vqUpdateHUD();
-      vqInf.lastMouseWorldHit = vqInf.currentTargetBlock;
+        const delta = (time - prevTime) / 1000;
+
+        // --- 1. 每一幀都要做的 (必須流暢的移動與渲染) ---
+        vqUpdatePhysics(delta); 
+        vqUpdateHUD();
+
+        // --- 2. 每 2 幀才做的 (節省 50% 計算量) ---
+        if (vqFrameCount % 2 === 0) {
+            vqUpdateHighlight();
+            vqUpdateFallingPieces(delta * 2);
+        }
+
+        // --- 3. 每 10 幀才做的 (環境與生成，約 0.16 秒一次) ---
+        if (vqFrameCount % 10 === 0) {
+            vqUpdateTimeOfDay();
+            vqEnsureChunksAroundPlayer(); // 這是最吃效能的，絕對不能每幀跑
+            vqSpawnMonsterNearPlayer();
+        }
+
+        // --- 4. 每 20 幀才做的 (AI 與網路，約 0.3 秒一次) ---
+        if (vqFrameCount % 20 === 0) {
+            vqUpdateAnimals(delta * 20);
+            vqUpdateMonsters(delta * 20);
+            vqSendLocalState();
+            vqUpdateNetCleanup();
+        }
+
+        vqInf.lastMouseWorldHit = vqInf.currentTargetBlock;
     }
 
     prevTime = time;
     if (vqRenderer && vqScene && vqCamera) vqRenderer.render(vqScene, vqCamera);
-  };
-
+};
   window.backToMenu = function () {
     if (vqAnimationId) cancelAnimationFrame(vqAnimationId);
     if (vqInf.cloudTimer) clearTimeout(vqInf.cloudTimer);
