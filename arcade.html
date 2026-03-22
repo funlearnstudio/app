@@ -1373,42 +1373,33 @@ function getBlock(x, y, z) {
     if(worldGrid[x] && worldGrid[x][y]) return worldGrid[x][y][z];
     return undefined;
 }
-
 // ==========================================
-// 🛡️ 1. 修正碰撞偵測 (加入基岩層，防止無限掉落)
-// ==========================================
-// ==========================================
-// 🛡️ 1. 修正碰撞偵測 (讓你能在草地上滑順走路，不再卡死！)
-// ==========================================
-// ==========================================
-// 🛡️ 終極碰撞偵測 (修正命名為 vqCheckCollision)
+// 🛡️ 終極碰撞偵測 (強制綁定在 window 上，保證絕對找得到！)
 // ==========================================
 window.vqCheckCollision = function(x, y, z) {
-    // 絕對防護網：萬一掉太深，強制托住 (通常不會發生了)
-    if (y < -100) return true;
+    // 絕對防護網：如果你掉到 -50，直接強制判定為踩到地板托住你
+    if (y < -50) return true;
 
-    // 將真實座標轉換為方塊網格座標
-    let blockSize = window.blockSize || 10; // 確保有 blockSize
-    let bx = Math.round(x / blockSize);
-    let by = Math.round((y - 5) / blockSize); // 玩家腳底的格子
-    let bz = Math.round(z / blockSize);
+    let currentBlockSize = window.blockSize || 10;
+    let bx = Math.round(x / currentBlockSize);
+    let by = Math.round((y - 5) / currentBlockSize); // 玩家腳底的格子
+    let bz = Math.round(z / currentBlockSize);
 
-    // 內部查表函數：檢查某個座標是否有實體方塊
+    // 檢查某個網格座標是否有實體方塊
     function checkSolid(wx, wy, wz) {
-        // 1. 檢查是不是撞到我們的「5顆題目方塊」
-        if (typeof getBlock === 'function' && getBlock(wx, wy, wz)) return true;
+        // 1. 檢查舊版手動物件 (例如 5 顆題目方塊)
+        if (typeof window.getBlock === 'function' && window.getBlock(wx, wy, wz)) return true;
         
-        // 2. 檢查是不是撞到「動態生成的生態區塊」
+        // 2. 檢查新版無限生態區塊
         const VQ_CHUNK_SIZE = 16; 
         const cx = Math.floor(wx / VQ_CHUNK_SIZE);
         const cz = Math.floor(wz / VQ_CHUNK_SIZE);
         
-        // 確保 vqInf 存在再讀取
-        if (typeof vqInf !== 'undefined' && vqInf.chunks) {
-            const chunk = vqInf.chunks.get(`${cx},${cz}`); 
+        if (typeof window.vqInf !== 'undefined' && window.vqInf.chunks) {
+            const chunk = window.vqInf.chunks.get(`${cx},${cz}`); 
             if (chunk && chunk.baseLookup) {
                 const blockType = chunk.baseLookup.get(`${wx}|${wy}|${wz}`);
-                // 如果該位置有方塊，且不是水或可穿透的花草，就判定為撞牆/踩到地板！
+                // 只要不是水或可穿透的植物，就是撞到牆或踩到地板
                 if (blockType && blockType !== 'water' && blockType !== 'tall_grass' && 
                     blockType !== 'red_flower' && blockType !== 'yellow_flower') {
                     return true;
@@ -1418,11 +1409,11 @@ window.vqCheckCollision = function(x, y, z) {
         return false;
     }
 
-    // 檢查腳底 (by) 和 身體 (by+1) 是否撞到東西
-    return checkSolid(bx, by, bz) || checkSolid(bx, by + 1, bz);
+    // 檢查腳底 (by)、身體 (by+1) 甚至稍微往下探一點 (by-1)，確保萬無一失
+    return checkSolid(bx, by, bz) || checkSolid(bx, by + 1, bz) || checkSolid(bx, by - 1, bz);
 };
 
-// 為了防止有其他地方還在叫舊名字，我們買個雙重保險
+// 買個雙重保險，不管遊戲是用哪個名字呼叫，都指派給這個函數
 window.checkCollision = window.vqCheckCollision;
 
 // ==========================================
