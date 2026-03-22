@@ -670,67 +670,69 @@ const ITEM_REGISTRY = {
         setupJoy('joystick-move', 'knob-move', moveInput);
         setupJoy('joystick-look', 'knob-look', lookInput);
 
-        // 遊戲主迴圈
+       const clock = new THREE.Clock(); // 確保這行在 updateGame 之外定義
+
         function updateGame() {
             requestAnimationFrame(updateGame);
-            const delta = clock.getDelta(); const time = Date.now();
-            if(isQuizOpen) { renderer.render(scene, camera); return; }
+            const delta = clock.getDelta();
+            
+            // 🛡️ 如果題目視窗開啟，只渲染畫面不更新邏輯
+            if (isBossQuizOpen || isQuizOpen) { 
+                renderer.render(scene, camera); 
+                return; 
+            }
 
-            // 1. 視角
-            camera.rotation.y -= lookInput.x * 0.05;
-            camera.rotation.x -= lookInput.y * 0.05;
+            // 1. 視角旋轉 (加上平滑係數，避免轉太快)
+            // 建議 lookInput.x/y 在搖桿處置時已經縮小過，或是這裡乘上更小的係數
+            camera.rotation.y -= lookInput.x * 0.02;
+            camera.rotation.x -= lookInput.y * 0.02;
             camera.rotation.x = Math.max(-1.5, Math.min(1.5, camera.rotation.x));
             
-            // 2. 移動與地形延伸
-            const speed = 0.15; const dir = new THREE.Vector3();
-            if(keysPressed['w']) dir.z -= 1; if(keysPressed['s']) dir.z += 1;
-            if(keysPressed['a']) dir.x -= 1; if(keysPressed['d']) dir.x += 1;
-            if(moveInput.x !== 0 || moveInput.y !== 0) { dir.x += moveInput.x; dir.z += moveInput.y; }
-            if(dir.length()>0) {
+            // 2. 移動邏輯
+            const speed = 0.15; 
+            const dir = new THREE.Vector3();
+            
+            // 鍵盤控制
+            if(keysPressed['w']) dir.z -= 1; 
+            if(keysPressed['s']) dir.z += 1;
+            if(keysPressed['a']) dir.x -= 1; 
+            if(keysPressed['d']) dir.x += 1;
+            
+            // 搖桿控制補強
+            if(moveInput.x !== 0 || moveInput.y !== 0) { 
+                dir.x += moveInput.x; 
+                dir.z += moveInput.y; 
+            }
+
+            if(dir.length() > 0) {
+                // 將移動方向轉向攝影機面對的方向（只繞 Y 軸旋轉）
                 dir.normalize().applyAxisAngle(new THREE.Vector3(0,1,0), camera.rotation.y);
                 camera.position.addScaledVector(dir, speed);
-                updateInfiniteTerrain();
+                
+                // 只有移動時才更新無限地形檢查，節省效能
+                if (typeof updateInfiniteTerrain === 'function') {
+                    updateInfiniteTerrain();
+                }
             }
 
-            // 3. 重力 與 準心瞄準
-            playerVelocityY = blocks.has(getBlockKey(camera.position.x, camera.position.y-1.8, camera.position.z)) ? 0 : playerVelocityY - 0.01;
-            camera.position.y += playerVelocityY; if(camera.position.y < -10) resetPlayer();
+            // 3. 更新實體 AI (動物移動)
+            updateEntities(delta);
+
+            // 4. 更新準心系統 (顯示目標資訊)
             updateCrosshairSystem();
 
-            // 4. 🧭 閻羅王導航 UI 更新
-            if(bossEntity) {
+            // 5. 魔王特效 (讓黑紅方塊有呼吸感)
+            if (bossEntity) {
+                const scale = 1 + Math.sin(Date.now() * 0.005) * 0.1;
+                bossEntity.scale.set(scale, scale, scale);
+                // 更新導航指標距離
                 const dist = Math.floor(camera.position.distanceTo(bossEntity.position));
                 document.getElementById('boss-dist').innerText = dist;
-                // 魔王脈動效果
-                bossEntity.scale.set(2 + Math.sin(time*0.005)*0.1, 2 + Math.sin(time*0.005)*0.1, 2 + Math.sin(time*0.005)*0.1);
             }
 
-            // 5. 動物 AI (自動跳躍)
-            entities.forEach(ent => {
-                const group = ent.group; const data = group.userData;
-                if (time > ent.nextStateTime) {
-                    const rnd = Math.random();
-                    if(rnd < 0.4) { ent.state = 'idle'; ent.velocity.set(0,0,0); }
-                    else { ent.state = 'wander'; ent.velocity.set((Math.random()-0.5)*0.03, 0, (Math.random()-0.5)*0.03); }
-                    ent.nextStateTime = time + 2000 + Math.random()*3000;
-                }
-                // 移動與跳躍
-                const nextPos = group.position.clone().add(ent.velocity);
-                const blockAheadKey = getBlockKey(nextPos.x, group.position.y, nextPos.z);
-                if(blocks.has(blockAheadKey) && !data.isJumping) {
-                    data.velY = 0.15; data.isJumping = true; // 自動跳躍
-                }
-                group.position.add(ent.velocity);
-                const feetKey = getBlockKey(group.position.x, group.position.y-0.1, group.position.z);
-                data.velY = blocks.has(feetKey) ? Math.max(0, data.velY) : data.velY - 0.01;
-                if(blocks.has(feetKey)) data.isJumping = false;
-                group.position.y += data.velY;
-                if(g.position.y < -5) g.position.y = 5; // 掉落防呆
-            });
-
+            // 最後：渲染畫面
             renderer.render(scene, camera);
         }
-
         // 初始化
         window.onload = () => { renderUI(); updateStats(0,0); updateGame(); };
         window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
