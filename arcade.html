@@ -85,6 +85,11 @@
         }
     });
 </script>
+    <script>
+function startGame(id) {
+    console.log("startGame called:", id);
+}
+</script>
 <body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden">
 <div id="star-container"></div>
     <header class="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-30">
@@ -488,50 +493,52 @@
     let timerInterval;
  const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
 const ThemeEngine = {
-    apply: async function(usernameOrKey) {
+    apply: async function(username) {
         const body = document.body;
-        const rawUserKey = typeof usernameOrKey === 'string' ? usernameOrKey.trim() : '';
-        const lookupUsername = rawUserKey && isNaN(Number(rawUserKey)) ? rawUserKey : '';
-
-        console.log("🚀 [ThemeEngine] 啟動快照優先模式。輸入:", usernameOrKey);
+        console.log("🚀 [ThemeEngine] 啟動快照優先模式。用戶:", username);
 
         // --- 階段 1：立即從本地讀取 ---
+        // 抓取整個物件，而不只是 XP，這樣更新時才不會丟失姓名等資料
         let userRaw = localStorage.getItem('currentUser');
         let userDataLocal = userRaw ? JSON.parse(userRaw) : { xp: 0 };
         let currentXP = Number(userDataLocal.xp) || 0;
-
+        
         console.log("📦 [本地快照] 當前 XP:", currentXP);
-        this.updateThemeUI(currentXP);
-
-        // 如果沒有可用的帳號名稱，就只做本地主題更新，不做雲端同步
-        if (!lookupUsername) return;
+        this.updateThemeUI(currentXP); 
 
         // --- 階段 2：背景同步雲端試算表 ---
         try {
             const response = await fetch(`${GAS_URL}?action=get_leaderboard`);
             const leaderboard = await response.json();
-
-            const cloudUser = Array.isArray(leaderboard) ? leaderboard.find(u =>
-                String(u.username).trim().toLowerCase() === lookupUsername.toLowerCase()
-            ) : null;
+            
+            const cloudUser = leaderboard.find(u => 
+                String(u.username).trim().toLowerCase() === String(username).trim().toLowerCase()
+            );
 
             if (cloudUser) {
-                const cloudXP = Number(cloudUser.xp) || 0;
+                const cloudXP = Number(cloudUser.xp);
                 console.log("✅ [雲端回傳] 最新 XP:", cloudXP);
 
+                // ✨ 關鍵判斷：雲端與本地不一致時才更新
                 if (cloudXP !== currentXP) {
                     console.log("✨ [同步] 偵測到數值差異，更新本地快照與 UI...");
-
+                    
+                    // 1. 更新內存物件中的 XP (保留原本的其他資料)
                     userDataLocal.xp = cloudXP;
+                    // 如果雲端有回傳等級也順便更新
                     if (cloudUser.level) userDataLocal.level = cloudUser.level;
+
+                    // 2. 寫回 localStorage
                     localStorage.setItem('currentUser', JSON.stringify(userDataLocal));
-                    this.updateThemeUI(cloudXP);
+                    
+                    // 3. 重新觸發染色與特效
+                    this.updateThemeUI(cloudXP); 
                 }
             } else {
                 console.warn("⚠️ 雲端找不到該用戶資料。");
             }
         } catch (e) {
-            console.warn("⚠️ 雲端同步失敗，已保留本地主題。", e);
+            console.error("❌ 雲端同步失敗:", e);
         }
     },
 
@@ -587,7 +594,7 @@ const ThemeEngine = {
 document.addEventListener('DOMContentLoaded', () => {
     // 讀取 currentUser，如果沒有就預設 0
     const user = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
-    ThemeEngine.apply(user.username || user.account || user.xp || 0);
+    ThemeEngine.apply(user.xp);
 });
     // 🚀 系統初始化 (window.onload)
     // ==========================================
@@ -714,7 +721,7 @@ async function awardXPAndSync(xpAmount, gameName, scoreAmount) {
     
     // 🌟 立即連動主題變色 (ThemeEngine)
     if (typeof ThemeEngine !== 'undefined' && ThemeEngine.apply) {
-        ThemeEngine.apply(user.username || user.account || newTotalXP);
+        ThemeEngine.apply(newTotalXP);
     }
 
     // 6. 準備發送給 GAS 的資料包
@@ -854,35 +861,20 @@ function toggleSidebar() {
 
     // 題目生成器
     function generateGameQuestions(subj, count) {
-        const normalizeQuestion = (q) => {
-            if (!q || !q.question) return null;
-            const normalized = Object.assign({}, q);
-
-            // 題庫防呆：沒有 options 時，自動生成單一答案選項，避免畫面當機
-            if (!Array.isArray(normalized.options) || normalized.options.length === 0) {
-                const ans = resolveAnswerText(normalized);
-                normalized.options = [String(ans ?? '未提供答案')];
-                normalized.answer = 0;
-            }
-            return normalized;
-        };
-
         if (window.generatePaper) {
             let q = window.generatePaper({ 
                 subject: subj, 
-                total: count,
-                tags: targetTags.length > 0 ? targetTags : [subj]
-            });
-
-            q = Array.isArray(q) ? q.map(normalizeQuestion).filter(Boolean) : [];
-
+                total: count, 
+                // 優先使用 targetTags (使用者的年級)，如果沒有則回退到科目
+                tags: targetTags.length > 0 ? targetTags : [subj] 
+            }).filter(i => i && i.question);
+            
+            // 補齊題目防止當機
             if (q.length < count) {
-                let backup = window.generatePaper({ subject: subj, total: count - q.length, tags: [subj] });
-                backup = Array.isArray(backup) ? backup.map(normalizeQuestion).filter(Boolean) : [];
+                const backup = window.generatePaper({ subject: subj, total: count - q.length });
                 q = q.concat(backup);
             }
-
-            return q.slice(0, count);
+            return q;
         }
         console.warn("無法載入題目生成器");
         return [];
@@ -894,11 +886,6 @@ function toggleSidebar() {
             return q.options[q.answer];
         }
         return q.answer;
-    }
-
-    function getSafeOptions(q) {
-        if (q && Array.isArray(q.options) && q.options.length > 0) return q.options;
-        return [String(resolveAnswerText(q) ?? '未提供答案')];
     }
 
   function startGame(id) {
@@ -989,7 +976,7 @@ function toggleSidebar() {
         const q = gameQuestions[currentQIdx % gameQuestions.length];
         document.getElementById('mrQuestion').innerHTML = q.question.replace(/\n/g, '<br>');
         const con = document.getElementById('mrOptions'); con.innerHTML = '';
-        getSafeOptions(q).forEach((opt, idx) => {
+        q.options.forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = "w-full py-3 text-lg font-bold bg-slate-50 border-2 border-slate-100 rounded-xl hover:bg-blue-50 transition active:scale-95";
             btn.innerHTML = opt;
@@ -1005,7 +992,6 @@ function toggleSidebar() {
     }
    function endMathRush() {
     clearInterval(timerInterval);
-    document.getElementById('mrGameArea').classList.add('hidden');
     document.getElementById('mrGameOver').classList.remove('hidden');
     
     // 修正點：移除 const，直接計算 (因為前面可能已經宣告過了)
@@ -1151,7 +1137,7 @@ function toggleSidebar() {
         const q = gameQuestions[currentQIdx % gameQuestions.length];
         document.getElementById('rpgQuestion').innerHTML = q.question;
         const con = document.getElementById('rpgOptions'); con.innerHTML = '';
-        getSafeOptions(q).forEach((opt, idx) => {
+        q.options.forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = "w-full py-3 bg-slate-50 border rounded-lg hover:bg-green-50 text-left px-4 font-bold text-slate-600";
             btn.innerHTML = opt;
@@ -1211,7 +1197,7 @@ function toggleSidebar() {
         const q = gameQuestions[currentQIdx % gameQuestions.length];
         document.getElementById('bombQuestion').innerHTML = q.question;
         const con = document.getElementById('bombOptions'); con.innerHTML = '';
-        getSafeOptions(q).forEach((opt, idx) => {
+        q.options.forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = "py-4 bg-slate-700 text-white rounded-xl font-bold hover:bg-slate-600";
             btn.innerHTML = opt;
@@ -1267,7 +1253,7 @@ function toggleSidebar() {
         const q = gameQuestions[currentQIdx % gameQuestions.length];
         document.getElementById('wheelQuestion').innerHTML = q.question;
         const con = document.getElementById('wheelOptions'); con.innerHTML = '';
-        getSafeOptions(q).forEach((opt, idx) => {
+        q.options.forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = "w-full py-2 bg-yellow-50 border border-yellow-200 rounded-lg text-slate-700 font-bold hover:bg-yellow-100";
             btn.innerHTML = opt;
@@ -3559,6 +3545,1071 @@ window.animateVoxelWorld = function () {
   window.vqConnectWebSocket = vqConnectWebSocket;
   window.vqToggleBuildMode = vqToggleBuildMode;
   window.vqEatFood = vqEatFood;
+})();
+
+</script>
+
+<script>
+
+(() => {
+  if (window.__VQ_LITE_WORLD_V1__) return;
+  window.__VQ_LITE_WORLD_V1__ = true;
+
+  const originalStartGame = window.startGame;
+  const originalBackToMenu = window.backToMenu;
+
+  const STYLE_ID = 'vq-lite-style';
+  if (!document.getElementById(STYLE_ID)) {
+    const style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = `
+      #game-voxel { position: relative; }
+      #vq-minimap-wrap {
+        position: absolute;
+        right: 18px;
+        bottom: 18px;
+        width: 168px;
+        padding: 10px;
+        border-radius: 18px;
+        background: rgba(2, 6, 23, 0.60);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.10);
+        box-shadow: 0 20px 35px rgba(0,0,0,0.25);
+        z-index: 12;
+        pointer-events: none;
+      }
+      #vq-minimap-title { color: rgba(255,255,255,0.88); font-weight: 800; font-size: 12px; margin-bottom: 8px; display:flex; justify-content:space-between; gap:8px; }
+      #vq-minimap {
+        width: 100%;
+        height: 128px;
+        display: block;
+        border-radius: 12px;
+        background: linear-gradient(180deg, rgba(13,24,48,0.95), rgba(10,14,26,0.95));
+        image-rendering: pixelated;
+      }
+      #vq-minimap-foot {
+        margin-top: 8px;
+        font-size: 11px;
+        color: rgba(255,255,255,0.66);
+        display:flex;
+        justify-content:space-between;
+      }
+      .vq-target-glow {
+        filter: drop-shadow(0 0 12px rgba(253, 224, 71, 0.9));
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  const V = {
+    running: false,
+    initialized: false,
+    mode: 'menu',
+    frame: 0,
+    animationId: 0,
+    clockPrev: performance.now(),
+    scene: null,
+    camera: null,
+    renderer: null,
+    controls: null,
+    blocker: null,
+    hud: null,
+    crosshair: null,
+    overlay: null,
+    container: null,
+    daylight: 0.62,
+    timeOfDay: 0.25,
+    sunLight: null,
+    moonLight: null,
+    ambient: null,
+    hemi: null,
+    fogColors: {
+      day: new THREE.Color(0x86c7f3),
+      sunset: new THREE.Color(0xf4b27a),
+      night: new THREE.Color(0x1b2a3d)
+    },
+    chunkSize: 16,
+    blockSize: 8,
+    renderRadius: 2,
+    seaLevel: 2,
+    chunkQueue: [],
+    chunkBusy: false,
+    chunks: new Map(),
+    interactables: [],
+    monsters: [],
+    targets: [],
+    currentTarget: null,
+    currentMonster: null,
+    questionPool: [],
+    questionIndex: 0,
+    targetGoal: 5,
+    targetsFound: 0,
+    scoreXP: 0,
+    mapCanvas: null,
+    mapCtx: null,
+    mapLastDraw: 0,
+    worldSeed: 1337,
+    moveForward: false,
+    moveBackward: false,
+    moveLeft: false,
+    moveRight: false,
+    canJump: false,
+    velocity: new THREE.Vector3(),
+    raycaster: new THREE.Raycaster(),
+    tmpVec3: new THREE.Vector3(),
+    tmpVec2: new THREE.Vector2(),
+    tmpColor: new THREE.Color(),
+    skyColor: new THREE.Color(),
+    pausedForQuiz: false
+  };
+
+  function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function hash2(x, z, seed = 0) {
+    const n = Math.sin(x * 127.1 + z * 311.7 + seed * 74.7) * 43758.5453123;
+    return n - Math.floor(n);
+  }
+  function smoothNoise(x, z, seed = 0) {
+    const xi = Math.floor(x), zi = Math.floor(z);
+    const xf = x - xi, zf = z - zi;
+    const a = hash2(xi, zi, seed);
+    const b = hash2(xi + 1, zi, seed);
+    const c = hash2(xi, zi + 1, seed);
+    const d = hash2(xi + 1, zi + 1, seed);
+    const u = xf * xf * (3 - 2 * xf);
+    const v = zf * zf * (3 - 2 * zf);
+    return lerp(lerp(a, b, u), lerp(c, d, u), v);
+  }
+  function biomeAt(wx, wz) {
+    const scale = 1 / 72;
+    const moisture = smoothNoise(wx * scale, wz * scale, 11);
+    const temperature = smoothNoise(wx * scale, wz * scale, 29);
+    const altitude = smoothNoise(wx * scale * 0.65, wz * scale * 0.65, 47);
+    if (altitude > 0.72) return 'mountain';
+    if (temperature < 0.28) return 'snow';
+    if (moisture < 0.23) return 'desert';
+    if (moisture > 0.64) return 'forest';
+    if (altitude < 0.28) return 'river';
+    return 'plains';
+  }
+  function terrainHeight(wx, wz) {
+    const base = Math.sin(wx * 0.045) * 1.9 + Math.cos(wz * 0.042) * 1.7;
+    const hills = Math.sin((wx + wz) * 0.028) * 1.6 + Math.cos((wx - wz) * 0.031) * 1.5;
+    const detail = (smoothNoise(wx * 0.18, wz * 0.18, 3) - 0.5) * 4.5;
+    const ridge = Math.abs(Math.sin(wx * 0.018) + Math.cos(wz * 0.018)) * 0.9;
+    const riverCut = biomeAt(wx, wz) === 'river' ? -2.2 : 0;
+    return clamp(Math.round(4 + base + hills + detail + ridge + riverCut), 1, 12);
+  }
+  function worldToBlockCoord(x) { return Math.round(x / V.blockSize); }
+  function blockToWorldCoord(b) { return b * V.blockSize; }
+  function chunkCoord(b) { return Math.floor(b / V.chunkSize); }
+  function chunkKey(cx, cz) { return `${cx},${cz}`; }
+  function getBlockColor(type) {
+    if (window.BLOCK_TYPES && typeof BLOCK_TYPES[type] === 'number') return BLOCK_TYPES[type];
+    const fallback = {
+      grass: 0x5fbf5f,
+      dirt: 0x8b6a45,
+      stone: 0x8a8f9b,
+      sand: 0xd8c58a,
+      snow: 0xf4f7fb,
+      water: 0x4da3ff,
+      wood_plank: 0x8d6e63,
+      leaves: 0x2f8f4e,
+      trunk: 0x6d4c41,
+      target: 0xfde047,
+      mushroom: 0xd34b4b
+    };
+    return fallback[type] || 0xffffff;
+  }
+
+  function safeQuestions(count) {
+    let questions = [];
+    if (typeof generateGameQuestions === 'function') {
+      try {
+        questions = generateGameQuestions(currentSubject || 'math', count) || [];
+      } catch (e) {
+        questions = [];
+      }
+    }
+    if (!Array.isArray(questions) || questions.length === 0) {
+      questions = [
+        { question: '10 + 5 = ?', answer: '15', options: ['10', '12', '15', '20'] },
+        { question: '8 × 4 = ?', answer: '32', options: ['24', '32', '36', '40'] },
+        { question: '12 - 7 = ?', answer: '5', options: ['4', '5', '6', '7'] },
+        { question: '9 + 9 = ?', answer: '18', options: ['16', '17', '18', '20'] }
+      ];
+    }
+    return questions.map(q => {
+      const out = { ...q };
+      if (!Array.isArray(out.options) || out.options.length === 0) {
+        out.options = [String(out.answer ?? 'A')];
+      }
+      if (typeof out.answer === 'undefined') out.answer = out.options[0];
+      return out;
+    });
+  }
+
+  function ensureHudWidgets() {
+    const game = document.getElementById('game-voxel');
+    if (!game) return;
+    let wrap = document.getElementById('vq-minimap-wrap');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.id = 'vq-minimap-wrap';
+      wrap.innerHTML = `
+        <div id="vq-minimap-title">
+          <span>Mini Map</span>
+          <span id="vq-world-time-label">Day</span>
+        </div>
+        <canvas id="vq-minimap" width="128" height="128"></canvas>
+        <div id="vq-minimap-foot">
+          <span id="vq-biome-label">plains</span>
+          <span id="vq-entity-label">0 mobs</span>
+        </div>
+      `;
+      game.appendChild(wrap);
+    }
+    V.mapCanvas = document.getElementById('vq-minimap');
+    V.mapCtx = V.mapCanvas ? V.mapCanvas.getContext('2d') : null;
+  }
+
+  function ensureScene() {
+    V.container = document.getElementById('vq-canvas-container');
+    V.blocker = document.getElementById('vq-blocker');
+    V.hud = document.getElementById('vq-hud');
+    V.crosshair = document.getElementById('vq-crosshair');
+    V.overlay = document.getElementById('vq-quiz-overlay');
+    if (!V.container) return false;
+
+    V.container.innerHTML = '';
+    V.scene = new THREE.Scene();
+    V.scene.background = new THREE.Color(0x86c7f3);
+    V.scene.fog = new THREE.FogExp2(0x86c7f3, 0.0016);
+
+    V.camera = new THREE.PerspectiveCamera(75, V.container.clientWidth / V.container.clientHeight, 0.1, 1200);
+    V.renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, powerPreference: 'low-power' });
+    V.renderer.setPixelRatio(1);
+    V.renderer.setSize(V.container.clientWidth, V.container.clientHeight);
+    V.renderer.shadowMap.enabled = false;
+    V.container.appendChild(V.renderer.domElement);
+
+    V.ambient = new THREE.AmbientLight(0xffffff, 0.55);
+    V.hemi = new THREE.HemisphereLight(0xbfe4ff, 0x39411e, 0.65);
+    V.sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    V.moonLight = new THREE.DirectionalLight(0x9fc2ff, 0.15);
+    V.sunLight.position.set(80, 120, 40);
+    V.moonLight.position.set(-60, 90, -40);
+
+    V.scene.add(V.ambient);
+    V.scene.add(V.hemi);
+    V.scene.add(V.sunLight);
+    V.scene.add(V.moonLight);
+
+    V.controls = new THREE.PointerLockControls(V.camera, document.body);
+    V.scene.add(V.controls.getObject());
+    V.controls.getObject().position.set(0, (terrainHeight(0, 0) + 3) * V.blockSize, 0);
+
+    if (V.blocker) {
+      V.blocker.style.display = 'flex';
+      V.blocker.onclick = () => {
+        if (V.pausedForQuiz) return;
+        V.controls.lock();
+      };
+    }
+
+    V.controls.addEventListener('lock', () => {
+      if (V.blocker) V.blocker.style.display = 'none';
+      if (V.hud) V.hud.classList.remove('hidden');
+      if (V.crosshair) V.crosshair.classList.remove('hidden');
+    });
+    V.controls.addEventListener('unlock', () => {
+      if (V.pausedForQuiz) return;
+      if (V.blocker) V.blocker.style.display = 'flex';
+      if (V.crosshair) V.crosshair.classList.add('hidden');
+    });
+
+    if (!window.__VQ_LITE_INPUT_BOUND__) {
+      window.__VQ_LITE_INPUT_BOUND__ = true;
+      document.addEventListener('keydown', (e) => {
+        if (e.code === 'KeyW' || e.code === 'ArrowUp') V.moveForward = true;
+        if (e.code === 'KeyS' || e.code === 'ArrowDown') V.moveBackward = true;
+        if (e.code === 'KeyA' || e.code === 'ArrowLeft') V.moveLeft = true;
+        if (e.code === 'KeyD' || e.code === 'ArrowRight') V.moveRight = true;
+        if (e.code === 'Space' && V.canJump) {
+          V.velocity.y = 8.5;
+          V.canJump = false;
+        }
+      });
+      document.addEventListener('keyup', (e) => {
+        if (e.code === 'KeyW' || e.code === 'ArrowUp') V.moveForward = false;
+        if (e.code === 'KeyS' || e.code === 'ArrowDown') V.moveBackward = false;
+        if (e.code === 'KeyA' || e.code === 'ArrowLeft') V.moveLeft = false;
+        if (e.code === 'KeyD' || e.code === 'ArrowRight') V.moveRight = false;
+      });
+      document.addEventListener('mousedown', (e) => {
+        if (!V.running || e.button !== 0 || !V.controls || !V.controls.isLocked || V.pausedForQuiz) return;
+        handleCrosshairInteraction();
+      });
+      window.addEventListener('resize', () => {
+        if (!V.camera || !V.renderer || !V.container) return;
+        V.camera.aspect = V.container.clientWidth / V.container.clientHeight;
+        V.camera.updateProjectionMatrix();
+        V.renderer.setSize(V.container.clientWidth, V.container.clientHeight);
+      });
+    }
+
+    ensureHudWidgets();
+    return true;
+  }
+
+  function disposeObject3D(obj) {
+    if (!obj) return;
+    obj.traverse?.((n) => {
+      if (n.geometry) n.geometry.dispose?.();
+      if (n.material) {
+        if (Array.isArray(n.material)) n.material.forEach(m => m.dispose?.());
+        else n.material.dispose?.();
+      }
+    });
+    if (obj.parent) obj.parent.remove(obj);
+  }
+
+  function clearWorld() {
+    for (const chunk of V.chunks.values()) disposeObject3D(chunk.group);
+    V.chunks.clear();
+    for (const m of V.monsters) disposeObject3D(m.mesh);
+    V.monsters.length = 0;
+    for (const t of V.targets) disposeObject3D(t.mesh);
+    V.targets.length = 0;
+    V.interactables.length = 0;
+  }
+
+  function createBlockInstanced(type, positions, colorOverride) {
+    const geo = new THREE.BoxGeometry(V.blockSize, V.blockSize, V.blockSize);
+    const mat = new THREE.MeshLambertMaterial({ color: colorOverride || getBlockColor(type) });
+    const mesh = new THREE.InstancedMesh(geo, mat, positions.length);
+    const dummy = new THREE.Object3D();
+    positions.forEach((p, i) => {
+      dummy.position.set(p.x, p.y, p.z);
+      dummy.scale.set(p.sx || 1, p.sy || 1, p.sz || 1);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    return mesh;
+  }
+
+  function treeAt(wx, wy, wz) {
+    const group = new THREE.Group();
+    const trunkH = 2 + Math.floor(hash2(wx, wz, 91) * 3);
+    const trunkMat = new THREE.MeshLambertMaterial({ color: getBlockColor('trunk') });
+    const leafMat = new THREE.MeshLambertMaterial({ color: getBlockColor('leaves') });
+    const trunk = new THREE.Mesh(new THREE.BoxGeometry(V.blockSize * 0.55, V.blockSize * trunkH, V.blockSize * 0.55), trunkMat);
+    trunk.position.set(wx, wy + (V.blockSize * trunkH) / 2, wz);
+    group.add(trunk);
+    const crownHeight = wy + V.blockSize * trunkH + V.blockSize * 0.3;
+    const leafOffsets = [
+      [0, 0, 0], [V.blockSize * 0.8, 0, 0], [-V.blockSize * 0.8, 0, 0], [0, 0, V.blockSize * 0.8], [0, 0, -V.blockSize * 0.8],
+      [0, V.blockSize * 0.7, 0]
+    ];
+    leafOffsets.forEach(([dx, dy, dz]) => {
+      const leaf = new THREE.Mesh(new THREE.BoxGeometry(V.blockSize * 1.05, V.blockSize * 1.05, V.blockSize * 1.05), leafMat);
+      leaf.position.set(wx + dx, crownHeight + dy, wz + dz);
+      group.add(leaf);
+    });
+    return group;
+  }
+
+  function terrainSample(wx, wz) {
+    const biome = biomeAt(wx, wz);
+    const h = terrainHeight(wx, wz);
+    return { biome, h };
+  }
+
+  function buildChunk(cx, cz) {
+    const key = chunkKey(cx, cz);
+    if (V.chunks.has(key)) return V.chunks.get(key);
+
+    const group = new THREE.Group();
+    group.userData.chunk = { cx, cz };
+    group.position.set(cx * V.chunkSize * V.blockSize, 0, cz * V.chunkSize * V.blockSize);
+
+    const blockBuckets = new Map();
+    const addBlock = (type, x, y, z, sx = 1, sy = 1, sz = 1) => {
+      if (!blockBuckets.has(type)) blockBuckets.set(type, []);
+      blockBuckets.get(type).push({ x, y, z, sx, sy, sz });
+    };
+
+    const chunkSurface = [];
+    const trees = [];
+
+    for (let lx = 0; lx < V.chunkSize; lx++) {
+      for (let lz = 0; lz < V.chunkSize; lz++) {
+        const wx = cx * V.chunkSize + lx;
+        const wz = cz * V.chunkSize + lz;
+        const { biome, h } = terrainSample(wx, wz);
+        const surfaceY = h * V.blockSize;
+        chunkSurface.push({ wx, wz, h, biome });
+
+        let top = 'grass';
+        if (biome === 'desert' || biome === 'river') top = 'sand';
+        else if (biome === 'snow') top = 'snow';
+        else if (biome === 'mountain' && h > 8) top = 'snow';
+        else if (biome === 'mountain') top = 'stone';
+        else if (biome === 'forest') top = 'grass';
+
+        const depth = h >= 8 ? 3 : h >= 5 ? 2 : 1;
+        addBlock(top, wx * V.blockSize, surfaceY, wz * V.blockSize);
+        for (let d = 1; d <= depth; d++) {
+          const type = d === depth && h >= 7 ? 'stone' : 'dirt';
+          addBlock(type, wx * V.blockSize, (h - d) * V.blockSize, wz * V.blockSize);
+        }
+
+        if (h <= V.seaLevel) {
+          for (let y = h + 1; y <= V.seaLevel; y++) {
+            addBlock('water', wx * V.blockSize, y * V.blockSize, wz * V.blockSize, 1, 0.98, 1);
+          }
+        }
+
+        const treeChance = biome === 'forest' ? 0.20 : biome === 'plains' ? 0.08 : biome === 'river' ? 0.03 : 0.02;
+        const hasTree = h > V.seaLevel + 1 && hash2(wx, wz, 9) < treeChance;
+        if (hasTree) trees.push({ x: wx * V.blockSize, y: surfaceY, z: wz * V.blockSize });
+      }
+    }
+
+    for (const [type, positions] of blockBuckets.entries()) {
+      const mesh = createBlockInstanced(type, positions);
+      group.add(mesh);
+    }
+
+    for (const t of trees) group.add(treeAt(t.x, t.y, t.z));
+
+    const targetCount = hash2(cx, cz, 51) < 0.75 ? 1 : 0;
+    for (let i = 0; i < targetCount; i++) {
+      const localX = Math.floor(2 + hash2(cx + i, cz + i * 2, 14) * 11);
+      const localZ = Math.floor(2 + hash2(cx + i * 3, cz + i * 5, 15) * 11);
+      const wx = cx * V.chunkSize + localX;
+      const wz = cz * V.chunkSize + localZ;
+      const h = terrainHeight(wx, wz);
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(V.blockSize * 0.85, V.blockSize * 0.85, V.blockSize * 0.85),
+        new THREE.MeshStandardMaterial({ color: getBlockColor('target'), emissive: 0x553300, roughness: 0.35, metalness: 0.08 })
+      );
+      mesh.position.set(wx * V.blockSize, (h + 1.3) * V.blockSize, wz * V.blockSize);
+      mesh.userData = { kind: 'target', wx, wz, chunkKey: key };
+      mesh.castShadow = false;
+      mesh.receiveShadow = false;
+      V.interactables.push(mesh);
+      V.targets.push({ mesh, wx, wz, chunkKey: key, alive: true, pulse: Math.random() * Math.PI * 2 });
+      group.add(mesh);
+    }
+
+    const chunk = { key, cx, cz, group, surface: chunkSurface, trees, generatedAt: performance.now() };
+    V.chunks.set(key, chunk);
+    V.scene.add(group);
+    spawnMobsForChunk(chunk);
+    return chunk;
+  }
+
+  function unloadChunk(cx, cz) {
+    const key = chunkKey(cx, cz);
+    const chunk = V.chunks.get(key);
+    if (!chunk) return;
+    V.targets = V.targets.filter(t => {
+      if (t.chunkKey === key) {
+        V.interactables = V.interactables.filter(m => m !== t.mesh);
+        disposeObject3D(t.mesh);
+        return false;
+      }
+      return true;
+    });
+    V.monsters = V.monsters.filter(m => {
+      if (m.homeChunk === key) {
+        disposeObject3D(m.mesh);
+        return false;
+      }
+      return true;
+    });
+    disposeObject3D(chunk.group);
+    V.chunks.delete(key);
+  }
+
+  function ensureChunksAroundPlayer() {
+    if (!V.controls) return;
+    const pos = V.controls.getObject().position;
+    const pcx = chunkCoord(worldToBlockCoord(pos.x));
+    const pcz = chunkCoord(worldToBlockCoord(pos.z));
+
+    for (let cx = pcx - V.renderRadius; cx <= pcx + V.renderRadius; cx++) {
+      for (let cz = pcz - V.renderRadius; cz <= pcz + V.renderRadius; cz++) {
+        const key = chunkKey(cx, cz);
+        if (!V.chunks.has(key) && !V.chunkQueue.includes(key)) V.chunkQueue.push(key);
+      }
+    }
+
+    for (const key of [...V.chunks.keys()]) {
+      const [cx, cz] = key.split(',').map(Number);
+      if (Math.abs(cx - pcx) > V.renderRadius + 1 || Math.abs(cz - pcz) > V.renderRadius + 1) {
+        unloadChunk(cx, cz);
+      }
+    }
+  }
+
+  function processChunkQueue() {
+    if (V.chunkBusy || V.chunkQueue.length === 0) return;
+    V.chunkBusy = true;
+    const key = V.chunkQueue.shift();
+    const [cx, cz] = key.split(',').map(Number);
+    buildChunk(cx, cz);
+    V.chunkBusy = false;
+  }
+
+  function spawnMobMesh(kind) {
+    const group = new THREE.Group();
+    let color = 0x6b7280;
+    let bodyH = 2.8;
+    let bodyW = 2.2;
+    if (kind === 'deer') { color = 0xc9b39d; bodyH = 2.1; bodyW = 2.0; }
+    if (kind === 'pig') { color = 0xf48fb1; bodyH = 1.8; bodyW = 2.0; }
+    if (kind === 'zombie') { color = 0x4caf50; bodyH = 2.6; bodyW = 2.1; }
+    if (kind === 'creeper') { color = 0x81c784; bodyH = 2.4; bodyW = 1.9; }
+    const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.95, metalness: 0.02 });
+    const body = new THREE.Mesh(new THREE.BoxGeometry(V.blockSize * bodyW, V.blockSize * bodyH, V.blockSize * bodyW), mat);
+    body.position.y = V.blockSize * bodyH / 2;
+    group.add(body);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(V.blockSize * 1.1, V.blockSize * 1.1, V.blockSize * 1.1), mat);
+    head.position.y = V.blockSize * (bodyH + 0.35);
+    group.add(head);
+    return group;
+  }
+
+  function spawnMob(kind, x, y, z, homeChunkKey) {
+    const mesh = spawnMobMesh(kind);
+    mesh.position.set(x, y, z);
+    mesh.userData = { kind, hp: kind === 'creeper' ? 2 : 3, state: 'wander' };
+    V.scene.add(mesh);
+    const mob = {
+      mesh,
+      kind,
+      hp: kind === 'creeper' ? 2 : 3,
+      state: 'wander',
+      stateTimer: 2 + Math.random() * 3,
+      targetX: x,
+      targetZ: z,
+      homeChunk: homeChunkKey,
+      speed: kind === 'zombie' ? 3.0 : kind === 'creeper' ? 2.5 : 2.2,
+      afraid: 0,
+      lastThink: 0
+    };
+    V.monsters.push(mob);
+    return mob;
+  }
+
+  function spawnMobsForChunk(chunk) {
+    const density = biomeAt(chunk.cx * 16, chunk.cz * 16) === 'forest' ? 0.45 : 0.22;
+    if (hash2(chunk.cx, chunk.cz, 77) > density) return;
+    const count = hash2(chunk.cx + 1, chunk.cz + 2, 99) > 0.75 ? 2 : 1;
+    for (let i = 0; i < count; i++) {
+      const sx = (hash2(chunk.cx, chunk.cz, 31 + i) - 0.5) * V.chunkSize * V.blockSize * 0.7;
+      const sz = (hash2(chunk.cx, chunk.cz, 41 + i) - 0.5) * V.chunkSize * V.blockSize * 0.7;
+      const wx = chunk.cx * V.chunkSize * V.blockSize + sx;
+      const wz = chunk.cz * V.chunkSize * V.blockSize + sz;
+      const blockX = worldToBlockCoord(wx);
+      const blockZ = worldToBlockCoord(wz);
+      const h = terrainHeight(blockX, blockZ);
+      const y = (h + 0.4) * V.blockSize;
+      const kinds = ['deer', 'pig', 'zombie', 'creeper'];
+      const kind = kinds[Math.floor(hash2(chunk.cx + i * 2, chunk.cz + i * 3, 12) * kinds.length)];
+      spawnMob(kind, wx, y, wz, chunk.key);
+    }
+  }
+
+  function updateDayNight(delta) {
+    V.timeOfDay += delta * 0.015;
+    if (V.timeOfDay > Math.PI * 2) V.timeOfDay -= Math.PI * 2;
+
+    const day01 = (Math.sin(V.timeOfDay) + 1) / 2;
+    const twilight = 1 - Math.abs(day01 * 2 - 1);
+    const dayFactor = clamp(day01, 0, 1);
+
+    const sunY = Math.sin(V.timeOfDay) * 130 + 55;
+    const sunX = Math.cos(V.timeOfDay) * 140;
+    V.sunLight.position.set(sunX, sunY, 60);
+    V.moonLight.position.set(-sunX, -sunY * 0.65, -60);
+
+    V.sunLight.intensity = 0.18 + dayFactor * 1.05;
+    V.moonLight.intensity = 0.05 + (1 - dayFactor) * 0.42;
+    V.ambient.intensity = 0.18 + dayFactor * 0.48;
+    V.hemi.intensity = 0.22 + dayFactor * 0.28;
+
+    const sky = new THREE.Color().copy(V.fogColors.night).lerp(V.fogColors.day, dayFactor * 0.95);
+    sky.lerp(V.fogColors.sunset, twilight * 0.22);
+    V.scene.background.copy(sky);
+    V.scene.fog.color.copy(sky);
+
+    const label = document.getElementById('vq-world-time-label');
+    if (label) {
+      label.textContent = dayFactor > 0.67 ? 'Day' : dayFactor < 0.33 ? 'Night' : 'Dusk';
+    }
+  }
+
+  function updatePlayerMovement(delta) {
+    if (!V.controls) return;
+    const obj = V.controls.getObject();
+    const speed = 28;
+    V.velocity.x -= V.velocity.x * 8.0 * delta;
+    V.velocity.z -= V.velocity.z * 8.0 * delta;
+    V.velocity.y -= 18 * delta;
+
+    const dirZ = (V.moveForward ? 1 : 0) - (V.moveBackward ? 1 : 0);
+    const dirX = (V.moveRight ? 1 : 0) - (V.moveLeft ? 1 : 0);
+
+    if (V.moveForward || V.moveBackward) V.velocity.z -= dirZ * speed * delta;
+    if (V.moveLeft || V.moveRight) V.velocity.x -= dirX * speed * delta;
+
+    obj.translateX(V.velocity.x * delta);
+    obj.translateZ(V.velocity.z * delta);
+    obj.position.y += V.velocity.y * delta;
+
+    const groundY = terrainHeight(worldToBlockCoord(obj.position.x), worldToBlockCoord(obj.position.z)) * V.blockSize + V.blockSize * 1.65;
+    if (obj.position.y < groundY) {
+      V.velocity.y = 0;
+      obj.position.y = groundY;
+      V.canJump = true;
+    }
+
+    const limit = V.blockSize * V.chunkSize * (V.renderRadius + 2);
+    obj.position.x = clamp(obj.position.x, -limit, limit);
+    obj.position.z = clamp(obj.position.z, -limit, limit);
+  }
+
+  function maybeRetargetMonster(mob, playerPos) {
+    const dx = playerPos.x - mob.mesh.position.x;
+    const dz = playerPos.z - mob.mesh.position.z;
+    const dist = Math.hypot(dx, dz);
+
+    if (dist < V.blockSize * 5) {
+      mob.state = 'retreat';
+      mob.stateTimer = 1.4 + Math.random() * 1.2;
+      mob.targetX = mob.mesh.position.x - dx * 1.7;
+      mob.targetZ = mob.mesh.position.z - dz * 1.7;
+      return;
+    }
+
+    if (mob.afraid > 0) {
+      mob.afraid -= 1;
+      mob.state = 'retreat';
+      return;
+    }
+
+    if (mob.stateTimer > 0) return;
+
+    const roll = Math.random();
+    if (mob.kind === 'deer' || mob.kind === 'pig') {
+      if (roll < 0.50) mob.state = 'wander';
+      else if (roll < 0.75) mob.state = 'look';
+      else mob.state = 'retreat';
+    } else if (mob.kind === 'zombie') {
+      if (roll < 0.35) mob.state = 'wander';
+      else if (roll < 0.70) mob.state = 'approach';
+      else if (roll < 0.88) mob.state = 'look';
+      else mob.state = 'retreat';
+    } else {
+      if (roll < 0.42) mob.state = 'wander';
+      else if (roll < 0.68) mob.state = 'approach';
+      else if (roll < 0.88) mob.state = 'look';
+      else mob.state = 'retreat';
+    }
+
+    mob.stateTimer = 1.8 + Math.random() * 3.5;
+    const wobble = V.blockSize * (5 + Math.random() * 10);
+    if (mob.state === 'wander') {
+      mob.targetX = mob.mesh.position.x + (Math.random() - 0.5) * wobble;
+      mob.targetZ = mob.mesh.position.z + (Math.random() - 0.5) * wobble;
+    } else if (mob.state === 'approach') {
+      mob.targetX = playerPos.x + (Math.random() - 0.5) * V.blockSize * 8;
+      mob.targetZ = playerPos.z + (Math.random() - 0.5) * V.blockSize * 8;
+    } else if (mob.state === 'retreat') {
+      mob.targetX = mob.mesh.position.x - dx * 1.3;
+      mob.targetZ = mob.mesh.position.z - dz * 1.3;
+    } else {
+      mob.targetX = mob.mesh.position.x + (Math.random() - 0.5) * V.blockSize * 3;
+      mob.targetZ = mob.mesh.position.z + (Math.random() - 0.5) * V.blockSize * 3;
+    }
+  }
+
+  function updateMonsters(delta) {
+    if (!V.controls) return;
+    const playerPos = V.controls.getObject().position;
+
+    for (const mob of V.monsters) {
+      if (!mob.mesh) continue;
+      mob.stateTimer -= delta;
+      maybeRetargetMonster(mob, playerPos);
+
+      const pos = mob.mesh.position;
+      const ground = terrainHeight(worldToBlockCoord(pos.x), worldToBlockCoord(pos.z)) * V.blockSize + V.blockSize * 0.4;
+      const dirX = mob.targetX - pos.x;
+      const dirZ = mob.targetZ - pos.z;
+      const len = Math.hypot(dirX, dirZ) || 1;
+
+      let moveSpeed = mob.speed;
+      if (mob.state === 'look') moveSpeed = 0.4;
+      if (mob.state === 'retreat') moveSpeed *= 1.8;
+      if (mob.state === 'approach') moveSpeed *= 1.1;
+      if (mob.state === 'wander') moveSpeed *= 0.8;
+
+      if (len > 1.2) {
+        pos.x += (dirX / len) * moveSpeed * delta * V.blockSize;
+        pos.z += (dirZ / len) * moveSpeed * delta * V.blockSize;
+        mob.mesh.rotation.y = Math.atan2(dirX, dirZ);
+      } else if (mob.state !== 'look') {
+        mob.stateTimer = 0;
+      }
+
+      pos.y = lerp(pos.y, ground, 0.12);
+
+      const dist = mob.mesh.position.distanceTo(playerPos);
+      if (dist < V.blockSize * 1.1 && mob.kind !== 'deer' && mob.kind !== 'pig') {
+        V.ambient.intensity = Math.max(V.ambient.intensity, 0.22);
+      }
+
+      const unloadLimit = V.blockSize * V.chunkSize * (V.renderRadius + 4);
+      if (Math.abs(pos.x - playerPos.x) > unloadLimit || Math.abs(pos.z - playerPos.z) > unloadLimit) {
+        mob.mesh.visible = false;
+      } else {
+        mob.mesh.visible = true;
+      }
+    }
+
+    V.monsters = V.monsters.filter(m => {
+      if (!m.mesh.visible && m.mesh.position.distanceTo(V.controls.getObject().position) > V.blockSize * V.chunkSize * (V.renderRadius + 4)) {
+        disposeObject3D(m.mesh);
+        return false;
+      }
+      return true;
+    });
+  }
+
+  function updateTargets(delta) {
+    for (const target of V.targets) {
+      if (!target.alive || !target.mesh) continue;
+      target.pulse += delta * 4;
+      target.mesh.rotation.y += delta * 0.6;
+      target.mesh.position.y += Math.sin(target.pulse) * 0.01;
+    }
+  }
+
+  function drawMiniMap() {
+    if (!V.mapCtx || !V.mapCanvas || !V.controls) return;
+    const now = performance.now();
+    if (now - V.mapLastDraw < 220) return;
+    V.mapLastDraw = now;
+
+    const ctx = V.mapCtx;
+    const w = V.mapCanvas.width, h = V.mapCanvas.height;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(3, 7, 18, 0.95)';
+    ctx.fillRect(0, 0, w, h);
+
+    const pos = V.controls.getObject().position;
+    const px = worldToBlockCoord(pos.x);
+    const pz = worldToBlockCoord(pos.z);
+    const radius = 16;
+    const cell = Math.max(1, Math.floor(w / (radius * 2 + 2)));
+
+    for (let dz = -radius; dz <= radius; dz++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        const wx = px + dx;
+        const wz = pz + dz;
+        const { biome, h: height } = terrainSample(wx, wz);
+        let color = '#3b82f6';
+        if (height <= V.seaLevel) color = '#2563eb';
+        else if (biome === 'desert') color = '#d8c58a';
+        else if (biome === 'forest') color = '#2f855a';
+        else if (biome === 'snow') color = '#e5eef8';
+        else if (biome === 'mountain') color = '#9ca3af';
+        else color = '#60a94d';
+
+        const alpha = clamp(0.35 + height / 18, 0.35, 0.95);
+        ctx.fillStyle = color;
+        ctx.globalAlpha = alpha;
+        ctx.fillRect((dx + radius + 1) * cell, (dz + radius + 1) * cell, cell, cell);
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    for (const t of V.targets) {
+      if (!t.alive) continue;
+      const tx = worldToBlockCoord(t.mesh.position.x);
+      const tz = worldToBlockCoord(t.mesh.position.z);
+      const dx = tx - px;
+      const dz = tz - pz;
+      if (Math.abs(dx) <= radius && Math.abs(dz) <= radius) {
+        ctx.fillStyle = '#fde047';
+        ctx.fillRect((dx + radius + 1) * cell, (dz + radius + 1) * cell, cell * 1.5, cell * 1.5);
+      }
+    }
+
+    for (const m of V.monsters) {
+      const mx = worldToBlockCoord(m.mesh.position.x);
+      const mz = worldToBlockCoord(m.mesh.position.z);
+      const dx = mx - px;
+      const dz = mz - pz;
+      if (Math.abs(dx) <= radius && Math.abs(dz) <= radius) {
+        ctx.fillStyle = m.kind === 'deer' || m.kind === 'pig' ? '#fca5a5' : '#ef4444';
+        ctx.fillRect((dx + radius + 1) * cell, (dz + radius + 1) * cell, cell, cell);
+      }
+    }
+
+    const center = (radius + 1) * cell;
+    ctx.save();
+    ctx.translate(center, center);
+    ctx.rotate(-V.controls.getObject().rotation.y);
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(0, -6);
+    ctx.lineTo(4, 5);
+    ctx.lineTo(-4, 5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.strokeRect(0, 0, w, h);
+
+    const biomeLabel = document.getElementById('vq-biome-label');
+    const entityLabel = document.getElementById('vq-entity-label');
+    const centerBiome = biomeAt(px, pz);
+    if (biomeLabel) biomeLabel.textContent = centerBiome;
+    if (entityLabel) entityLabel.textContent = `${V.monsters.length} mobs`;
+  }
+
+  function updateWorldLabels() {
+    const timeLabel = document.getElementById('vq-world-time-label');
+    const stage = document.getElementById('vq-stage');
+    const score = document.getElementById('vq-score');
+    if (stage) stage.textContent = `收集進度: ${V.targetsFound} / ${V.targetGoal}`;
+    if (score) score.textContent = String(V.scoreXP);
+    if (timeLabel) {
+      const day01 = (Math.sin(V.timeOfDay) + 1) / 2;
+      timeLabel.textContent = day01 > 0.67 ? 'Day' : day01 < 0.33 ? 'Night' : 'Dusk';
+    }
+  }
+
+  function openQuiz(target) {
+    if (!V.overlay || !V.controls) return;
+    V.pausedForQuiz = true;
+    V.currentTarget = target;
+    V.currentMonster = target?.kind === 'monster' ? target.monster : null;
+    V.controls.unlock();
+
+    const q = V.questionPool[V.questionIndex % V.questionPool.length];
+    V.questionIndex++;
+
+    const qEl = document.getElementById('vq-question');
+    const optEl = document.getElementById('vq-options');
+    const stageEl = document.getElementById('vq-quiz-stage');
+    if (stageEl) stageEl.textContent = target?.kind === 'monster' ? '怪物挑戰' : '地圖探索';
+    if (qEl) qEl.innerHTML = (q?.question || '題目載入中...').replace(/\n/g, '<br>');
+    if (optEl) {
+      optEl.innerHTML = '';
+      (q?.options || []).forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded-2xl p-4 text-left font-bold text-slate-700 transition';
+        btn.innerHTML = `<span class="inline-flex w-8 h-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 mr-3">${String.fromCharCode(65 + idx)}</span>${opt}`;
+        btn.onclick = () => {
+          const correct = typeof q.answer === 'number' ? idx === q.answer : String(opt).trim() === String(q.answer).trim();
+          resolveQuiz(correct);
+        };
+        optEl.appendChild(btn);
+      });
+    }
+    if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise().catch(() => {});
+    V.overlay.classList.remove('hidden');
+  }
+
+  function resolveQuiz(correct) {
+    const overlay = document.getElementById('vq-quiz-overlay');
+    if (overlay) overlay.classList.add('hidden');
+
+    if (correct) {
+      if (V.currentTarget?.kind === 'target' && V.currentTarget?.mesh) {
+        V.currentTarget.alive = false;
+        V.targetsFound++;
+        V.scoreXP += 40;
+        V.currentTarget.mesh.visible = false;
+        V.interactables = V.interactables.filter(o => o !== V.currentTarget.mesh);
+        if (typeof awardXPAndSync === 'function') {
+          awardXPAndSync(40, '3D方塊收集', 40);
+        }
+      } else if (V.currentTarget?.kind === 'monster' && V.currentMonster) {
+        V.currentMonster.hp -= 1;
+        V.scoreXP += 60;
+        if (V.currentMonster.hp <= 0) {
+          disposeObject3D(V.currentMonster.mesh);
+          V.monsters = V.monsters.filter(m => m !== V.currentMonster);
+        } else {
+          V.currentMonster.afraid = 90;
+        }
+        if (typeof awardXPAndSync === 'function') {
+          awardXPAndSync(60, '怪物擊退', 60);
+        }
+      }
+    } else {
+      if (V.currentMonster) V.currentMonster.afraid = 180;
+      if (V.currentTarget?.mesh) {
+        const pos = V.currentTarget.mesh.position;
+        pos.y += V.blockSize * 2.2;
+        pos.x += (Math.random() - 0.5) * V.blockSize * 5;
+        pos.z += (Math.random() - 0.5) * V.blockSize * 5;
+      }
+    }
+
+    V.currentTarget = null;
+    V.currentMonster = null;
+    V.pausedForQuiz = false;
+    updateWorldLabels();
+    if (V.controls) V.controls.lock();
+  }
+
+  function handleCrosshairInteraction() {
+    if (!V.camera || !V.scene || !V.controls) return;
+    V.raycaster.setFromCamera(V.tmpVec2.set(0, 0), V.camera);
+
+    const targets = [];
+    for (const t of V.targets) if (t.alive && t.mesh) targets.push(t.mesh);
+    for (const m of V.monsters) if (m.mesh) targets.push(m.mesh);
+    const hits = V.raycaster.intersectObjects(targets, true);
+    if (!hits.length) return;
+
+    let hit = hits[0].object;
+    let targetMesh = hit;
+    while (targetMesh && !targetMesh.userData?.kind && targetMesh.parent) targetMesh = targetMesh.parent;
+
+    if (targetMesh?.userData?.kind === 'target') {
+      openQuiz({ kind: 'target', mesh: targetMesh, data: targetMesh.userData });
+      return;
+    }
+
+    const mob = V.monsters.find(m => m.mesh === targetMesh || m.mesh.children.includes(targetMesh) || m.mesh.getObjectById?.(targetMesh.id));
+    if (mob) {
+      openQuiz({ kind: 'monster', monster: mob, mesh: mob.mesh });
+    }
+  }
+
+  function startVoxelLite() {
+    if (!ensureScene()) return;
+    V.questionPool = safeQuestions(18);
+    V.questionIndex = 0;
+    V.targetsFound = 0;
+    V.scoreXP = 0;
+    V.running = true;
+    V.mode = 'voxel';
+    V.clockPrev = performance.now();
+    V.frame = 0;
+    V.pausedForQuiz = false;
+    if (V.container) V.container.innerHTML = '';
+    V.container.appendChild(V.renderer.domElement);
+
+    clearWorld();
+    ensureHudWidgets();
+    V.targets = [];
+    V.monsters = [];
+    V.interactables = [];
+
+    // prebuild around spawn
+    const pos = V.controls.getObject().position;
+    pos.set(0, (terrainHeight(0, 0) + 4) * V.blockSize, 0);
+    ensureChunksAroundPlayer();
+    for (let i = 0; i < 6; i++) processChunkQueue();
+
+    if (V.blocker) V.blocker.style.display = 'flex';
+    if (V.hud) V.hud.classList.add('hidden');
+    if (V.crosshair) V.crosshair.classList.add('hidden');
+
+    updateWorldLabels();
+    if (V.animationId) cancelAnimationFrame(V.animationId);
+    animate();
+    if (V.controls) V.controls.lock();
+  }
+
+  function animate() {
+    if (!V.running) return;
+    V.animationId = requestAnimationFrame(animate);
+    const now = performance.now();
+    const delta = Math.min((now - V.clockPrev) / 1000, 0.05);
+    V.clockPrev = now;
+    V.frame++;
+
+    if (V.controls && V.controls.isLocked && !V.pausedForQuiz) {
+      updatePlayerMovement(delta);
+      if (V.frame % 2 === 0) updateTargets(delta * 2);
+      if (V.frame % 3 === 0) {
+        updateDayNight(delta * 3);
+        ensureChunksAroundPlayer();
+        processChunkQueue();
+      }
+      if (V.frame % 4 === 0) updateMonsters(delta * 4);
+      drawMiniMap();
+      updateWorldLabels();
+    }
+
+    if (V.renderer && V.scene && V.camera) V.renderer.render(V.scene, V.camera);
+  }
+
+  function stopVoxelLite() {
+    V.running = false;
+    V.pausedForQuiz = false;
+    if (V.animationId) cancelAnimationFrame(V.animationId);
+    if (V.controls) {
+      try { V.controls.unlock(); } catch (e) {}
+    }
+    if (V.blocker) V.blocker.style.display = 'flex';
+    if (V.crosshair) V.crosshair.classList.add('hidden');
+    if (V.hud) V.hud.classList.add('hidden');
+  }
+
+  window.startGame = function(id) {
+    if (id === 'voxel') return startVoxelLite();
+    if (typeof originalStartGame === 'function') return originalStartGame.call(window, id);
+  };
+
+  window.backToMenu = function() {
+    if (V.running) stopVoxelLite();
+    if (typeof originalBackToMenu === 'function') return originalBackToMenu.call(window);
+    const gameMenu = document.getElementById('gameMenu');
+    const voxelGame = document.getElementById('game-voxel');
+    const banner = document.getElementById('voxelHeroBanner');
+    if (voxelGame) voxelGame.classList.add('hidden');
+    if (gameMenu) gameMenu.classList.remove('hidden');
+    if (banner) banner.classList.remove('hidden');
+  };
+
+  window.triggerVoxelQuiz = function(target) {
+    if (!target) return;
+    openQuiz(target);
+  };
+
+  if (window.ThemeEngine && typeof window.ThemeEngine.updateThemeUI === 'function') {
+    const themeApply = window.ThemeEngine.apply?.bind(window.ThemeEngine);
+    window.ThemeEngine.apply = async function(input) {
+      const user = (() => {
+        try { return JSON.parse(localStorage.getItem('currentUser') || '{}'); } catch (e) { return {}; }
+      })();
+      const username = typeof input === 'string' && isNaN(Number(input)) ? input : (user.username || user.name || '');
+      const xp = typeof input === 'number' ? input : Number(user.xp) || 0;
+      try { this.updateThemeUI(xp); } catch (e) {}
+      if (!username || !themeApply) return;
+      try { return await themeApply(username); } catch (e) { return; }
+    };
+  }
+
+  window.__VQ_LITE_API__ = {
+    start: startVoxelLite,
+    stop: stopVoxelLite,
+    get state() { return V; }
+  };
 })();
 
 </script>
