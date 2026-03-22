@@ -692,67 +692,59 @@ function updateInfiniteTerrain() {
         setupJoy('joystick-move', 'knob-move', moveInput);
         setupJoy('joystick-look', 'knob-look', lookInput);
 
-        function updateGame() {
-            requestAnimationFrame(updateGame);
-            const delta = clock.getDelta();
-            
-            // 🛡️ 如果題目視窗開啟，只渲染畫面不更新邏輯
-            if (isBossQuizOpen || isQuizOpen) { 
-                renderer.render(scene, camera); 
-                return; 
-            }
+       // 🚀 優化後的遊戲主循環
+function updateGame() {
+    requestAnimationFrame(updateGame);
+    const delta = clock.getDelta();
+    
+    if (isBossQuizOpen || isQuizOpen) { 
+        renderer.render(scene, camera); 
+        return; 
+    }
 
-            // 1. 視角旋轉 (加上平滑係數，避免轉太快)
-            // 建議 lookInput.x/y 在搖桿處置時已經縮小過，或是這裡乘上更小的係數
-            camera.rotation.y -= lookInput.x * 0.02;
-            camera.rotation.x -= lookInput.y * 0.02;
-            camera.rotation.x = Math.max(-1.5, Math.min(1.5, camera.rotation.x));
-            
-            // 2. 移動邏輯
-            const speed = 0.15; 
-            const dir = new THREE.Vector3();
-            
-            // 鍵盤控制
-            if(keysPressed['w']) dir.z -= 1; 
-            if(keysPressed['s']) dir.z += 1;
-            if(keysPressed['a']) dir.x -= 1; 
-            if(keysPressed['d']) dir.x += 1;
-            
-            // 搖桿控制補強
-            if(moveInput.x !== 0 || moveInput.y !== 0) { 
-                dir.x += moveInput.x; 
-                dir.z += moveInput.y; 
-            }
+    // 1. 平滑視角旋轉
+    camera.rotation.y -= lookInput.x * 0.03;
+    camera.rotation.x -= lookInput.y * 0.03;
+    camera.rotation.x = Math.max(-1.5, Math.min(1.5, camera.rotation.x));
+    
+    // 2. 移動邏輯 (考量相機朝向)
+    const speed = 0.15; 
+    const dir = new THREE.Vector3();
+    
+    if(keysPressed['w']) dir.z -= 1; 
+    if(keysPressed['s']) dir.z += 1;
+    if(keysPressed['a']) dir.x -= 1; 
+    if(keysPressed['d']) dir.x += 1;
+    
+    if(moveInput.x !== 0 || moveInput.y !== 0) { 
+        dir.x += moveInput.x; 
+        dir.z += moveInput.y; 
+    }
 
-            if(dir.length() > 0) {
-                // 將移動方向轉向攝影機面對的方向（只繞 Y 軸旋轉）
-                dir.normalize().applyAxisAngle(new THREE.Vector3(0,1,0), camera.rotation.y);
-                camera.position.addScaledVector(dir, speed);
-                
-                // 只有移動時才更新無限地形檢查，節省效能
-                if (typeof updateInfiniteTerrain === 'function') {
-                    updateInfiniteTerrain();
-                }
-            }
+    if(dir.length() > 0) {
+        // 只繞著 Y 軸轉向，防止玩家往地底下走
+        const playerRotY = camera.rotation.y;
+        dir.normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), playerRotY);
+        camera.position.addScaledVector(dir, speed);
+        
+        // 移動時才更新地形
+        updateInfiniteTerrain();
+    }
 
-            // 3. 更新實體 AI (動物移動)
-            updateEntities(delta);
+    // 3. 更新實體 (動物 AI)
+    if (typeof updateEntities === 'function') updateEntities(delta);
 
-            // 4. 更新準心系統 (顯示目標資訊)
-            updateCrosshairSystem();
+    // 4. 更新準心資訊
+    updateCrosshairSystem();
 
-            // 5. 魔王特效 (讓黑紅方塊有呼吸感)
-            if (bossEntity) {
-                const scale = 1 + Math.sin(Date.now() * 0.005) * 0.1;
-                bossEntity.scale.set(scale, scale, scale);
-                // 更新導航指標距離
-                const dist = Math.floor(camera.position.distanceTo(bossEntity.position));
-                document.getElementById('boss-dist').innerText = dist;
-            }
+    // 5. 魔王呼吸燈效果
+    if (bossEntity) {
+        const pulse = 1 + Math.sin(Date.now() * 0.005) * 0.1;
+        bossEntity.scale.set(pulse, pulse, pulse);
+    }
 
-            // 最後：渲染畫面
-            renderer.render(scene, camera);
-        }
+    renderer.render(scene, camera);
+}
         // 初始化
         window.onload = () => { renderUI(); updateStats(0,0); updateGame(); };
         window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
@@ -815,27 +807,28 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-// 2. 初始化世界
+// 修改初始化世界的部分
 function initGame() {
     console.log("🚀 正在啟動理化生存世界...");
     
-    // 確保相機不要在 0,0,0 (會黑屏)
     camera.position.set(0, 5, 10);
     camera.lookAt(0, 0, 0);
 
-    // 產生初始地形
-    updateInfiniteTerrain();
+    updateInfiniteTerrain(); // 產生初始地面
     
-    // 產生 Boss 與 UI
+    // 🌟 修正：讓 15 隻動物分散在出生點附近
+    for(let i=0; i<15; i++) {
+        const type = (i % 2 === 0 ? 'pig' : 'cow');
+        // 隨機生成在玩家半徑 20 格內
+        const rx = (Math.random() - 0.5) * 40;
+        const rz = (Math.random() - 0.5) * 40;
+        spawnAnimal(type, new THREE.Vector3(rx, 2, rz)); 
+    }
+
     spawnBoss();
     renderUI();
-    
-    // 正式開始動畫迴圈
-    animate();
+    animate(); // 啟動循環
 }
-
-// 執行！
-initGame();
         // ==========================================
 // 🛠️ 互動系統：挖掘、採集、狩獵
 // ==========================================
