@@ -12,6 +12,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
     <link rel="stylesheet" href="assets/css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
      <style>
         /* 當螢幕寬度小於 300px (通常是手錶) 時隱藏 */
         @media (max-width: 300px) {
@@ -209,7 +212,56 @@
                     </span>
                 </div>
             </div>
+<div id="voxelHeroBanner" class="w-full max-w-6xl mx-auto mb-10 bg-gradient-to-r from-slate-900 via-indigo-900 to-purple-900 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden flex flex-col items-center text-center border-4 border-indigo-500/30">
+        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
+        <div class="z-10 relative">
+            <div class="w-20 h-20 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-2xl mx-auto flex items-center justify-center text-4xl shadow-lg shadow-indigo-500/50 mb-4 transform rotate-12"><i class="fas fa-cube text-white"></i></div>
+            <h2 class="text-4xl md:text-5xl font-black mb-4 tracking-wider">3D 知識宇宙 VoxelQuest</h2>
+            <p class="mb-8 text-indigo-200 text-lg">第一人稱沉浸式探索！跑酷、尋寶、解開隱藏在方塊中的謎題。</p>
+            <button onclick="initVoxelWorld()" class="bg-yellow-400 text-yellow-900 px-10 py-4 rounded-full font-black text-xl shadow-[0_0_20px_rgba(250,204,21,0.5)] hover:bg-yellow-300 hover:scale-105 transition-all duration-300">
+                <i class="fas fa-play mr-2"></i> 啟動 3D 世界
+            </button>
+        </div>
+    </div>
 
+    <div id="voxelGameWindow" class="hidden w-full max-w-6xl mx-auto h-[75vh] min-h-[500px] rounded-3xl bg-black mb-12 relative shadow-2xl overflow-hidden border-4 border-slate-700 transition-all">
+        
+        <div id="vq-blocker" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-20 text-white cursor-pointer transition-opacity backdrop-blur-sm">
+            <h2 class="text-5xl font-black mb-6 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">點擊畫面開始探索</h2>
+            <div class="flex gap-6 text-lg text-slate-300 mb-8 bg-black/50 p-6 rounded-2xl border border-slate-600">
+                <div class="flex flex-col items-center"><i class="fas fa-mouse mb-2 text-2xl text-indigo-400"></i>滑鼠 轉動視角</div>
+                <div class="flex flex-col items-center"><i class="fas fa-keyboard mb-2 text-2xl text-indigo-400"></i>WASD 移動</div>
+                <div class="flex flex-col items-center"><i class="fas fa-ruler-vertical mb-2 text-2xl text-indigo-400"></i>空白鍵 跳躍</div>
+                <div class="flex flex-col items-center"><i class="fas fa-bullseye mb-2 text-2xl text-indigo-400"></i>左鍵 觸發方塊</div>
+            </div>
+            <button onclick="exitVoxelWorld()" class="absolute top-6 right-6 bg-red-500/80 hover:bg-red-500 px-6 py-2 rounded-full font-bold transition">離開 3D 世界</button>
+        </div>
+        
+        <div id="vq-hud" class="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-10 pointer-events-none hidden">
+            <div class="bg-black/60 backdrop-blur-md px-6 py-3 rounded-2xl text-white font-bold text-xl border border-white/10 shadow-lg">
+                <i class="fas fa-cube text-yellow-400 mr-2 animate-pulse"></i> 收集進度: <span id="vq-score" class="text-yellow-400 text-2xl">0</span> / <span id="vq-total">10</span>
+            </div>
+            <div class="bg-black/60 backdrop-blur-md px-6 py-3 rounded-2xl text-white font-bold border border-white/10 shadow-lg">
+                <span id="vq-subject-display">載入中...</span>
+            </div>
+        </div>
+
+        <div id="vq-crosshair" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white/70 text-3xl font-light pointer-events-none z-10 hidden">+</div>
+
+        <div id="vq-quiz-overlay" class="hidden absolute inset-0 bg-slate-900/90 backdrop-blur-md z-30 flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl p-8 max-w-3xl w-full text-slate-800 shadow-2xl border-4 border-indigo-200 transform scale-100 transition-transform">
+                <div class="flex justify-between items-center mb-6 pb-4 border-b-2 border-slate-100">
+                    <h3 class="text-3xl font-black text-indigo-900 flex items-center"><i class="fas fa-brain text-indigo-500 mr-3"></i> 知識挑戰</h3>
+                    <div class="text-slate-400 text-sm">答對可獲得豐厚 XP</div>
+                </div>
+                <div id="vq-question" class="text-2xl font-bold mb-8 leading-relaxed text-slate-700 min-h-[80px]">題目載入中...</div>
+                <div id="vq-options" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    </div>
+            </div>
+        </div>
+        
+        <div id="vq-canvas-container" class="w-full h-full"></div>
+    </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8" id="gameMenu">
                 
                 <div onclick="startGame('flashcard')" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group">
@@ -1237,6 +1289,504 @@ function toggleSidebar() {
         document.getElementById('wheelQuestion').textContent = '請先轉動轉盤...';
         document.getElementById('wheelOptions').innerHTML = '';
     }
+// ========================================================
+// 👑 VoxelQuest Pro 終極版 - 日夜交替 & 5顆方塊收集系統
+// ========================================================
+let vqScene, vqCamera, vqRenderer, vqControls;
+let vqRaycaster;
+
+// 🌟 多目標方塊系統
+let vqTargetCubes = [];     // 存放場上所有的方塊
+let currentHitCube = null;  // 當前正在解答的那顆方塊
+const TARGET_COUNT = 5;     // 🌟 已經為你改成 5 顆！節奏更舒緩
+let cubesFound = 0;         // 本關已找到數量
+
+// 🌟 日夜交替系統
+let vqTimeOfDay = 0;        // 時間變數 (0 ~ 2π)
+let vqSunLight, vqAmbientLight; 
+
+// 物理與移動變數
+let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, canJump = false;
+let prevTime = performance.now();
+let velocity = new THREE.Vector3();
+let direction = new THREE.Vector3();
+let vqAnimationId;
+
+// 遊戲與關卡狀態
+let vqStage = 1;
+let vqTotalXP = 0;
+
+// ==========================================
+// 🧱 150+ 種類方塊註冊表 (Voxel Registry)
+// ==========================================
+const BLOCK_TYPES = {
+    // 【土地與地形 Land】
+    grass: 0x4CAF50, dirt: 0x795548, stone: 0x9E9E9E, sand: 0xE0E082, water: 0x2196F3, 
+    snow: 0xFFFFFF, ice: 0xB3E5FC, mud: 0x3E2723, clay: 0x90A4AE, bedrock: 0x212121, 
+    obsidian: 0x1A237E, gravel: 0x757575, moss: 0x33691E, podzol: 0x5D4037, mycelium: 0x9C27B0,
+    red_sand: 0xD84315, sandstone: 0xFFCC80, granite: 0xEF9A9A, diorite: 0xE0E0E0, andesite: 0x78909C,
+    basalt: 0x424242, magma: 0xE65100, soul_sand: 0x4E342E, netherrack: 0xB71C1C, end_stone: 0xFFF59D,
+    
+    // 【植物與自然 Plants】
+    oak_log: 0x4E342E, oak_leaves: 0x2E7D32, birch_log: 0xD7CCC8, birch_leaves: 0x81C784, 
+    pine_log: 0x3E2723, pine_leaves: 0x1B5E20, jungle_log: 0x5D4037, jungle_leaves: 0x43A047,
+    cactus: 0x388E3C, red_flower: 0xF44336, yellow_flower: 0xFFEB3B, blue_flower: 0x1E88E5,
+    fern: 0x4CAF50, dead_bush: 0x8D6E63, lily_pad: 0x66BB6A, vine: 0x2E7D32, 
+    red_mushroom: 0xD32F2F, brown_mushroom: 0x795548, bamboo: 0x8BC34A, sugar_cane: 0xAED581,
+    pumpkin: 0xE65100, melon: 0x4CAF50, hay_bale: 0xFFCA28, wheat: 0xFFD54F, tall_grass: 0x558B2F,
+
+    // 【建材與人工物 Materials】
+    glass: 0xE3F2FD, brick: 0xC62828, stone_brick: 0x616161, wood_plank: 0x8D6E63, 
+    gold_block: 0xFFB300, iron_block: 0xE0E0E0, diamond_block: 0x00BCD4, emerald_block: 0x00E676,
+    coal_block: 0x212121, lapis_block: 0x1565C0, redstone_block: 0xD50000, quartz_block: 0xFAFAFA,
+    bookshelf: 0x5D4037, crafting_table: 0x6D4C41, furnace: 0x757575, chest: 0x8D6E63,
+    wool_white: 0xEEEEEE, wool_orange: 0xFF9800, wool_magenta: 0xE040FB, wool_light_blue: 0x03A9F4,
+    wool_yellow: 0xFFEB3B, wool_lime: 0xCDDC39, wool_pink: 0xF48FB1, wool_gray: 0x9E9E9E,
+    
+    // 【房屋結構與家具 Structures】
+    roof_tile: 0xBF360C, roof_wood: 0x5D4037, window_frame: 0x4E342E, 
+    door_top: 0x795548, door_bottom: 0x6D4C41, fence: 0x8D6E63, pillar: 0xEEEEEE, 
+    stairs_stone: 0x9E9E9E, stairs_wood: 0x8D6E63, path_gravel: 0x757575, path_dirt: 0x5D4037,
+    bed_red: 0xF44336, table: 0x795548, chair: 0x8D6E63, lantern: 0xFFD54F, 
+
+    // 【動物部位 Animals】
+    pig_pink: 0xF8BBD0, pig_nose: 0xF06292, 
+    cow_white: 0xFAFAFA, cow_black: 0x212121, cow_leather: 0x4E342E,
+    sheep_fleece: 0xEEEEEE, sheep_skin: 0xFFCCBC, 
+    zombie_green: 0x4CAF50, creeper_green: 0x81C784
+};
+
+// 3D 碰撞世界網格
+let worldGrid = {}; 
+let blockSize = 10;
+let worldSize = 40; // 40x40 網格生成區塊
+
+function setBlock(x, y, z, typeKey) {
+    if(!worldGrid[x]) worldGrid[x] = {};
+    if(!worldGrid[x][y]) worldGrid[x][y] = {};
+    worldGrid[x][y][z] = BLOCK_TYPES[typeKey];
+}
+
+function getBlock(x, y, z) {
+    if(worldGrid[x] && worldGrid[x][y]) return worldGrid[x][y][z];
+    return undefined;
+}
+
+function checkCollision(x, y, z) {
+    let gridX = Math.round(x / blockSize);
+    let gridY = Math.round((y - 5) / blockSize); 
+    let gridZ = Math.round(z / blockSize);
+    if (getBlock(gridX, gridY, gridZ) || getBlock(gridX, gridY + 1, gridZ)) return true;
+    return false;
+}
+
+function initVoxel() {
+    if(!currentSubject) { alert("請先在上方選單選擇一個「學科」！"); return; }
+    gameQuestions = generateGameQuestions(currentSubject, 30); // 準備充足的題庫
+    if(gameQuestions.length === 0) { alert("此科目無題目！"); return; }
+    
+    vqStage = 1;
+    vqTotalXP = 0;
+    cubesFound = 0;
+    document.getElementById('vq-stage').textContent = `收集進度: ${cubesFound} / ${TARGET_COUNT}`;
+    document.getElementById('vq-score').textContent = vqTotalXP;
+
+    setupThreeJS();
+}
+
+// 攔截 startGame
+const originalStartGame = window.startGame;
+window.startGame = function(id) {
+    if(id === 'voxel') {
+        document.getElementById('gameMenu').classList.add('hidden');
+        if(document.getElementById('voxelHeroBanner')) document.getElementById('voxelHeroBanner').classList.add('hidden');
+        document.querySelectorAll('.game-section').forEach(el => el.classList.add('hidden'));
+        document.getElementById('game-voxel').classList.remove('hidden');
+        initVoxel();
+    } else {
+        if(document.getElementById('voxelHeroBanner')) document.getElementById('voxelHeroBanner').classList.add('hidden');
+        if(originalStartGame) originalStartGame(id);
+    }
+};
+
+function setupThreeJS() {
+    const container = document.getElementById('vq-canvas-container');
+    container.innerHTML = ''; 
+    worldGrid = {}; 
+
+    vqScene = new THREE.Scene();
+    vqScene.fog = new THREE.FogExp2(0x87ceeb, 0.002);
+
+    vqCamera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 1, 2000);
+    
+    // 🌟 光源設定 (為日夜交替做準備)
+    vqAmbientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    vqScene.add(vqAmbientLight);
+    
+    vqSunLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    vqSunLight.position.set(100, 200, 50);
+    vqScene.add(vqSunLight);
+
+    vqTimeOfDay = Math.PI / 4; // 初始時間設為早晨
+
+    vqControls = new THREE.PointerLockControls(vqCamera, document.body);
+    
+    const blocker = document.getElementById('vq-blocker');
+    blocker.addEventListener('click', function () {
+        if(!document.getElementById('vq-quiz-overlay').classList.contains('hidden')) return;
+        vqControls.lock();
+    });
+
+    vqControls.addEventListener('lock', function () {
+        blocker.style.display = 'none';
+        document.getElementById('vq-hud').classList.remove('hidden');
+        document.getElementById('vq-crosshair').classList.remove('hidden');
+    });
+
+    vqControls.addEventListener('unlock', function () {
+        if(document.getElementById('vq-quiz-overlay').classList.contains('hidden')) {
+            blocker.style.display = 'flex';
+            document.getElementById('vq-crosshair').classList.add('hidden');
+        }
+    });
+    vqScene.add(vqControls.getObject());
+
+    // 鍵盤控制
+    const onKeyDown = function (event) {
+        switch (event.code) {
+            case 'ArrowUp': case 'KeyW': moveForward = true; break;
+            case 'ArrowLeft': case 'KeyA': moveLeft = true; break;
+            case 'ArrowDown': case 'KeyS': moveBackward = true; break;
+            case 'ArrowRight': case 'KeyD': moveRight = true; break;
+            case 'Space': if (canJump) velocity.y += 150; canJump = false; break; 
+        }
+    };
+    const onKeyUp = function (event) {
+        switch (event.code) {
+            case 'ArrowUp': case 'KeyW': moveForward = false; break;
+            case 'ArrowLeft': case 'KeyA': moveLeft = false; break;
+            case 'ArrowDown': case 'KeyS': moveBackward = false; break;
+            case 'ArrowRight': case 'KeyD': moveRight = false; break;
+        }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keyup', onKeyUp);
+
+    // ==========================================
+    // 🌍 生成 150+ 方塊世界 & 撒下 5 顆方塊
+    // ==========================================
+    generateWorldData();
+    renderWorldInstanced();
+    spawnTargetCubes(TARGET_COUNT); // 🌟 一次產生 5 顆目標
+
+    vqControls.getObject().position.set(0, 80, 0); 
+
+    // 互動射線 (偵測多顆方塊)
+    const interactionRaycaster = new THREE.Raycaster();
+    document.addEventListener('mousedown', (event) => {
+        if(vqControls.isLocked && event.button === 0 && vqTargetCubes.length > 0) {
+            interactionRaycaster.setFromCamera(new THREE.Vector2(0,0), vqCamera);
+            const intersects = interactionRaycaster.intersectObjects(vqTargetCubes);
+            
+            if(intersects.length > 0) {
+                const hitObj = intersects[0].object;
+                if(vqCamera.position.distanceTo(hitObj.position) < 80) {
+                    currentHitCube = hitObj; // 記錄點到了哪一顆
+                    triggerVoxelQuiz();
+                }
+            }
+        }
+    });
+
+    vqRenderer = new THREE.WebGLRenderer({ antialias: true });
+    vqRenderer.setPixelRatio(window.devicePixelRatio);
+    vqRenderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(vqRenderer.domElement);
+    window.addEventListener('resize', onWindowResize);
+
+    prevTime = performance.now();
+    animateVoxelWorld();
+}
+
+function generateWorldData() {
+    const half = worldSize / 2;
+    for (let x = -half; x < half; x++) {
+        for (let z = -half; z < half; z++) {
+            let height = Math.floor(Math.sin(x/5) * 3 + Math.cos(z/4) * 2) + 2;
+            for(let y = -3; y < height; y++) {
+                if(y < -1) setBlock(x, y, z, 'stone');
+                else if(y < height-1) setBlock(x, y, z, 'dirt');
+                else setBlock(x, y, z, 'grass');
+            }
+            let surfaceY = height;
+            let rand = Math.random();
+
+            if(rand < 0.02) generateTree(x, surfaceY, z);
+            else if(rand < 0.05) setBlock(x, surfaceY, z, 'tall_grass');
+            else if(rand < 0.06) setBlock(x, surfaceY, z, 'red_flower');
+            else if(rand < 0.08) generateAnimal(x, surfaceY, z);
+            
+            if(x % 15 === 0 && z % 15 === 0 && Math.random() < 0.5) generateHouse(x, surfaceY, z);
+        }
+    }
+}
+
+function generateTree(bx, by, bz) {
+    let height = Math.floor(Math.random() * 3) + 4;
+    for(let y=0; y<height; y++) setBlock(bx, by+y, bz, 'oak_log');
+    for(let lx=-2; lx<=2; lx++) {
+        for(let lz=-2; lz<=2; lz++) {
+            for(let ly=height-2; ly<=height+1; ly++) {
+                if(Math.abs(lx)===2 && Math.abs(lz)===2 && ly===height+1) continue;
+                if(!getBlock(bx+lx, by+ly, bz+lz)) setBlock(bx+lx, by+ly, bz+lz, 'oak_leaves');
+            }
+        }
+    }
+}
+
+function generateHouse(bx, by, bz) {
+    const w = 5, h = 4, d = 5;
+    for(let x=0; x<w; x++) {
+        for(let y=0; y<h; y++) {
+            for(let z=0; z<d; z++) {
+                if(x===0 || x===w-1 || z===0 || z===d-1) setBlock(bx+x, by+y, bz+z, 'wood_plank');
+                if(y===h-1) setBlock(bx+x, by+y+1, bz+z, 'roof_tile');
+                if(y===0) setBlock(bx+x, by-1, bz+z, 'stone_brick');
+            }
+        }
+    }
+    setBlock(bx+2, by, bz, 'door_bottom');
+    setBlock(bx+2, by+1, bz, 'door_top');
+    setBlock(bx+1, by+1, bz+d-1, 'glass');
+    setBlock(bx+1, by, bz+1, 'bed_red');
+}
+
+function generateAnimal(bx, by, bz) {
+    setBlock(bx, by, bz, 'pig_pink');
+    setBlock(bx+1, by, bz, 'pig_nose');
+}
+
+function renderWorldInstanced() {
+    let totalBlocks = 0;
+    for(let x in worldGrid) {
+        for(let y in worldGrid[x]) {
+            totalBlocks += Object.keys(worldGrid[x][y]).length;
+        }
+    }
+    const geometry = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
+    const material = new THREE.MeshLambertMaterial({ color: 0xffffff });
+    const instancedMesh = new THREE.InstancedMesh(geometry, material, totalBlocks);
+    let dummy = new THREE.Object3D();
+    let colorObj = new THREE.Color();
+    let index = 0;
+    for(let x in worldGrid) {
+        for(let y in worldGrid[x]) {
+            for(let z in worldGrid[x][y]) {
+                dummy.position.set(x * blockSize, y * blockSize, z * blockSize);
+                dummy.updateMatrix();
+                instancedMesh.setMatrixAt(index, dummy.matrix);
+                colorObj.setHex(worldGrid[x][y][z]);
+                instancedMesh.setColorAt(index, colorObj);
+                index++;
+            }
+        }
+    }
+    instancedMesh.instanceMatrix.needsUpdate = true;
+    instancedMesh.instanceColor.needsUpdate = true;
+    vqScene.add(instancedMesh);
+}
+
+// 🎯 生成多顆目標方塊 (5 顆)
+function spawnTargetCubes(count) {
+    // 先清除舊的
+    vqTargetCubes.forEach(cube => vqScene.remove(cube));
+    vqTargetCubes = [];
+    
+    const qGeo = new THREE.BoxGeometry(8, 8, 8);
+    const qMat = new THREE.MeshPhongMaterial({ color: 0xFFD700, emissive: 0xFF8C00, shininess: 100 });
+    
+    for(let i=0; i<count; i++) {
+        let cube = new THREE.Mesh(qGeo, qMat);
+        // 分散散落於地圖上空
+        cube.position.set(
+            (Math.random() - 0.5) * (worldSize * blockSize * 0.8), 
+            Math.random() * 30 + 15, 
+            (Math.random() - 0.5) * (worldSize * blockSize * 0.8)
+        );
+        vqScene.add(cube);
+        vqTargetCubes.push(cube);
+    }
+}
+
+function onWindowResize() {
+    if(!vqCamera || !vqRenderer) return;
+    const container = document.getElementById('vq-canvas-container');
+    vqCamera.aspect = container.clientWidth / container.clientHeight;
+    vqCamera.updateProjectionMatrix();
+    vqRenderer.setSize(container.clientWidth, container.clientHeight);
+}
+
+function animateVoxelWorld() {
+    vqAnimationId = requestAnimationFrame(animateVoxelWorld);
+    const time = performance.now();
+    
+    if (vqControls.isLocked === true) {
+        // 🌟 1. 處理日夜交替
+        vqTimeOfDay += 0.0005; // 日夜流逝速度
+        if(vqTimeOfDay > Math.PI * 2) vqTimeOfDay = 0;
+        
+        // 太陽軌跡與光照強度變化
+        let sunHeight = Math.sin(vqTimeOfDay);
+        vqSunLight.position.x = Math.cos(vqTimeOfDay) * 200;
+        vqSunLight.position.y = sunHeight * 200;
+        
+        let skyColor = new THREE.Color();
+        if (sunHeight > 0.2) { 
+            // 白天
+            skyColor.setHex(0x87ceeb); // 天藍
+            vqAmbientLight.intensity = 0.6;
+            vqSunLight.intensity = 0.8;
+        } else if (sunHeight > 0) {
+            // 黃昏/清晨
+            let ratio = sunHeight / 0.2;
+            skyColor.lerpColors(new THREE.Color(0xfd5e53), new THREE.Color(0x87ceeb), ratio);
+            vqAmbientLight.intensity = 0.3 + (0.3 * ratio);
+            vqSunLight.intensity = 0.8 * ratio;
+        } else {
+            // 黑夜
+            skyColor.setHex(0x050510); // 深夜藍黑
+            vqAmbientLight.intensity = 0.15; // 晚上保留微弱月光
+            vqSunLight.intensity = 0; // 太陽下山
+        }
+        
+        vqScene.background = skyColor;
+        vqScene.fog.color = skyColor;
+
+        // 🌟 2. 讓所有存在的方塊自轉
+        vqTargetCubes.forEach(cube => {
+            cube.rotation.x += 0.02; 
+            cube.rotation.y += 0.03;
+        });
+
+        // 🌟 3. 玩家物理與移動
+        const delta = (time - prevTime) / 1000;
+        velocity.x -= velocity.x * 10.0 * delta;
+        velocity.z -= velocity.z * 10.0 * delta;
+        velocity.y -= 9.8 * 60.0 * delta; // 重力
+
+        direction.z = Number(moveForward) - Number(moveBackward);
+        direction.x = Number(moveRight) - Number(moveLeft);
+        direction.normalize();
+
+        const speed = 400.0;
+        if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;
+        if (moveLeft || moveRight) velocity.x -= direction.x * speed * delta;
+
+        let pos = vqControls.getObject().position;
+        let nextX = pos.x - (velocity.x * delta);
+        let nextZ = pos.z - (velocity.z * delta);
+        let nextY = pos.y + (velocity.y * delta);
+
+        if(checkCollision(nextX, pos.y, pos.z)) velocity.x = 0;
+        if(checkCollision(pos.x, pos.y, nextZ)) velocity.z = 0;
+        if(checkCollision(pos.x, nextY, pos.z)) {
+            if(velocity.y < 0) {
+                velocity.y = 0;
+                canJump = true;
+                pos.y = Math.ceil(pos.y / blockSize) * blockSize + 5; 
+            } else velocity.y = 0; 
+        }
+
+        if(pos.y < -50) { velocity.y = 0; pos.set(0, 80, 0); } // 掉落虛空重生
+
+        vqControls.moveRight(-velocity.x * delta);
+        vqControls.moveForward(-velocity.z * delta);
+        pos.y += (velocity.y * delta);
+    }
+    prevTime = time;
+    vqRenderer.render(vqScene, vqCamera);
+}
+
+// ⚔️ 觸發答題 (對應特定的那顆方塊)
+function triggerVoxelQuiz() {
+    vqControls.unlock();
+    document.getElementById('vq-crosshair').classList.add('hidden');
+    document.getElementById('vq-quiz-overlay').classList.remove('hidden');
+    // UI 更新
+    document.getElementById('vq-quiz-stage').textContent = `收集進度: ${cubesFound} / ${TARGET_COUNT}`; 
+    
+    const qData = gameQuestions[currentQIdx % gameQuestions.length];
+    document.getElementById('vq-question').innerHTML = qData.question;
+    const optionsContainer = document.getElementById('vq-options');
+    optionsContainer.innerHTML = '';
+    
+    qData.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = "w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl hover:bg-indigo-50 font-bold text-slate-700 text-lg transition-all shadow-sm";
+        btn.innerHTML = `<span class="inline-block w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg mr-3">${String.fromCharCode(65+idx)}</span> ${opt}`;
+        
+        btn.onclick = () => {
+            let isCorrect = (typeof qData.answer === 'number' ? idx === qData.answer : opt === qData.answer);
+            if(isCorrect) {
+                btn.classList.replace('bg-slate-50', 'bg-green-100');
+                
+                // 🌟 答對：移除該顆方塊，增加進度
+                vqScene.remove(currentHitCube); 
+                vqTargetCubes = vqTargetCubes.filter(c => c !== currentHitCube); // 從陣列中剃除
+                
+                cubesFound++;
+                vqTotalXP += 50;
+                currentQIdx++;
+                
+                document.getElementById('vq-score').textContent = vqTotalXP;
+                document.getElementById('vq-stage').textContent = `收集進度: ${cubesFound} / ${TARGET_COUNT}`;
+                awardXPAndSync(50, `3D方塊收集`, 50);
+                
+                setTimeout(() => {
+                    document.getElementById('vq-quiz-overlay').classList.add('hidden');
+                    
+                    // 檢查是否找齊了 5 顆
+                    if(cubesFound >= TARGET_COUNT) {
+                        alert(`🎉 恭喜！你找齊了 ${TARGET_COUNT} 顆知識方塊！準備進入下一階段！`);
+                        cubesFound = 0;
+                        vqStage++;
+                        spawnTargetCubes(TARGET_COUNT); // 重新撒下新的一批 5 顆
+                        document.getElementById('vq-stage').textContent = `收集進度: 0 / ${TARGET_COUNT}`;
+                    } else {
+                        alert(`✅ 答對了！目前已收集 ${cubesFound} / ${TARGET_COUNT} 顆，繼續尋找下一顆！`);
+                    }
+                    vqControls.lock(); 
+                }, 800);
+            } else {
+                btn.classList.replace('bg-slate-50', 'bg-red-100');
+                btn.classList.add('animate-shake'); 
+                setTimeout(() => {
+                    document.getElementById('vq-quiz-overlay').classList.add('hidden');
+                    alert("❌ 答錯了！方塊能量消散，它轉移到別的地方了！");
+                    
+                    // 答錯懲罰：這顆方塊傳送到別的地方
+                    currentHitCube.position.set(
+                        (Math.random() - 0.5) * (worldSize * blockSize * 0.8), 
+                        Math.random() * 30 + 15, 
+                        (Math.random() - 0.5) * (worldSize * blockSize * 0.8)
+                    );
+                    
+                    vqControls.lock();
+                }, 1000);
+            }
+        };
+        optionsContainer.appendChild(btn);
+    });
+    if(window.MathJax) MathJax.typesetPromise();
+}
+
+function backToMenu() {
+    if(vqAnimationId) cancelAnimationFrame(vqAnimationId);
+    if(vqControls) vqControls.unlock();
+    document.getElementById('game-voxel').classList.add('hidden');
+    document.getElementById('gameMenu').classList.remove('hidden');
+    document.getElementById('voxelHeroBanner').classList.remove('hidden');
+}
 </script>
 </body>
 </html>
