@@ -1377,16 +1377,31 @@ function getBlock(x, y, z) {
 // ==========================================
 // 🛡️ 1. 修正碰撞偵測 (加入基岩層，防止無限掉落)
 // ==========================================
+// ==========================================
+// 🛡️ 1. 修正碰撞偵測 (讓你能在草地上滑順走路，不再卡死！)
+// ==========================================
 function checkCollision(x, y, z) {
-    // 🌟 絕對地板：只要玩家高度(y)低於 10，就視為踩到實體地板，強制接住！
-    if (y <= 10) return true;
-
     let gridX = Math.round(x / blockSize);
     let gridY = Math.round((y - 5) / blockSize); 
     let gridZ = Math.round(z / blockSize);
+
+    // 🌟 正常的地板判定：只要腳底下的網格高度 <= 0 (草地層)，就判定為踩到地板
+    if (gridY <= 0) return true;
+
+    // 檢查有沒有撞到其他方塊 (例如我們生成的 5 顆題目方塊)
     if (getBlock(gridX, gridY, gridZ) || getBlock(gridX, gridY + 1, gridZ)) return true;
     return false;
 }
+
+// ==========================================
+// 🚫 2. 封印舊版生態系 (阻止背景迴圈在天上種樹、生怪！)
+// ==========================================
+// 把原本動畫迴圈裡會呼叫的舊函數全部變成「空殼」，這樣它們就不會做事了
+window.vqEnsureChunksAroundPlayer = function() {}; 
+window.vqSpawnMonsterNearPlayer = function() {};
+window.vqUpdateAnimals = function() {};
+window.vqUpdateMonsters = function() {};
+window.generateWorldData = function() {};
 
 // ==========================================
 // 🌱 2. 超輕量級平坦地板 (生成綠色草地)
