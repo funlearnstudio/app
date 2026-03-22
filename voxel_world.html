@@ -159,8 +159,9 @@ const ITEM_REGISTRY = {
     'sand': { n: '沙子', i: '⏳', type: 'block' },
     'coal': { n: '煤炭', i: '⚫', type: 'mat' },
     'iron_ore': { n: '鐵礦', i: '⛓️', type: 'mat' },
+    'gas': { n: '瓦斯', i: '💨', type: 'mat' }, // 👈 合成公式有用到
 
-    // 🛠️ 工具與材料 (mat)
+    // 🛠️ 工具與材料
     'stick': { n: '木棍', i: '🦯', type: 'mat' }, 
     'plank': { n: '木板', i: '🪵', type: 'mat' },
     'salt': { n: '鹽巴', i: '🧂', type: 'mat' }, 
@@ -170,8 +171,8 @@ const ITEM_REGISTRY = {
     'torch': { n: '火把', i: '🔦', type: 'mat' },
     'leather': { n: '皮革', i: '👞', type: 'mat' },
 
-    // 🍖 動物產品 (10種預留)
-    'meat_pig': { n: '生豬肉', i: '🥩', type: 'food', e: 10, h: -5 }, // 生吃扣血
+    // 🍖 動物與肉類
+    'meat_pig': { n: '生豬肉', i: '🥩', type: 'food', e: 10, h: -5 },
     'meat_cow': { n: '生牛肉', i: '🥩', type: 'food', e: 12, h: -5 },
     'meat_chicken': { n: '生雞肉', i: '🍗', type: 'food', e: 8, h: -8 },
     'egg': { n: '雞蛋', i: '🥚', type: 'food', e: 5, h: 0 },
@@ -179,7 +180,7 @@ const ITEM_REGISTRY = {
     'cow_hide': { n: '牛皮', i: '📜', type: 'mat' },
     'wool': { n: '羊毛', i: '☁️', type: 'mat' },
 
-    // 🥕 蔬菜 (10種)
+    // 🥕 蔬菜與水果 (包含公式缺少的)
     'carrot': { n: '胡蘿蔔', i: '🥕', type: 'food', e: 15, h: 5 }, 
     'potato': { n: '馬鈴薯', i: '🥔', type: 'food', e: 15, h: 5 },
     'tomato': { n: '番茄', i: '🍅', type: 'food', e: 10, h: 5 }, 
@@ -190,8 +191,7 @@ const ITEM_REGISTRY = {
     'pumpkin': { n: '南瓜', i: '🎃', type: 'block', e: 25, h: 10 },
     'eggplant': { n: '茄子', i: '🍆', type: 'food', e: 15, h: 5 }, 
     'chili': { n: '辣椒', i: '🌶️', type: 'food', e: 5, h: -5 },
-
-    // 🍎 水果 (10種)
+    'cucumber': { n: '小黃瓜', i: '🥒', type: 'food', e: 10, h: 5 }, // 👈 補齊
     'apple': { n: '蘋果', i: '🍎', type: 'food', e: 20, h: 10 }, 
     'banana': { n: '香蕉', i: '🍌', type: 'food', e: 25, h: 10 },
     'grape': { n: '葡萄', i: '🍇', type: 'food', e: 15, h: 8 }, 
@@ -203,23 +203,32 @@ const ITEM_REGISTRY = {
     'lemon': { n: '檸檬', i: '🍋', type: 'food', e: 10, h: 15 }, 
     'cherry': { n: '櫻桃', i: '🍒', type: 'food', e: 10, h: 5 },
 
-    // 🍱 進階料理 (30種合成對應)
+    // 🍳 合成料理成品 (補齊 30 種公式對應 ID)
     'cooked_meat_pig': { n: '烤豬肉', i: '🍖', type: 'food', e: 50, h: 20 },
     'salted_meat_pig': { n: '鹽漬豬肉', i: '🥩', type: 'food', e: 45, h: 25 },
     'cooked_meat_cow': { n: '戰斧牛排', i: '🥩', type: 'food', e: 60, h: 30 },
+    'salted_meat_cow': { n: '鹽醃牛肉', i: '🥩', type: 'food', e: 55, h: 25 }, // 👈 補齊
+    'cooked_chicken': { n: '烤雞腿', i: '🍗', type: 'food', e: 45, h: 20 }, // 👈 補齊
     'boiled_egg': { n: '水煮蛋', i: '🥚', type: 'food', e: 20, h: 15 },
     'bacon': { n: '煙燻培根', i: '🥓', type: 'food', e: 55, h: 15 },
     'salad_mixed': { n: '綜合沙拉', i: '🥗', type: 'food', e: 50, h: 35 },
     'baked_potato': { n: '烤馬鈴薯', i: '🥔', type: 'food', e: 40, h: 15 },
     'corn_soup': { n: '玉米濃湯', i: '🥣', type: 'food', e: 50, h: 40 },
+    'pickled_cucumber': { n: '鹽漬小黃瓜', i: '🥒', type: 'food', e: 25, h: 15 }, // 👈 補齊
+    'fried_eggplant': { n: '油炸茄子', i: '🍆', type: 'food', e: 35, h: 10 }, // 👈 補齊
+    'pumpkin_pie': { n: '南瓜派', i: '🥧', type: 'food', e: 60, h: 20 }, // 👈 補齊
+    'onion_rings': { n: '炸洋蔥圈', i: '🧅', type: 'food', e: 30, h: 5 }, // 👈 補齊
+    'garlic_bread': { n: '大蒜麵包', i: '🥖', type: 'food', e: 40, h: 10 }, // 👈 補齊
     'fruit_juice': { n: '綜合果汁', i: '🍹', type: 'food', e: 45, h: 30 },
     'banana_milk': { n: '香蕉牛奶', i: '🥤', type: 'food', e: 50, h: 35 },
-    'lemonade': { n: '檸檬氣泡飲', i: '🍹', type: 'food', e: 30, h: 50 }, // 補血神器
+    'lemonade': { n: '檸檬氣泡飲', i: '🍹', type: 'food', e: 30, h: 50 },
     'dried_grape': { n: '葡萄乾', i: '🍇', type: 'food', e: 30, h: 10 },
-    'peach_jam': { n: '桃子果醬', i: '🍯', type: 'food', e: 50, h: 20 }
-    // ... 更多合成物可以依此類推
+    'pineapple_slice': { n: '鳳梨切片', i: '🍍', type: 'food', e: 15, h: 5 }, // 👈 補齊
+    'watermelon_bucket': { n: '西瓜桶', i: '🍉', type: 'food', e: 60, h: 30 }, // 👈 補齊
+    'peach_jam': { n: '桃子果醬', i: '🍯', type: 'food', e: 50, h: 20 },
+    'strawberry_cake': { n: '草莓蛋糕', i: '🍰', type: 'food', e: 70, h: 25 }, // 👈 補齊
+    'cooked_meat_salted': { n: '醃烤肉', i: '🍖', type: 'food', e: 60, h: 40 }
 };
-
        const RECIPES = [
     // --- 🧱 基礎材料 (6種) ---
     { id: 'stick', n: '木棍 x4', req: [{id:'wood', count:1}], outCount: 4 },
@@ -325,21 +334,25 @@ const ITEM_REGISTRY = {
 
             // 🚀 快捷列 (支援滑動與自動對齊)
             const hotbarDiv = document.getElementById('hotbar'); hotbarDiv.innerHTML = '';
-            // 整理快捷列數據 (移除數量為0的物品)
-            hotbarSlots = Object.keys(inventory).filter(id => inventory[id] > 0);
-            if(selectedSlotIndex >= hotbarSlots.length) selectedSlotIndex = 0;
-
-            hotbarSlots.forEach((itemId, i) => {
-                const item = ITEM_REGISTRY[itemId];
+           hotbarSlots.forEach((itemId, i) => {
+                // 🛡️ 安全檢查：如果 itemId 找不到對應的註冊資料，給它一個預設值
+                const item = ITEM_REGISTRY[itemId] || { n: '未知物品', i: '❓', type: 'none' };
+                
                 const div = document.createElement('div');
                 div.className = `slot ${i === selectedSlotIndex ? 'active' : ''}`;
+                
+                // 使用檢查過的 item 資料
                 div.innerHTML = `${item.i}<span class="slot-count">${inventory[itemId]}</span>`;
                 
                 div.onclick = (e) => {
                     // 如果點擊的是食物，且已經是選中狀態，就吃掉
-                    if (selectedSlotIndex === i && item.type === 'food') { consumeItem(itemId); }
-                    else { selectedSlotIndex = i; }
+                    if (selectedSlotIndex === i && item.type === 'food') { 
+                        consumeItem(itemId); 
+                    } else { 
+                        selectedSlotIndex = i; 
+                    }
                     renderUI();
+                    
                     // 🚀 自動捲動到中間對齊
                     div.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                 };
