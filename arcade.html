@@ -1387,7 +1387,13 @@ window.vqUpdateChunkMesh = function(chunk) {
     if (!window.vqInf.material) window.vqInf.material = new THREE.MeshLambertMaterial({ color: 0xffffff });
     
     // 🌟 關鍵優化：建立極速字典，以後找方塊只要 0.0001 秒，絕對不卡頓！
+    // 🌟 確保這行有在裡面：建立快速搜尋地圖
     chunk.baseLookup = new Map();
+    if (chunk.baseBlocks) {
+        chunk.baseBlocks.forEach(b => {
+            chunk.baseLookup.set(`${b.wx}|${b.wy}|${b.wz}`, b.type);
+        });
+    }
     const totalBlocks = chunk.baseBlocks ? chunk.baseBlocks.length : 0;
     
     if (totalBlocks > 0) {
@@ -1425,57 +1431,40 @@ window.vqUpdateChunkMesh = function(chunk) {
     }
     chunk.dirty = false;
 };
-// ==========================================
-// 🛡️ 鋼鐵保險版碰撞偵測
-// ==========================================
 window.vqCheckCollision = function(x, y, z) {
-    // 1. 強制高度保險：絕對不允許玩家掉到 y=10 以下（那是地底深處）
-    // 如果掉下去了，強制把你拉回地表高度
-    if (y < 10) {
-        if (typeof vqControls !== 'undefined' && vqControls.getObject) {
-            let player = vqControls.getObject();
-            player.position.y = 80; // 把你丟回天空
-            if (typeof vqVelocity !== 'undefined') vqVelocity.y = 0; // 重設重力加速度
+    // 【保險 1】絕對底線：如果掉到地底，直接強制傳送回高空
+    if (y < 2) {
+        if (vqControls && vqControls.getObject) {
+            vqControls.getObject().position.set(x, 120, z);
+            if (typeof vqVelocity !== 'undefined') vqVelocity.y = 0;
         }
         return true; 
     }
 
-    let currentBlockSize = window.blockSize || 10;
-    // 使用 Math.floor 確保精準度
-    let bx = Math.floor(x / currentBlockSize);
-    let by = Math.floor((y - 6) / currentBlockSize); // 稍微往下一點偵測腳底
-    let bz = Math.floor(z / currentBlockSize);
+    let bs = window.blockSize || 10;
+    let bx = Math.floor(x / bs);
+    let by = Math.floor((y - 6) / bs); // 偵測腳底
+    let bz = Math.floor(z / bs);
 
-    function checkSolid(wx, wy, wz) {
-        // 優先檢查：如果你在岩層高度 (wy < 3)，直接當作是有地板，防止掉出世界
-        if (wy <= 1) return true;
-
-        // 檢查一般題目方塊
-        if (typeof window.getBlock === 'function' && window.getBlock(wx, wy, wz)) return true;
+    // 【保險 2】如果該座標還沒生成，先當作有地板（懸浮等待）
+    function isSolid(wx, wy, wz) {
+        if (wy <= 1) return true; // 地殼層
         
-        // 檢查自然地形
-        const VQ_CHUNK_SIZE = 16; 
-        const cx = Math.floor(wx / VQ_CHUNK_SIZE);
-        const cz = Math.floor(wz / VQ_CHUNK_SIZE);
-        
-        if (typeof window.vqInf !== 'undefined' && window.vqInf.chunks) {
-            const chunk = window.vqInf.chunks.get(`${cx},${cz}`); 
-            
-            // 關鍵：如果區塊還沒載入完成，就先給玩家一個隱形地板支撐，防止掉入黑洞
-            if (!chunk || !chunk.baseLookup) return true; 
+        const cx = Math.floor(wx / 16);
+        const cz = Math.floor(wz / 16);
+        if (window.vqInf && window.vqInf.chunks) {
+            const chunk = window.vqInf.chunks.get(`${cx},${cz}`);
+            if (!chunk || !chunk.baseLookup) return true; // 世界還沒好，請先飄著
 
-            const blockType = chunk.baseLookup.get(`${wx}|${wy}|${wz}`);
-            if (blockType && blockType !== 'water' && blockType !== 'tall_grass') {
-                return true;
-            }
+            const type = chunk.baseLookup.get(`${wx}|${wy}|${wz}`);
+            // 只要有方塊且不是空氣/草/水，就是實體
+            return type && type !== 'water' && type !== 'tall_grass' && type !== 'flower';
         }
         return false;
     }
 
-    // 同時檢查腳下和膝蓋位置
-    return checkSolid(bx, by, bz) || checkSolid(bx, by + 1, bz);
+    return isSolid(bx, by, bz) || isSolid(bx, by + 1, bz);
 };
-
 window.checkCollision = window.vqCheckCollision;
 window.generateFastVoxelFloor = function() {
     const size = 60; // 生成 60x60 的安全區
