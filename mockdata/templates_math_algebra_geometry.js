@@ -718,9 +718,10 @@
     tags: ["數學", "二次函數", "最大最小", "國九"],
     generate: () => {
         // 1. 修正 const 錯誤，改用 let，並確保 a 不為 0
+       // let a = Utils.rnd(-3, 3);
+       // if (a === 0) a = 1; 
         let a = Utils.rnd(-3, 3);
-        if (a === 0) a = 1; 
-        
+        if (a === 0) a = 1;
         const b = Utils.rnd(-6, 6);
         const c = Utils.rnd(-5, 5);
         
