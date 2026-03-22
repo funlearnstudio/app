@@ -3,15 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D 生存學習世界 - 物理重力修復版</title>
+    <title>3D 生存世界 - 終極手機完美版</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/gh/josephg/noisejs/perlin.js"></script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
-
     <script src="mockdata/users.js"></script>
     <script src="assets/js/auth.js"></script>
     <script src="assets/js/generator_engine.js"></script>
@@ -32,85 +29,74 @@
     <script src="mockdata/templates_geography_core.js"></script>
     <script src="mockdata/templates_civics_core.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Noto Sans TC', sans-serif; touch-action: none; user-select: none; -webkit-user-select: none; }
+        /* 基礎設定防反白、防縮放 */
+        body { margin: 0; overflow: hidden; font-family: 'Noto Sans TC', sans-serif; touch-action: none; user-select: none; -webkit-user-select: none; background-color: #87CEEB; }
         
-        #sidebar { position: fixed; top: 0; left: -350px; width: 350px; height: 100vh; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); z-index: 50; transition: left 0.3s; color: white; padding: 20px; overflow-y: auto; border-right: 2px solid rgba(255,255,255,0.1); }
-        #sidebar.open { left: 0; }
-        .toggle-btn { position: fixed; top: 15px; left: 15px; z-index: 60; background: rgba(0,0,0,0.6); color: white; padding: 10px 15px; border-radius: 8px; cursor: pointer; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); }
-        .return-btn { display: block; width: 100%; text-align: center; background: #ef4444; color: white; padding: 10px; border-radius: 8px; font-weight: bold; margin-bottom: 20px; }
-
-        .status-ui { position: fixed; top: 15px; right: 15px; background: rgba(0,0,0,0.6); padding: 12px; border-radius: 12px; color: white; z-index: 20; text-align: right; pointer-events: none; min-width: 160px;}
+        /* 系統訊息與UI */
+        #msg-box { position: fixed; top: 15%; left: 50%; transform: translateX(-50%); font-size: 22px; font-weight: bold; color: #fbbf24; text-shadow: 2px 2px 4px black; z-index: 100; opacity: 0; transition: opacity 0.3s; pointer-events: none; width: 100%; text-align: center; }
+        #crosshair { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255,255,255,0.8); font-size: 30px; pointer-events: none; z-index: 10; text-shadow: 0 0 3px black; }
+        #view-model { position: fixed; bottom: -30px; right: 15%; font-size: 120px; z-index: 15; transform-origin: bottom right; transition: transform 0.1s; pointer-events: none; filter: drop-shadow(0px 10px 10px rgba(0,0,0,0.5)); }
+        
+        /* 狀態條 (右上角) */
+        .status-ui { position: fixed; top: 15px; right: 15px; background: rgba(0,0,0,0.6); padding: 12px; border-radius: 12px; color: white; z-index: 20; min-width: 160px; pointer-events: none; backdrop-filter: blur(4px); }
         .stat-bar { width: 100%; height: 12px; background: #333; border-radius: 6px; margin-top: 4px; overflow: hidden; border: 1px solid #555; }
         .hp-fill { height: 100%; background: #ef4444; width: 100%; transition: width 0.3s; }
         .energy-fill { height: 100%; background: #10b981; width: 100%; transition: width 0.3s; }
+        #luck-overlay { display: none; position: fixed; top: 80px; left: 50%; transform: translateX(-50%); color: #fbbf24; font-weight: bold; font-size: 18px; text-shadow: 2px 2px 4px black; z-index: 20; }
 
-        #inventory-list, #recipe-list { max-height: 250px; overflow-y: auto; padding-right: 5px; }
-        #recipe-list::-webkit-scrollbar, #inventory-list::-webkit-scrollbar { width: 6px; }
-        #recipe-list::-webkit-scrollbar-thumb, #inventory-list::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+        /* 左側選單按鈕與側邊欄 */
+        .toggle-btn { position: fixed; top: 15px; left: 15px; z-index: 60; background: rgba(0,0,0,0.6); color: white; padding: 10px 15px; border-radius: 8px; cursor: pointer; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); pointer-events: auto; }
+        #sidebar { position: fixed; top: 0; left: -350px; width: 350px; height: 100vh; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); z-index: 50; transition: left 0.3s; color: white; padding: 20px; overflow-y: auto; border-right: 2px solid rgba(255,255,255,0.1); }
+        #sidebar.open { left: 0; }
+        #inventory-list, #recipe-list { max-height: 300px; overflow-y: auto; }
 
-        #hotbar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; background: rgba(0,0,0,0.6); padding: 8px; border-radius: 12px; z-index: 30; backdrop-filter: blur(4px); }
-        .slot { width: 50px; height: 50px; border: 2px solid #555; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; position: relative; cursor: pointer; background: rgba(255,255,255,0.1); pointer-events: auto; }
-        .slot.active { border-color: #fbbf24; background: rgba(251, 191, 36, 0.2); box-shadow: 0 0 10px rgba(251,191,36,0.6); }
+        /* 🚀 快捷列：緊貼底部，防遮擋 */
+        #hotbar { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 16px; z-index: 40; backdrop-filter: blur(4px); pointer-events: auto; }
+        .slot { width: 45px; height: 45px; border: 2px solid #555; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; position: relative; cursor: pointer; background: rgba(255,255,255,0.1); }
+        .slot.active { border-color: #fbbf24; background: rgba(251, 191, 36, 0.3); box-shadow: 0 0 15px rgba(251,191,36,0.8); transform: scale(1.1); transition: 0.1s; }
         .slot-count { position: absolute; bottom: 2px; right: 4px; font-size: 12px; font-weight: bold; text-shadow: 1px 1px 2px black; }
 
-        #controls { position: fixed; top: 50%; right: 20px; transform: translateY(-50%); z-index: 30; display: flex; flex-direction: column; gap: 15px; }
-        .action-btn { width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.5); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; backdrop-filter: blur(4px); pointer-events: auto; }
-        
-        #joystick-bg { position: fixed; bottom: 40px; left: 20px; width: 120px; height: 120px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; z-index: 30; backdrop-filter: blur(4px); pointer-events: auto; }
-        #joystick-knob { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(255,255,255,0.7); border-radius: 50%; pointer-events: none; }
+        /* 🚀 搖桿區：大幅往上移，絕對不擋快捷列 */
+        .joystick-zone { position: fixed; bottom: 120px; width: 130px; height: 130px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; z-index: 30; backdrop-filter: blur(4px); pointer-events: auto; }
+        #joystick-move { left: 30px; }
+        #joystick-look { right: 30px; background: rgba(255,100,100,0.1); border-color: rgba(255,100,100,0.3); }
+        .joystick-knob { position: absolute; top: 40px; left: 40px; width: 50px; height: 50px; background: rgba(255,255,255,0.8); border-radius: 50%; pointer-events: none; }
+        #joystick-look .joystick-knob { background: rgba(255,100,100,0.8); }
+        .aim-label { position: absolute; top: -25px; left: 50%; transform: translateX(-50%); color: white; font-size: 14px; font-weight: bold; text-shadow: 1px 1px 2px black; pointer-events: none; }
 
-        #joystick-aim-bg { position: fixed; bottom: 40px; right: 20px; width: 120px; height: 120px; background: rgba(255,100,100,0.15); border: 2px solid rgba(255,100,100,0.3); border-radius: 50%; z-index: 30; backdrop-filter: blur(4px); pointer-events: auto; }
-        #joystick-aim-knob { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(255,100,100,0.7); border-radius: 50%; pointer-events: none; }
-        .aim-label { position: absolute; top: -25px; left: 50%; transform: translateX(-50%); color: white; font-size: 12px; font-weight: bold; text-shadow: 1px 1px 2px black; pointer-events: none; }
+        /* 🚀 互動按鈕：右側中間偏下 */
+        #controls { position: fixed; bottom: 270px; right: 30px; z-index: 30; display: flex; flex-direction: column; gap: 15px; pointer-events: auto; }
+        .action-btn { width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.5); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; backdrop-filter: blur(4px); }
+        .action-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.4); }
 
-        #crosshair { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255,255,255,0.9); font-size: 28px; pointer-events: none; z-index: 10; text-shadow: 0 0 3px black; transition: left 0.05s, top 0.05s; }
+        /* 彈窗背景 */
+        .overlay-box { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 500px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); border: 2px solid #3b82f6; border-radius: 16px; padding: 24px; color: white; z-index: 200; box-shadow: 0 20px 40px rgba(0,0,0,0.8); }
         
-        #msg-box { position: fixed; top: 20%; left: 50%; transform: translateX(-50%); font-size: 24px; font-weight: bold; color: #fbbf24; text-shadow: 2px 2px 4px black; z-index: 100; opacity: 0; transition: opacity 0.3s; pointer-events: none; width: 100%; text-align: center; }
-        #view-model { position: fixed; bottom: -50px; right: 10%; font-size: 150px; z-index: 15; transform-origin: bottom right; transition: transform 0.1s; pointer-events: none; filter: drop-shadow(0px 10px 10px rgba(0,0,0,0.5)); }
-        .swing { animation: swingAnim 0.3s ease-in-out; }
-        @keyframes swingAnim { 0% { transform: rotate(0deg) translateY(0); } 50% { transform: rotate(-40deg) translateY(-50px) translateX(-30px); } 100% { transform: rotate(0deg) translateY(0); } }
-        
-        #water-overlay, #dmg-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 5; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
-        #water-overlay { background: rgba(20, 80, 200, 0.4); backdrop-filter: blur(2px); }
-        #dmg-overlay { background: radial-gradient(circle, rgba(255,0,0,0) 60%, rgba(255,0,0,0.4) 100%); transition: opacity 0.1s; }
-
-        .overlay-box { display: none; position: fixed; top: 10%; left: 50%; transform: translateX(-50%); width: 90%; max-width: 600px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); border: 2px solid #3b82f6; border-radius: 16px; padding: 24px; color: white; z-index: 200; box-shadow: 0 20px 40px rgba(0,0,0,0.8); max-height: 80vh; overflow-y: auto; }
-        .quiz-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer; width: 100%; text-align: left; color: white; font-size: 16px; transition: 0.2s; }
-        .quiz-btn:hover { background: rgba(59, 130, 246, 0.5); border-color: #3b82f6; }
+        /* 揮動動畫 */
+        .swing { animation: swingAnim 0.2s ease-in-out; }
+        @keyframes swingAnim { 0% { transform: rotate(0deg) translateY(0); } 50% { transform: rotate(-40deg) translateY(-30px) translateX(-20px); } 100% { transform: rotate(0deg) translateY(0); } }
     </style>
 </head>
 <body>
 
-    <div id="water-overlay"></div>
-    <div id="dmg-overlay"></div>
     <div id="crosshair">✚</div>
     <div id="msg-box">系統訊息</div>
     <div id="view-model">👊</div>
+    <div id="luck-overlay">✨ 幸運增幅中！掉落增加！(<span id="luck-time"></span>s)</div>
 
-    <button class="toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i> 選單</button>
-
-    <div id="sidebar">
-        <h2 class="text-xl font-bold mb-4"><i class="fas fa-cube text-blue-400"></i> 生存選單</h2>
-        <a href="arcade.html" class="return-btn"><i class="fas fa-sign-out-alt"></i> 返回學習遊戲場</a>
-        
-        <div class="mb-4 bg-slate-800 p-3 rounded-lg">
-            <p class="text-sm">玩家: <span id="user-name" class="text-yellow-400 font-bold">載入中</span></p>
-            <p class="text-sm">XP: <span id="xp-val" class="text-blue-400 font-bold">0</span></p>
-            <p class="text-[10px] text-gray-400 mt-1">時間: <span id="time-display">白晝</span></p>
+    <div id="tutorial-overlay" class="overlay-box" style="display: block; border-color: #fbbf24;">
+        <h2 class="text-2xl font-bold text-yellow-400 mb-4 border-b border-gray-600 pb-2">
+            <i class="fas fa-gamepad"></i> 遊戲操作指南
+        </h2>
+        <div class="text-gray-200 text-base leading-relaxed space-y-3 mb-6">
+            <p><strong class="text-blue-400">🛠️ 萬物皆可合成：</strong> 打開左上角「選單」，收集材料合成工具與食物。</p>
+            <p><strong class="text-emerald-400">✨ 吃食物補血與增運：</strong> 點擊下方快捷列的食物可以直接吃！吃下「幸運金蘋果」可獲得 60 秒挖礦掉落加倍效果。</p>
+            <p><strong class="text-red-400">⚠️ 食物不能挖礦：</strong> 食物太軟了，無法破壞方塊！請切換成「空手」或「鎬子」來採礦，用鎬子挖礦掉落會更多喔！</p>
+            <p><strong class="text-purple-400">🎮 最佳化操控：</strong> 左搖桿移動，右搖桿轉視角（已調慢防暈），下方是物品欄，右方按鈕用來破壞或放置方塊。</p>
         </div>
-
-        <div class="mb-4">
-            <div class="flex justify-between items-center border-b border-gray-600 pb-1 mb-2">
-                <h3 class="text-sm text-gray-400">生存背包</h3>
-                <span id="inv-count" class="text-xs text-gray-500">0/200</span>
-            </div>
-            <div id="inventory-list" class="grid grid-cols-5 gap-2"></div>
-        </div>
-
-        <div>
-            <h3 class="text-sm text-gray-400 mb-2 border-b border-gray-600 pb-1">萬物合成台</h3>
-            <div id="recipe-list" class="flex flex-col gap-2"></div>
-        </div>
+        <button onclick="document.getElementById('tutorial-overlay').style.display='none'" class="px-6 py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-lg w-full text-lg shadow-lg">
+            我準備好出發了！
+        </button>
     </div>
 
     <div class="status-ui">
@@ -120,534 +106,433 @@
         <div class="stat-bar"><div id="energy-fill" class="energy-fill"></div></div>
     </div>
 
+    <button class="toggle-btn" onclick="document.getElementById('sidebar').classList.toggle('open'); renderUI();"><i class="fas fa-bars"></i> 選單合成</button>
+    <div id="sidebar">
+        <h2 class="text-xl font-bold mb-4"><i class="fas fa-cube text-blue-400"></i> 生存背包與合成</h2>
+        <button onclick="document.getElementById('sidebar').classList.remove('open')" class="w-full bg-slate-700 p-2 rounded mb-4">關閉選單</button>
+        
+        <h3 class="text-sm text-gray-400 mb-2 border-b border-gray-600 pb-1">你的背包</h3>
+        <div id="inventory-list" class="grid grid-cols-5 gap-2 mb-6"></div>
+
+        <h3 class="text-sm text-gray-400 mb-2 border-b border-gray-600 pb-1">萬物合成台</h3>
+        <div id="recipe-list" class="flex flex-col gap-2"></div>
+    </div>
+
     <div id="hotbar"></div>
-    
-    <div id="joystick-bg"><div class="aim-label" style="color:#10b981;">移動</div><div id="joystick-knob"></div></div>
-    <div id="joystick-aim-bg"><div class="aim-label" style="color:#ef4444;">轉視角</div><div id="joystick-aim-knob"></div></div>
 
     <div id="controls">
-        <button id="btn-interact" class="action-btn" style="background: rgba(59, 130, 246, 0.4);"><i class="fas fa-hand-pointer"></i></button>
-        <button id="btn-place" class="action-btn"><i class="fas fa-cube"></i></button>
-        <button id="btn-break" class="action-btn" style="background: rgba(239, 68, 68, 0.4);"><i class="fas fa-hammer"></i></button>
+        <button id="btn-place" class="action-btn" style="background: rgba(16, 185, 129, 0.4); border-color: #10b981;"><i class="fas fa-cube"></i></button>
+        <button id="btn-break" class="action-btn" style="background: rgba(239, 68, 68, 0.4); border-color: #ef4444;"><i class="fas fa-hammer"></i></button>
     </div>
 
-    <div id="quiz-overlay" class="overlay-box">
-        <div class="flex justify-between items-center mb-4 border-b border-gray-600 pb-2">
-            <h2 id="quiz-title" class="text-xl font-bold text-yellow-400">知識挑戰</h2>
-        </div>
-        <div id="quiz-question" class="text-lg mb-6">載入中...</div>
-        <div id="quiz-options"></div>
-        <div class="mt-4 text-right"><button onclick="closeUI()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded">逃跑</button></div>
-    </div>
-
-    <div id="npc-dialog" class="overlay-box border-emerald-500">
-        <h2 id="npc-name" class="text-xl font-bold text-emerald-400 mb-2"><i class="fas fa-user"></i> 村長</h2>
-        <p id="npc-lore" class="text-sm text-gray-400 mb-4 italic">"閒聊內容..."</p>
-        <div class="bg-slate-800 p-3 rounded mb-6">
-            <p class="text-sm font-bold text-yellow-400 mb-1">任務需求：</p>
-            <p id="npc-quest" class="text-base">需要 10 個木頭</p>
-            <p id="npc-reward" class="text-sm text-blue-300 mt-1">獎勵: 蘋果 x5</p>
-        </div>
-        <div class="flex flex-col gap-2">
-            <button id="npc-submit" class="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 rounded text-white font-bold">交付任務</button>
-            <button onclick="closeUI()" class="px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded text-white">下次再說</button>
-        </div>
-    </div>
+    <div id="joystick-move" class="joystick-zone"><div class="aim-label" style="color:#10b981;">移動</div><div class="joystick-knob" id="knob-move"></div></div>
+    <div id="joystick-look" class="joystick-zone"><div class="aim-label" style="color:#ef4444;">視角</div><div class="joystick-knob" id="knob-look"></div></div>
 
     <script>
         // ==========================================
-        // 1. 雲端 GAS 經驗值同步系統
+        // 1. 遊戲資料設定 (物品、食物、工具、配方)
         // ==========================================
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
-        
-        async function syncGASXP(xpToAdd, reason) {
-            if (!currentUser || currentUser.username === 'guest') return;
-            currentUser.xp = (Number(currentUser.xp) || 0) + xpToAdd;
-            document.getElementById('xp-val').innerText = currentUser.xp;
-            try { localStorage.setItem('currentUser', JSON.stringify(currentUser)); } catch(e){}
-
-            fetch(GAS_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: "save_record", username: currentUser.username, activity: `【3D生存】${reason}`, score: xpToAdd, xp: xpToAdd, detail: JSON.stringify({ unitName: 'VoxelWorld', xpGained: xpToAdd }) })
-            }).catch(e => console.error(e));
-
-            if(typeof window.awardXPAndSync === 'function') window.awardXPAndSync(xpToAdd, `3D生存-${reason}`, xpToAdd);
-        }
-
-        // ==========================================
-        // 2. 遊戲資料與合成表
-        // ==========================================
-        const ITEM_REGISTRY = {}; const RECIPES = []; let playerInventory = {};
-        
-        const baseMats = [
-            { id: 'wood', n: '木頭', i: '🪵', isBlock: true, bType: 4 }, 
-            { id: 'stone', n: '石頭', i: '🪨', isBlock: true, bType: 3 },
-            { id: 'dirt', n: '泥土', i: '🟤', isBlock: true, bType: 2 },
-            { id: 'iron_ore', n: '鐵礦石', i: '🪨' }, { id: 'diamond_ore', n: '鑽石礦', i: '💎' }, 
-            { id: 'iron_ingot', n: '鐵錠', i: '⚪' }, { id: 'diamond', n: '鑽石', i: '💎' }, 
-            { id: 'coal', n: '煤炭', i: '⚫' }, { id: 'stick', n: '木棍', i: '🦯' }, { id: 'slime', n: '粘液', i: '💧' },
-            { id: 'wool', n: '羊毛', i: '🧶' }
-        ];
-        const foodMats = [
-            { id: 'apple', n: '蘋果', i: '🍎', r: 10, h: 10 }, 
-            { id: 'meat', n: '豬肉', i: '🥩', r: 5 }, { id: 'beef', n: '生牛肉', i: '🥩', r: 5 },
-            { id: 'chicken_meat', n: '生雞肉', i: '🍗', r: 5 }, { id: 'egg', n: '雞蛋', i: '🥚', r: 2 },
-            { id: 'cooked_meat', n: '烤肉', i: '🍖', r: 30, h: 25 }, { id: 'cooked_beef', n: '牛排', i: '🥩', r: 40, h: 30 },
-            { id: 'cooked_chicken', n: '烤雞', i: '🍗', r: 25, h: 20 }
-        ];
-
-        [...baseMats, ...foodMats].forEach(m => ITEM_REGISTRY[m.id] = { name: m.n, icon: m.i, type: m.r !== undefined ? 'food' : 'mat', restore: m.r, heal: m.h||0, isBlock: m.isBlock, bType: m.bType });
-        
-        const tiers = [{id:'wood', n:'木', mat:'wood'}, {id:'stone', n:'石', mat:'stone'}, {id:'iron', n:'鐵', mat:'iron_ingot'}, {id:'diamond', n:'鑽石', mat:'diamond'}];
-        const tools = [{id:'pickaxe', n:'鎬', i:'⛏️', q:3}, {id:'axe', n:'斧', i:'🪓', q:3}, {id:'sword', n:'劍', i:'🗡️', q:2}];
-        tiers.forEach(t => {
-            tools.forEach(tool => {
-                ITEM_REGISTRY[`${t.id}_${tool.id}`] = { name: `${t.n}${tool.n}`, icon: tool.i, type: 'tool' };
-                RECIPES.push({ id: `${t.id}_${tool.id}`, name: `${t.n}${tool.n}`, icon: tool.i, req: [{ id: t.mat, count: tool.q }, { id: 'stick', count: 2 }], count: 1 });
-            });
-        });
-
-        RECIPES.push({ id: 'stick', name: '木棍 x4', icon: '🦯', req: [{id:'wood', count:2}], count: 4 });
-        RECIPES.push({ id: 'torch', name: '火把 x4', icon: '🔥', req: [{id:'stick', count:1}, {id:'coal', count:1}], count: 4 });
-        ITEM_REGISTRY['torch'] = { name: '火把', icon: '🔥', type: 'block' };
-
-        RECIPES.push({ id: 'iron_ingot', name: '熔煉鐵錠', icon: '⚪', req: [{id:'iron_ore', count:1}, {id:'coal', count:1}], count: 1 });
-        RECIPES.push({ id: 'cooked_meat', name: '烤豬肉', icon: '🍖', req: [{id:'meat', count:1}, {id:'coal', count:1}], count: 1 });
-        RECIPES.push({ id: 'cooked_beef', name: '牛排', icon: '🥩', req: [{id:'beef', count:1}, {id:'coal', count:1}], count: 1 });
-        RECIPES.push({ id: 'cooked_chicken', name: '烤雞', icon: '🍗', req: [{id:'chicken_meat', count:1}, {id:'coal', count:1}], count: 1 });
-
-        // ==========================================
-        // 音效、介面與玩家狀態
-        // ==========================================
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playSnd(t) {
-            if(audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            let d = 0.1;
-            if(t==='hit') { osc.type='square'; osc.frequency.setValueAtTime(120, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime+0.1); }
-            else if(t==='break') { osc.type='sawtooth'; osc.frequency.setValueAtTime(80, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime+0.15); d=0.15; gain.gain.value = 0.5; }
-            else if(t==='place') { osc.type='sine'; osc.frequency.setValueAtTime(200, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime+0.1); }
-            else if(t==='success') { osc.type='sine'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.setValueAtTime(800, audioCtx.currentTime+0.1); d=0.2; }
-            else if(t==='error') { osc.type='sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime+0.3); d=0.3; }
-            else if(t==='hurt') { osc.type='square'; osc.frequency.setValueAtTime(100, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime+0.2); d=0.2; gain.gain.value=0.8; }
-            else if(t==='egg') { osc.type='sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime+0.1); d=0.1; }
-            osc.start(); gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+d); osc.stop(audioCtx.currentTime+d);
-        }
-
-        let currentUser = { username: "guest", xp: 0 };
-        let hp = 100, energy = 100, selectedSlot = 0;
-        playerInventory['wood'] = 20; playerInventory['stone'] = 10; playerInventory['apple'] = 5;
-
-        window.onload = () => {
-            try { if (typeof Auth !== 'undefined' && Auth.getCurrentUser()) currentUser = Auth.getCurrentUser(); } catch(e) {}
-            document.getElementById('user-name').innerText = currentUser.username;
-            document.getElementById('xp-val').innerText = currentUser.xp || 0;
-            renderUI();
+        const ITEMS = {
+            'wood': { name: '木頭', icon: '🪵', type: 'block' },
+            'stone': { name: '石頭', icon: '🪨', type: 'block' },
+            'dirt': { name: '泥土', icon: '🟤', type: 'block' },
+            'stick': { name: '木棍', icon: '🦯', type: 'mat' },
+            'apple': { name: '蘋果', icon: '🍎', type: 'food', energy: 10, hp: 5 },
+            'meat': { name: '生肉', icon: '🥩', type: 'food', energy: 5, hp: 0 },
+            'cooked_meat': { name: '烤肉', icon: '🍖', type: 'food', energy: 30, hp: 20 },
+            'golden_apple': { name: '幸運金蘋果', icon: '✨', type: 'food', energy: 50, hp: 50, isLuck: true },
+            'wood_pickaxe': { name: '木鎬', icon: '⛏️', type: 'tool' },
+            'stone_pickaxe': { name: '石鎬', icon: '⛏️', type: 'tool' },
+            'torch': { name: '火把', icon: '🔥', type: 'block' }
         };
 
-        function modifyStat(type, amt) {
-            if(type === 'hp') {
-                hp = Math.max(0, Math.min(100, hp + amt));
-                document.getElementById('hp-fill').style.width = `${hp}%`; document.getElementById('hp-txt').innerText = Math.floor(hp);
-                if(amt < 0) { const dmg = document.getElementById('dmg-overlay'); dmg.style.opacity = 1; playSnd('hurt'); setTimeout(() => dmg.style.opacity = 0, 200); }
-                if(hp <= 0) die();
-            } else {
-                energy = Math.max(0, Math.min(100, energy + amt));
-                document.getElementById('energy-fill').style.width = `${energy}%`; document.getElementById('energy-txt').innerText = Math.floor(energy);
-            }
-        }
-
-        function die() {
-            showMsg("💀 你死亡了！", '#ef4444');
-            camera.position.set(0, 100, 0); // 隨便設個高點，後面會自動吸附地面
-            hp = 100; energy = 50; 
-            modifyStat('hp', 0); modifyStat('energy', 0);
-        }
-
-        function showMsg(txt, color='#fbbf24') { const m = document.getElementById('msg-box'); m.innerText = txt; m.style.color = color; m.style.opacity = 1; setTimeout(() => m.style.opacity = 0, 2500); }
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); renderUI(); }
-        function closeUI() { document.querySelectorAll('.overlay-box').forEach(el => el.style.display = 'none'); activeInteractObj = null; }
-
-        function renderUI() {
-            const invKeys = Object.keys(playerInventory).filter(k => playerInventory[k] > 0);
-            document.getElementById('inv-count').innerText = `${invKeys.length}/${Object.keys(ITEM_REGISTRY).length}`;
-            const invList = document.getElementById('inventory-list'); invList.innerHTML = '';
-            const hb = document.getElementById('hotbar'); hb.innerHTML = '';
-            
-            invKeys.forEach((key, idx) => {
-                const item = ITEM_REGISTRY[key]; const count = playerInventory[key];
-                const d = document.createElement('div'); d.className = `slot bg-slate-800`; d.title = item.name;
-                d.innerHTML = `${item.icon}<span class="slot-count">${count}</span>`;
-                d.onclick = () => { if(item.type === 'food') { modifyStat('energy', item.restore); modifyStat('hp', item.heal||0); playerInventory[key]--; playSnd('success'); renderUI(); } };
-                invList.appendChild(d);
-                if(idx < 6) {
-                    const hd = document.createElement('div'); hd.className = `slot ${idx === selectedSlot ? 'active' : ''}`;
-                    hd.innerHTML = `${item.icon}<span class="slot-count">${count}</span>`;
-                    hd.onclick = () => { selectedSlot = idx; renderUI(); document.getElementById('view-model').innerText = item.icon; };
-                    hb.appendChild(hd);
-                }
-            });
-            if(invKeys.length > 0 && selectedSlot < invKeys.length) document.getElementById('view-model').innerText = ITEM_REGISTRY[invKeys[selectedSlot]].icon;
-            else document.getElementById('view-model').innerText = '👊';
-
-            const rList = document.getElementById('recipe-list'); rList.innerHTML = '';
-            RECIPES.forEach(r => {
-                const canCraft = r.req.every(req => (playerInventory[req.id] || 0) >= req.count);
-                const d = document.createElement('div'); d.className = `flex justify-between items-center p-2 rounded ${canCraft ? 'bg-blue-900/60' : 'bg-slate-800 opacity-40'}`;
-                let reqHtml = r.req.map(req => `<span class="text-[10px] bg-black/30 px-1 rounded">${ITEM_REGISTRY[req.id].icon}x${req.count}</span>`).join(' ');
-                d.innerHTML = `<div class="flex items-center gap-2"><span class="text-2xl">${r.icon}</span><div><div class="font-bold text-sm">${r.name} x${r.count}</div><div class="flex gap-1 mt-1 flex-wrap">${reqHtml}</div></div></div>
-                               <button class="px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded text-xs text-white ${!canCraft?'hidden':''}">合成</button>`;
-                if(canCraft) d.querySelector('button').onclick = () => { r.req.forEach(req => playerInventory[req.id] -= req.count); playerInventory[r.id] = (playerInventory[r.id] || 0) + r.count; playSnd('success'); renderUI(); };
-                rList.appendChild(d);
-            });
-        }
-
-        // ==========================================
-        // 3. Three.js: 藍天、地形、動物與粒子
-        // ==========================================
-        const scene = new THREE.Scene(); 
-        scene.background = new THREE.Color(0x87CEEB); 
-        scene.fog = new THREE.Fog(0x87CEEB, 2, 40);
-        
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 100);
-        const renderer = new THREE.WebGLRenderer({ antialias: false });
-        renderer.setPixelRatio(1); renderer.setSize(window.innerWidth, window.innerHeight); document.body.appendChild(renderer.domElement);
-        
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); scene.add(ambientLight); 
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8); dirLight.position.set(20, 50, 20); scene.add(dirLight);
-
-        function gTex(base, noise, char='') {
-            const cvs = document.createElement('canvas'); cvs.width=16; cvs.height=16; const ctx = cvs.getContext('2d');
-            ctx.fillStyle = base; ctx.fillRect(0,0,16,16); ctx.fillStyle = noise;
-            if(char) { ctx.fillStyle='white'; ctx.font='14px Arial'; ctx.fillText(char, 2, 13); }
-            else { for(let i=0;i<256;i++) if(Math.random()<0.3) ctx.fillRect(i%16, Math.floor(i/16), 1, 1); }
-            const tex = new THREE.CanvasTexture(cvs); tex.magFilter = THREE.NearestFilter; return new THREE.MeshLambertMaterial({ map: tex });
-        }
-        
-        const BLOCK = { AIR:0, GRASS:1, DIRT:2, STONE:3, WOOD:4, LEAVES:5, QUESTION:6 };
-        const box = new THREE.BoxGeometry(1,1,1);
-        const MATS = { 
-            [BLOCK.GRASS]: gTex('#55aa55','#449944'), [BLOCK.DIRT]: gTex('#8b5a2b','#7a491a'),
-            [BLOCK.STONE]: gTex('#888888','#666666'), [BLOCK.WOOD]: gTex('#5c4033','#4b3022'),
-            [BLOCK.LEAVES]: gTex('#228b22','#117a11'), [BLOCK.QUESTION]: gTex('#fbbf24','#f59e0b','?')
-        };
-
-        const targetBox = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.02, 1.02, 1.02)), new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }));
-        targetBox.visible = false; scene.add(targetBox);
-
-        const particles = [];
-        function spawnParticles(pos) {
-            for(let i=0; i<8; i++) {
-                const p = new THREE.Mesh(new THREE.BoxGeometry(0.2,0.2,0.2), new THREE.MeshBasicMaterial({color: Math.random() > 0.5 ? 0x8b5a2b : 0x55aa55}));
-                p.position.copy(pos); p.userData = { v: new THREE.Vector3((Math.random()-0.5)*5, Math.random()*5, (Math.random()-0.5)*5), life: 1.0 };
-                scene.add(p); particles.push(p);
-            }
-        }
-
-        const chunks = new Map(); const interactables = []; const terrainMeshes = []; let activeInteractObj = null;
-
-        noise.seed(Math.random());
-        function getH(x, z) { return Math.floor(Math.pow((noise.perlin2(x/40, z/40)+1.5)/2, 2) * 12) + 1; }
-        
-        const startH = getH(0, 0); 
-        camera.position.set(0, startH + 5, 0); 
-
-        function genChunk(cx, cz) {
-            const key = `${cx},${cz}`; if(chunks.has(key)) return chunks.get(key);
-            const counts = {}; const poses = []; Object.values(BLOCK).forEach(v => counts[v]=0);
-
-            for(let x=0; x<16; x++) for(let z=0; z<16; z++) {
-                const wx=cx*16+x, wz=cz*16+z; const h = getH(wx, wz);
-                
-                for(let y=0; y<=h; y++) { let t = (y === h) ? (h < 4 ? BLOCK.DIRT : BLOCK.GRASS) : (y > h-3 ? BLOCK.DIRT : BLOCK.STONE); poses.push({x:wx, y, z:wz, t}); counts[t]++; }
-                
-                if(h >= 4 && Math.random() < 0.05) { 
-                    for(let ty=1; ty<=4; ty++) { poses.push({x:wx, y:h+ty, z:wz, t:BLOCK.WOOD}); counts[BLOCK.WOOD]++; }
-                    poses.push({x:wx, y:h+5, z:wz, t:BLOCK.LEAVES}); counts[BLOCK.LEAVES]++; 
-                    poses.push({x:wx+1, y:h+4, z:wz, t:BLOCK.LEAVES}); counts[BLOCK.LEAVES]++; 
-                    poses.push({x:wx-1, y:h+4, z:wz, t:BLOCK.LEAVES}); counts[BLOCK.LEAVES]++;
-                    poses.push({x:wx, y:h+4, z:wz+1, t:BLOCK.LEAVES}); counts[BLOCK.LEAVES]++;
-                    poses.push({x:wx, y:h+4, z:wz-1, t:BLOCK.LEAVES}); counts[BLOCK.LEAVES]++;
-                } 
-                else if(h >= 4 && Math.random() < 0.005) { 
-                    const q = new THREE.Mesh(box, MATS[BLOCK.QUESTION]); q.position.set(wx, h+1, wz); q.userData = { isQ:true, wy:h+1 }; scene.add(q); interactables.push(q);
-                }
-            }
-            const group = new THREE.Group(); const insts = {}; const ptrs = {};
-            Object.keys(counts).forEach(t => { 
-                if(counts[t]>0 && MATS[t]) { insts[t] = new THREE.InstancedMesh(box, MATS[t], counts[t]); group.add(insts[t]); ptrs[t]=0; terrainMeshes.push(insts[t]); }
-            });
-            const dummy = new THREE.Object3D();
-            poses.forEach(p => { if(insts[p.t]) { dummy.position.set(p.x, p.y, p.z); dummy.updateMatrix(); insts[p.t].setMatrixAt(ptrs[p.t]++, dummy.matrix); } });
-            scene.add(group); chunks.set(key, {group, active:true}); return chunks.get(key);
-        }
-
-        const ANIMALS = [
-            { type: 'pig', icon: '🐷', drop: 'meat' }, { type: 'cow', icon: '🐮', drop: 'beef' },
-            { type: 'sheep', icon: '🐑', drop: 'wool' }, { type: 'chicken', icon: '🐔', drop: 'chicken_meat' }
+        const RECIPES = [
+            { id: 'stick', name: '木棍 x4', icon: '🦯', req: [{id:'wood', count:2}], outCount: 4 },
+            { id: 'wood_pickaxe', name: '木鎬', icon: '⛏️', req: [{id:'wood', count:3}, {id:'stick', count:2}], outCount: 1 },
+            { id: 'stone_pickaxe', name: '石鎬', icon: '⛏️', req: [{id:'stone', count:3}, {id:'stick', count:2}], outCount: 1 },
+            { id: 'cooked_meat', name: '烤肉', icon: '🍖', req: [{id:'meat', count:1}, {id:'wood', count:1}], outCount: 1 },
+            { id: 'golden_apple', name: '幸運蘋果', icon: '✨', req: [{id:'apple', count:1}, {id:'stone', count:5}], outCount: 1 } // 暫時用石頭代替金錠方便測試
         ];
-        const animalMats = {};
-        ANIMALS.forEach(a => animalMats[a.type] = gTex('#ffffff', '#eeeeee', a.icon));
 
-        function spawnAnimal() {
-            let a = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
-            let px = camera.position.x + (Math.random()-0.5)*30, pz = camera.position.z + (Math.random()-0.5)*30;
-            let mesh = new THREE.Mesh(box, animalMats[a.type]); mesh.scale.set(0.8, 0.8, 0.8); mesh.position.set(px, getH(px,pz)+1, pz);
-            mesh.userData = { isMob:true, type: a.type, drop: a.drop, lastEgg: Date.now() };
-            scene.add(mesh); interactables.push(mesh);
-        }
-
-        setInterval(() => {
-            if(interactables.filter(i => i.userData.isMob && ANIMALS.find(at=>at.type===i.userData.type)).length < 15) spawnAnimal(); 
-            if(Math.random() < 0.05) {
-                let px = camera.position.x+(Math.random()-0.5)*40, pz = camera.position.z+(Math.random()-0.5)*40;
-                let b = new THREE.Mesh(box, gTex('#991b1b', '#7f1d1d', '👹')); b.scale.set(2,2,2); b.position.set(px, getH(px,pz)+2, pz); 
-                b.userData={isMob:true, type:'boss', hp:3, wy:getH(px,pz)+2}; scene.add(b); interactables.push(b); showMsg("⚠️ 知識巨魔出現！", '#ef4444');
-            }
-        }, 5000);
+        // 玩家資料
+        let inventory = { 'wood': 10, 'stone': 5, 'apple': 3, 'meat': 2 }; 
+        let hotbarSlots = ['wood', 'stone', 'apple', 'wood_pickaxe', '', ''];
+        let selectedSlotIndex = 0;
+        let hp = 100, energy = 100;
+        let luckEndTime = 0;
 
         // ==========================================
-        // 4. 🚀 真正的物理探測 (修正打洞與瞄準 Bug)
+        // 2. UI 更新與互動邏輯
         // ==========================================
-        const raycaster = new THREE.Raycaster();
-        let currentIntersect = null;
-        let pointerNDC = new THREE.Vector2(0, 0);
-
-        function updateRaycast() {
-            raycaster.setFromCamera(pointerNDC, camera);
-            const intersects = raycaster.intersectObjects([...interactables, ...terrainMeshes]);
-            if(intersects.length > 0 && intersects[0].distance < 8) {
-                currentIntersect = intersects[0]; targetBox.visible = true;
-                if(currentIntersect.object.isInstancedMesh) {
-                    const mat = new THREE.Matrix4(); currentIntersect.object.getMatrixAt(currentIntersect.instanceId, mat);
-                    targetBox.position.setFromMatrixPosition(mat);
-                } else {
-                    targetBox.scale.set(1, 1, 1); targetBox.position.copy(currentIntersect.object.position);
-                }
-            } else { currentIntersect = null; targetBox.visible = false; }
+        function showMsg(txt, color='#fbbf24') {
+            const m = document.getElementById('msg-box');
+            m.innerText = txt; m.style.color = color;
+            m.style.opacity = 1;
+            setTimeout(() => m.style.opacity = 0, 2000);
         }
 
-        function interact(action) {
-            const vm = document.getElementById('view-model'); vm.classList.remove('swing'); void vm.offsetWidth; vm.classList.add('swing');
-            if(energy <= 0 || hp <= 0) return;
-            updateRaycast(); if(!currentIntersect) return;
-            const obj = currentIntersect.object;
+        function updateStats(hpChange, energyChange) {
+            hp = Math.max(0, Math.min(100, hp + hpChange));
+            energy = Math.max(0, Math.min(100, energy + energyChange));
+            document.getElementById('hp-fill').style.width = `${hp}%`;
+            document.getElementById('hp-txt').innerText = Math.floor(hp);
+            document.getElementById('energy-fill').style.width = `${energy}%`;
+            document.getElementById('energy-txt').innerText = Math.floor(energy);
+            if (hp <= 0) { showMsg("💀 你餓死/摔死了！", "red"); hp = 100; energy = 50; updateStats(0,0); }
+        }
 
-            if(action === 'interact') {
-                if(obj.userData.isQ || obj.userData.isMob) { openQuiz(obj); return; }
-                if(obj.userData.isItem && obj.userData.id === 'egg') {
-                    playSnd('success'); playerInventory['egg'] = (playerInventory['egg']||0) + 1; showMsg('撿起 🥚雞蛋');
-                    scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); renderUI(); return;
+        // 吃東西邏輯
+        function consumeItem(itemId) {
+            const item = ITEMS[itemId];
+            if (item && item.type === 'food' && inventory[itemId] > 0) {
+                inventory[itemId]--;
+                updateStats(item.hp, item.energy);
+                showMsg(`😋 吃了 ${item.name}！`, '#10b981');
+                
+                // 幸運系統
+                if (item.isLuck) {
+                    luckEndTime = Date.now() + 60000; // 60秒
+                    document.getElementById('luck-overlay').style.display = 'block';
                 }
-            }
-
-            // ⛏️ 修正：將打破的方塊移至地底深處，徹底消除物理碰撞！
-            if(action === 'break') {
-                modifyStat('energy', -2); playSnd('break');
-                if(obj.isInstancedMesh) {
-                    const mat = new THREE.Matrix4(); mat.makeTranslation(0, -9999, 0); // 送往虛空
-                    obj.setMatrixAt(currentIntersect.instanceId, mat); obj.instanceMatrix.needsUpdate = true;
-                    spawnParticles(targetBox.position);
-                    
-                    const rnd = Math.random();
-                    if(rnd < 0.05) { playerInventory['diamond_ore'] = (playerInventory['diamond_ore']||0)+1; showMsg('挖到 💎鑽石礦'); }
-                    else if(rnd < 0.15) { playerInventory['iron_ore'] = (playerInventory['iron_ore']||0)+1; showMsg('挖到 ⚪鐵礦石'); }
-                    else if(rnd < 0.3) { playerInventory['coal'] = (playerInventory['coal']||0)+1; showMsg('挖到 ⚫煤炭'); }
-                    else if(rnd < 0.5) { playerInventory['stone'] = (playerInventory['stone']||0)+1; showMsg('挖到 🪨石頭'); }
-                    else if(rnd < 0.7) { playerInventory['dirt'] = (playerInventory['dirt']||0)+1; showMsg('挖到 🟤泥土'); }
-                    else { playerInventory['wood'] = (playerInventory['wood']||0)+1; showMsg('砍伐 🪵木頭'); }
-                } else if(!obj.userData.isMob) { scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); spawnParticles(obj.position); }
+                
+                if (inventory[itemId] <= 0) {
+                    delete inventory[itemId];
+                    hotbarSlots[selectedSlotIndex] = ''; // 清空該欄位
+                }
                 renderUI();
             }
-            
-            // 🧱 修正：完美對齊網格放置
-            if(action === 'place') {
-                const invKeys = Object.keys(playerInventory).filter(k => playerInventory[k] > 0);
-                if(invKeys.length === 0 || selectedSlot >= invKeys.length) return;
-                const itemId = invKeys[selectedSlot]; const itemDef = ITEM_REGISTRY[itemId];
-                if(itemDef && itemDef.isBlock) {
-                    playerInventory[itemId]--; renderUI(); playSnd('place'); modifyStat('energy', -1);
-                    const placePos = targetBox.position.clone().add(currentIntersect.face ? currentIntersect.face.normal : new THREE.Vector3(0,1,0));
-                    placePos.x = Math.round(placePos.x); placePos.y = Math.round(placePos.y); placePos.z = Math.round(placePos.z);
-                    
-                    targetBox.scale.set(1,1,1);
-                    const newBlock = new THREE.Mesh(box, MATS[itemDef.bType]); newBlock.position.copy(placePos); scene.add(newBlock); interactables.push(newBlock);
+        }
+
+        function renderUI() {
+            // 渲染背包
+            const invDiv = document.getElementById('inventory-list'); invDiv.innerHTML = '';
+            Object.keys(inventory).forEach(key => {
+                if(inventory[key] > 0) {
+                    const item = ITEMS[key];
+                    invDiv.innerHTML += `<div class="slot bg-slate-800" title="${item.name}">${item.icon}<span class="slot-count">${inventory[key]}</span></div>`;
+                }
+            });
+
+            // 渲染合成表
+            const recDiv = document.getElementById('recipe-list'); recDiv.innerHTML = '';
+            RECIPES.forEach(r => {
+                const canCraft = r.req.every(req => (inventory[req.id] || 0) >= req.count);
+                let reqHtml = r.req.map(req => `<span class="text-xs bg-black/40 px-1 rounded">${ITEMS[req.id].icon}x${req.count}</span>`).join(' ');
+                recDiv.innerHTML += `
+                    <div class="flex justify-between items-center p-2 rounded ${canCraft ? 'bg-blue-900/60' : 'bg-slate-800 opacity-50'}">
+                        <div class="flex items-center gap-2"><span class="text-2xl">${r.icon}</span>
+                        <div><div class="font-bold text-sm">${r.name} x${r.outCount}</div><div class="flex gap-1 mt-1">${reqHtml}</div></div></div>
+                        <button onclick="craft('${r.id}')" class="px-3 py-1 bg-blue-600 rounded text-xs text-white ${!canCraft?'hidden':''}">合成</button>
+                    </div>`;
+            });
+
+            // 渲染快捷列
+            const hotbarDiv = document.getElementById('hotbar'); hotbarDiv.innerHTML = '';
+            for(let i=0; i<6; i++) {
+                const itemId = hotbarSlots[i];
+                const count = itemId ? (inventory[itemId] || 0) : 0;
+                const icon = itemId ? ITEMS[itemId].icon : '';
+                
+                // 如果快捷列上的東西沒了，就清空
+                if (itemId && count <= 0) { hotbarSlots[i] = ''; }
+                
+                const div = document.createElement('div');
+                div.className = `slot ${i === selectedSlotIndex ? 'active' : ''}`;
+                div.innerHTML = `${icon}${count > 0 ? `<span class="slot-count">${count}</span>` : ''}`;
+                
+                div.onclick = () => {
+                    selectedSlotIndex = i;
+                    // 如果點擊的是食物，且已經是選中狀態，就直接吃掉！
+                    if (itemId && ITEMS[itemId].type === 'food') {
+                        consumeItem(itemId);
+                    }
+                    renderUI();
+                };
+                hotbarDiv.appendChild(div);
+            }
+
+            // 更新畫面手持物
+            const currentItem = hotbarSlots[selectedSlotIndex];
+            document.getElementById('view-model').innerText = currentItem && inventory[currentItem] > 0 ? ITEMS[currentItem].icon : '👊';
+        }
+
+        function craft(recipeId) {
+            const r = RECIPES.find(x => x.id === recipeId);
+            if(r.req.every(req => (inventory[req.id] || 0) >= req.count)) {
+                r.req.forEach(req => inventory[req.id] -= req.count);
+                inventory[r.id] = (inventory[r.id] || 0) + r.outCount;
+                
+                // 自動放入快捷列空位
+                if(!hotbarSlots.includes(r.id)) {
+                    const emptyIdx = hotbarSlots.findIndex(x => x === '');
+                    if(emptyIdx !== -1) hotbarSlots[emptyIdx] = r.id;
+                }
+                showMsg(`🔨 合成了 ${r.name}`, '#3b82f6');
+                renderUI();
+            }
+        }
+
+        // ==========================================
+        // 3. Three.js 場景與地形
+        // ==========================================
+        const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x87CEEB, 0.03);
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
+        const renderer = new THREE.WebGLRenderer({ antialias: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio > 1 ? 1.5 : 1); // 優化手機效能
+        document.body.appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 10); scene.add(dirLight);
+
+        // 簡單方塊材質
+        function createColorMaterial(color) { return new THREE.MeshLambertMaterial({ color: color }); }
+        const MATS = {
+            'grass': createColorMaterial(0x55aa55),
+            'dirt': createColorMaterial(0x8b5a2b),
+            'stone': createColorMaterial(0x888888),
+            'wood': createColorMaterial(0x5c4033)
+        };
+        const boxGeo = new THREE.BoxGeometry(1, 1, 1);
+
+        // 地形生成 (Perlin Noise)
+        const blocks = new Map();
+        noise.seed(Math.random());
+        
+        function getBlockKey(x, y, z) { return `${Math.floor(x)},${Math.floor(y)},${Math.floor(z)}`; }
+        
+        function initTerrain() {
+            const size = 10;
+            for(let x = -size; x <= size; x++) {
+                for(let z = -size; z <= size; z++) {
+                    let h = Math.floor(noise.perlin2(x/15, z/15) * 4) + 2;
+                    for(let y = -2; y <= h; y++) {
+                        let type = y === h ? 'grass' : (y > h-2 ? 'dirt' : 'stone');
+                        // 偶爾長樹
+                        if (y === h && Math.random() < 0.05 && x !== 0 && z !== 0) {
+                            addBlock(x, y+1, z, 'wood'); addBlock(x, y+2, z, 'wood');
+                        }
+                        addBlock(x, y, z, type);
+                    }
                 }
             }
         }
 
-        document.getElementById('btn-interact').onclick = () => interact('interact');
-        document.getElementById('btn-break').onclick = () => interact('break');
-        document.getElementById('btn-place').onclick = () => interact('place');
-
-        // ==== 雙搖桿控制 ====
-        const keys = {w:false, a:false, s:false, d:false};
-        const joyBg = document.getElementById('joystick-bg'), joyKnob = document.getElementById('joystick-knob');
-        joyBg.addEventListener('touchstart', e => handleJoyMove(e.touches[0])); joyBg.addEventListener('touchmove', e => { handleJoyMove(e.touches[0]); e.preventDefault(); }, {passive:false});
-        joyBg.addEventListener('touchend', () => { joyKnob.style.transform=`translate(0,0)`; keys.w=keys.s=keys.a=keys.d=false; });
-        function handleJoyMove(t) {
-            const rect = joyBg.getBoundingClientRect(); let nx=t.clientX-rect.left-60, ny=t.clientY-rect.top-60;
-            const dist = Math.hypot(nx, ny); if(dist>60) { nx=nx/dist*60; ny=ny/dist*60; }
-            joyKnob.style.transform = `translate(${nx}px, ${ny}px)`; keys.w=ny<-15; keys.s=ny>15; keys.a=nx<-15; keys.d=nx>15;
+        function addBlock(x, y, z, type) {
+            const mesh = new THREE.Mesh(boxGeo, MATS[type] || MATS['dirt']);
+            mesh.position.set(x, y, z);
+            scene.add(mesh);
+            blocks.set(getBlockKey(x, y, z), { mesh, type });
         }
 
-        const aimBg = document.getElementById('joystick-aim-bg'), aimKnob = document.getElementById('joystick-aim-knob');
-        let aimVector = {x: 0, y: 0}; let isAiming = false;
-        aimBg.addEventListener('touchstart', e => { isAiming = true; handleJoyAim(e.touches[0]); });
-        aimBg.addEventListener('touchmove', e => { if(isAiming) handleJoyAim(e.touches[0]); e.preventDefault(); }, {passive:false});
-        aimBg.addEventListener('touchend', () => { isAiming = false; aimKnob.style.transform=`translate(0,0)`; aimVector = {x:0, y:0}; });
-        function handleJoyAim(t) {
-            const rect = aimBg.getBoundingClientRect(); let nx=t.clientX-rect.left-60, ny=t.clientY-rect.top-60;
-            const dist = Math.hypot(nx, ny); if(dist>60) { nx=nx/dist*60; ny=ny/dist*60; }
-            aimKnob.style.transform = `translate(${nx}px, ${ny}px)`;
-            aimVector.x = nx / 60; aimVector.y = ny / 60; 
+        initTerrain();
+        camera.position.set(0, 5, 0);
+
+        // ==========================================
+        // 4. 破壞與放置邏輯 (包含防呆機制)
+        // ==========================================
+        const raycaster = new THREE.Raycaster();
+        const center = new THREE.Vector2(0, 0);
+
+        function swingHand() {
+            const vm = document.getElementById('view-model');
+            vm.classList.remove('swing');
+            void vm.offsetWidth; // trigger reflow
+            vm.classList.add('swing');
+            updateStats(0, -1); // 扣體力
         }
 
-        const crosshairEl = document.getElementById('crosshair');
-        document.addEventListener('mousemove', e => {
-            crosshairEl.style.left = e.clientX + 'px'; crosshairEl.style.top = e.clientY + 'px';
-            pointerNDC.x = (e.clientX / window.innerWidth) * 2 - 1; pointerNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        document.getElementById('btn-break').addEventListener('pointerdown', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            
+            const currentItemId = hotbarSlots[selectedSlotIndex];
+            const currentItem = currentItemId ? ITEMS[currentItemId] : null;
+
+            // ⛔ 物理防呆：如果手上拿的是食物，禁止挖礦！
+            if (currentItem && currentItem.type === 'food') {
+                showMsg("⚠️ 食物太軟了，無法用來挖礦！", "#ef4444");
+                return; // 直接中斷
+            }
+
+            swingHand();
+            raycaster.setFromCamera(center, camera);
+            const intersects = raycaster.intersectObjects(scene.children).filter(i => i.object.geometry.type === 'BoxGeometry');
+            
+            if (intersects.length > 0 && intersects[0].distance < 5) {
+                const target = intersects[0];
+                const p = target.object.position;
+                const key = getBlockKey(p.x, p.y, p.z);
+                
+                if (blocks.has(key)) {
+                    const bType = blocks.get(key).type;
+                    scene.remove(target.object);
+                    blocks.delete(key);
+
+                    // ✨ 計算掉落數量 (基礎 1 + 工具加成 + 幸運加成)
+                    let dropCount = 1;
+                    let isLuckActive = Date.now() < luckEndTime;
+                    
+                    if (currentItem && currentItem.type === 'tool') dropCount += 1; // 拿鎬子挖 +1
+                    if (isLuckActive) dropCount += 1; // 幸運增幅 +1
+
+                    // 轉換掉落物名稱
+                    let dropId = bType === 'grass' ? 'dirt' : bType; 
+                    if(dropId === 'wood' && Math.random() < 0.3) inventory['apple'] = (inventory['apple']||0) + 1; // 砍樹掉蘋果
+                    
+                    inventory[dropId] = (inventory[dropId] || 0) + dropCount;
+                    
+                    let msg = `⛏️ 獲得 ${ITEMS[dropId].name} x${dropCount}`;
+                    if(isLuckActive) msg += " (✨幸運加成)";
+                    showMsg(msg, isLuckActive ? '#fbbf24' : '#ffffff');
+                    
+                    renderUI();
+                }
+            }
         });
 
-        document.addEventListener('mousedown', e => { if (e.target.tagName === 'CANVAS') { interact('interact'); interact('break'); } });
-        document.addEventListener('keydown', e => { let k = e.key.toLowerCase(); if(keys.hasOwnProperty(k)) keys[k] = true; });
-        document.addEventListener('keyup', e => { let k = e.key.toLowerCase(); if(keys.hasOwnProperty(k)) keys[k] = false; });
+        document.getElementById('btn-place').addEventListener('pointerdown', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            const currentItemId = hotbarSlots[selectedSlotIndex];
+            const currentItem = currentItemId ? ITEMS[currentItemId] : null;
+
+            // 必須是 block 類型才能放置，且數量大於0
+            if (!currentItem || currentItem.type !== 'block' || !(inventory[currentItemId] > 0)) {
+                return;
+            }
+
+            swingHand();
+            raycaster.setFromCamera(center, camera);
+            const intersects = raycaster.intersectObjects(scene.children).filter(i => i.object.geometry.type === 'BoxGeometry');
+            
+            if (intersects.length > 0 && intersects[0].distance < 5) {
+                const p = intersects[0].object.position.clone().add(intersects[0].face.normal);
+                const key = getBlockKey(p.x, p.y, p.z);
+                
+                if (!blocks.has(key)) {
+                    addBlock(p.x, p.y, p.z, currentItemId === 'dirt' ? 'dirt' : currentItemId);
+                    inventory[currentItemId]--;
+                    if(inventory[currentItemId] <= 0) hotbarSlots[selectedSlotIndex] = ''; // 用光清空
+                    renderUI();
+                }
+            }
+        });
 
         // ==========================================
-        // 5. 答題獲得 XP 與 GAS 寫入
+        // 5. 虛擬搖桿與移動控制 (完美防遮擋 & 滑順)
         // ==========================================
-        function openQuiz(obj) {
-            activeInteractObj = obj; document.getElementById('quiz-overlay').style.display = 'block';
-            let title = obj.userData.type === 'boss' ? `👹 知識巨魔 (剩餘血量: ${obj.userData.hp})` : "❓ 知識挑戰 (+200 XP)";
-            document.getElementById('quiz-title').innerHTML = title;
-            document.getElementById('quiz-options').innerHTML = '載入中...';
-            
-            let currentSubject = new URLSearchParams(window.location.search).get('subject') || 'math';
-            let qList = [];
-            try { if(typeof window.generatePaper === 'function') qList = window.generatePaper({ subject: currentSubject, total: 1 }); } catch(e) {}
-            if (!qList || qList.length === 0 || !qList[0]) qList = [{ question: "測試題: 1+1=?", options: ["1", "2", "3", "4"], answer: 1 }];
+        let moveInput = { x: 0, y: 0 };
+        let lookInput = { x: 0, y: 0 };
 
-            const q = qList[0]; 
-            document.getElementById('quiz-question').innerHTML = q.question.replace(/\n/g, '<br>');
-            
-            const optDiv = document.getElementById('quiz-options'); optDiv.innerHTML = '';
-            q.options.forEach((opt, idx) => {
-                const btn = document.createElement('button'); btn.className = 'quiz-btn'; btn.innerHTML = `${['A','B','C','D'][idx]}. ${opt}`;
-                btn.onclick = () => {
-                    if((typeof q.answer === 'number' ? idx === q.answer : opt === q.answer)) {
-                        playSnd('success');
-                        if(obj.userData.type === 'boss') {
-                            obj.userData.hp--;
-                            if(obj.userData.hp <= 0) {
-                                showMsg("🎉 擊退巨魔！獲得 100 XP 與鑽石！", '#10b981'); spawnParticles(obj.position);
-                                playerInventory['diamond'] = (playerInventory['diamond']||0)+5; syncGASXP(100, "擊退知識巨魔"); 
-                                scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); closeUI(); renderUI();
-                            } else { showMsg(`✅ 攻擊成功！巨魔剩血：${obj.userData.hp}`, '#fbbf24'); openQuiz(obj); }
-                        } else if(ANIMALS.find(a => a.type === obj.userData.type)) {
-                            let dropItem = obj.userData.drop; let dropName = ITEM_REGISTRY[dropItem].name;
-                            showMsg(`🍖 獲得 ${dropName}！`, '#10b981'); playerInventory[dropItem] = (playerInventory[dropItem]||0)+2; 
-                            spawnParticles(obj.position); scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); closeUI(); renderUI();
-                        } else {
-                            showMsg("🎉 答對！獲得物資與 20 XP", '#10b981'); modifyStat('energy', 20); playerInventory['apple'] = (playerInventory['apple']||0)+2;
-                            syncGASXP(20, "解開知識方塊"); 
-                            spawnParticles(obj.position); scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); closeUI(); renderUI();
-                        }
-                    } else { 
-                        playSnd('error'); modifyStat('hp', obj.userData.type === 'boss' ? -30 : -10); showMsg("💥 答錯受到傷害！", '#ef4444'); closeUI(); 
+        function setupJoystick(zoneId, knobId, outputObj) {
+            const zone = document.getElementById(zoneId);
+            const knob = document.getElementById(knobId);
+            let activeId = null;
+            let centerX, centerY, maxR = 40;
+
+            zone.addEventListener('touchstart', e => {
+                e.preventDefault(); e.stopPropagation();
+                const touch = e.changedTouches[0];
+                activeId = touch.identifier;
+                const rect = zone.getBoundingClientRect();
+                centerX = rect.left + rect.width / 2;
+                centerY = rect.top + rect.height / 2;
+                updateKnob(touch.clientX, touch.clientY);
+            }, {passive: false});
+
+            zone.addEventListener('touchmove', e => {
+                e.preventDefault(); e.stopPropagation();
+                for(let i=0; i<e.changedTouches.length; i++) {
+                    if(e.changedTouches[i].identifier === activeId) {
+                        updateKnob(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+                        break;
                     }
-                };
-                optDiv.appendChild(btn);
-            });
-            if(window.MathJax) MathJax.typesetPromise();
+                }
+            }, {passive: false});
+
+            const endDrag = (e) => {
+                for(let i=0; i<e.changedTouches.length; i++) {
+                    if(e.changedTouches[i].identifier === activeId) {
+                        activeId = null;
+                        knob.style.transform = `translate(0px, 0px)`;
+                        outputObj.x = 0; outputObj.y = 0;
+                        break;
+                    }
+                }
+            };
+            zone.addEventListener('touchend', endDrag);
+            zone.addEventListener('touchcancel', endDrag);
+
+            function updateKnob(tx, ty) {
+                let dx = tx - centerX; let dy = ty - centerY;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist > maxR) { dx = (dx/dist)*maxR; dy = (dy/dist)*maxR; }
+                knob.style.transform = `translate(${dx}px, ${dy}px)`;
+                outputObj.x = dx / maxR;
+                outputObj.y = dy / maxR;
+            }
         }
 
-        const clock = new THREE.Clock();
-        let dayTime = 8;
-        
-        function animate() {
-            requestAnimationFrame(animate); const delta = Math.min(clock.getDelta(), 0.1); const time = Date.now();
-            
-            dayTime = (dayTime + delta * 0.1) % 24;
-            let isNight = dayTime > 18 || dayTime < 6;
-            document.getElementById('time-display').innerText = isNight ? '黑夜 (危險)' : '白晝';
-            scene.background.setHSL(0.6, 0.5, isNight ? 0.05 : 0.6); scene.fog.color.setHSL(0.6, 0.5, isNight ? 0.05 : 0.6);
-            dirLight.intensity = isNight ? 0.1 : 0.8;
+        setupJoystick('joystick-move', 'knob-move', moveInput);
+        setupJoystick('joystick-look', 'knob-look', lookInput);
 
-            if(isAiming) {
-                camera.rotation.y -= aimVector.x * 0.03; camera.rotation.x -= aimVector.y * 0.03;
-                camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x)); camera.rotation.order = 'YXZ';
-                pointerNDC.x = 0; pointerNDC.y = 0; crosshairEl.style.left = '50%'; crosshairEl.style.top = '50%';
+        const velocity = new THREE.Vector3();
+        const direction = new THREE.Vector3();
+        let euler = new THREE.Euler(0, 0, 0, 'YXZ');
+
+        function updateGame() {
+            requestAnimationFrame(updateGame);
+
+            // 🐌 視角滑順轉動：靈敏度設定為 0.04 (非常穩定)
+            if (lookInput.x !== 0 || lookInput.y !== 0) {
+                const lookSpeed = 0.04; 
+                euler.setFromQuaternion(camera.quaternion);
+                euler.y -= lookInput.x * lookSpeed;
+                euler.x -= lookInput.y * lookSpeed;
+                euler.x = Math.max(-Math.PI/2 + 0.1, Math.min(Math.PI/2 - 0.1, euler.x)); // 限制上下看
+                camera.quaternion.setFromEuler(euler);
             }
 
-            updateRaycast();
-
-            let speed = (energy > 0 ? 6 : 2);
-            let dz = (keys.w ? 1 : 0) - (keys.s ? 1 : 0); let dx = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
-            
-            let px = camera.position.x, pz = camera.position.z;
-            
-            if(dz !== 0 || dx !== 0) {
-                const euler = new THREE.Euler(0, camera.rotation.y, 0, 'YXZ');
-                const velocity = new THREE.Vector3(dx * speed, 0, -dz * speed);
-                velocity.applyEuler(euler);
-                px += velocity.x * delta; pz += velocity.z * delta;
-                camera.position.x = px; camera.position.z = pz;
+            // 移動計算
+            if (moveInput.x !== 0 || moveInput.y !== 0) {
+                const moveSpeed = 0.15;
+                direction.set(moveInput.x, 0, moveInput.y);
+                
+                // 根據相機目前的Y軸旋轉來移動 (前進是朝向視角方向)
+                const camRotY = euler.y; 
+                direction.applyAxisAngle(new THREE.Vector3(0,1,0), camRotY);
+                
+                camera.position.addScaledVector(direction, moveSpeed);
             }
-            
-            // 🚀 關鍵修復：真實向下探測重力系統
-            let groundY = getH(px, pz); // 預設地形高度
-            const downRay = new THREE.Raycaster(new THREE.Vector3(px, camera.position.y + 2, pz), new THREE.Vector3(0, -1, 0));
-            const hits = downRay.intersectObjects([...terrainMeshes, ...interactables]);
-            
-            for (let i = 0; i < hits.length; i++) {
-                if (hits[i].object.material && hits[i].object.material.transparent) continue; // 忽略水體
-                if (hits[i].object.userData.isNPC || hits[i].object.userData.isItem) continue; // 忽略生物跟雞蛋
-                groundY = hits[i].point.y;
-                break;
-            }
-            
-            camera.position.y += ((groundY + 1.6) - camera.position.y) * 0.15; // 平滑掉落與吸附
 
-            const cx = Math.floor(px/16), cz = Math.floor(pz/16);
-            for(let x=-2; x<=2; x++) for(let z=-2; z<=2; z++) { const key = `${cx+x},${cz+z}`; if(!chunks.has(key)) genChunk(cx+x, cz+z); else chunks.get(key).group.visible = true; }
-
-            interactables.forEach(b => {
-                if(b.userData.isQ) { b.rotation.y += 0.02; b.position.y = b.userData.wy + Math.sin(time*0.002)*0.2; }
-                if(b.userData.isMob) {
-                    if(ANIMALS.find(a=>a.type===b.userData.type)) { 
-                        b.position.x += Math.sin(time*0.001+b.id)*0.02; b.position.z += Math.cos(time*0.001+b.id)*0.02; 
-                        
-                        // 動物也套用簡單重力
-                        const ah = getH(b.position.x, b.position.z);
-                        b.position.y = ah + 1; 
-
-                        if(b.userData.type === 'chicken' && time - b.userData.lastEgg > 15000) {
-                            b.userData.lastEgg = time;
-                            if(Math.random() < 0.5) {
-                                playSnd('egg');
-                                let egg = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.4,0.4), gTex('#ffffff', '#eeeeee', '🥚'));
-                                egg.position.set(b.position.x, b.position.y - 0.2, b.position.z); egg.userData = { isItem: true, id: 'egg' };
-                                scene.add(egg); interactables.push(egg);
-                            }
-                        }
-                    } 
-                    else if(b.userData.type === 'boss') { b.rotation.y += 0.01; b.position.y = b.userData.wy + Math.sin(time*0.005)*0.5; }
+            // 更新幸運UI
+            if (luckEndTime > 0) {
+                let remain = Math.ceil((luckEndTime - Date.now()) / 1000);
+                if (remain > 0) {
+                    document.getElementById('luck-time').innerText = remain;
+                } else {
+                    luckEndTime = 0;
+                    document.getElementById('luck-overlay').style.display = 'none';
+                    showMsg("幸運效果結束了", "#aaaaaa");
                 }
-            });
-
-            for(let i=particles.length-1; i>=0; i--) {
-                let p = particles[i]; p.position.addScaledVector(p.userData.v, delta); p.userData.v.y -= 9.8 * delta; 
-                p.userData.life -= delta; p.scale.multiplyScalar(0.9);
-                if(p.userData.life <= 0) { scene.remove(p); particles.splice(i, 1); }
             }
 
             renderer.render(scene, camera);
         }
 
-        window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
-        
-        renderUI(); animate();
+        // 初始化
+        window.onload = () => {
+            renderUI();
+            updateGame();
+        };
+
+        // 處理螢幕縮放
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
     </script>
 </body>
 </html>
