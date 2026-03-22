@@ -85,11 +85,6 @@
         }
     });
 </script>
-    <script>
-function startGame(id) {
-    console.log("startGame called:", id);
-}
-</script>
 <body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden">
 <div id="star-container"></div>
     <header class="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-30">
@@ -493,52 +488,50 @@ function startGame(id) {
     let timerInterval;
  const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
 const ThemeEngine = {
-    apply: async function(username) {
+    apply: async function(usernameOrKey) {
         const body = document.body;
-        console.log("🚀 [ThemeEngine] 啟動快照優先模式。用戶:", username);
+        const rawUserKey = typeof usernameOrKey === 'string' ? usernameOrKey.trim() : '';
+        const lookupUsername = rawUserKey && isNaN(Number(rawUserKey)) ? rawUserKey : '';
+
+        console.log("🚀 [ThemeEngine] 啟動快照優先模式。輸入:", usernameOrKey);
 
         // --- 階段 1：立即從本地讀取 ---
-        // 抓取整個物件，而不只是 XP，這樣更新時才不會丟失姓名等資料
         let userRaw = localStorage.getItem('currentUser');
         let userDataLocal = userRaw ? JSON.parse(userRaw) : { xp: 0 };
         let currentXP = Number(userDataLocal.xp) || 0;
-        
+
         console.log("📦 [本地快照] 當前 XP:", currentXP);
-        this.updateThemeUI(currentXP); 
+        this.updateThemeUI(currentXP);
+
+        // 如果沒有可用的帳號名稱，就只做本地主題更新，不做雲端同步
+        if (!lookupUsername) return;
 
         // --- 階段 2：背景同步雲端試算表 ---
         try {
             const response = await fetch(`${GAS_URL}?action=get_leaderboard`);
             const leaderboard = await response.json();
-            
-            const cloudUser = leaderboard.find(u => 
-                String(u.username).trim().toLowerCase() === String(username).trim().toLowerCase()
-            );
+
+            const cloudUser = Array.isArray(leaderboard) ? leaderboard.find(u =>
+                String(u.username).trim().toLowerCase() === lookupUsername.toLowerCase()
+            ) : null;
 
             if (cloudUser) {
-                const cloudXP = Number(cloudUser.xp);
+                const cloudXP = Number(cloudUser.xp) || 0;
                 console.log("✅ [雲端回傳] 最新 XP:", cloudXP);
 
-                // ✨ 關鍵判斷：雲端與本地不一致時才更新
                 if (cloudXP !== currentXP) {
                     console.log("✨ [同步] 偵測到數值差異，更新本地快照與 UI...");
-                    
-                    // 1. 更新內存物件中的 XP (保留原本的其他資料)
-                    userDataLocal.xp = cloudXP;
-                    // 如果雲端有回傳等級也順便更新
-                    if (cloudUser.level) userDataLocal.level = cloudUser.level;
 
-                    // 2. 寫回 localStorage
+                    userDataLocal.xp = cloudXP;
+                    if (cloudUser.level) userDataLocal.level = cloudUser.level;
                     localStorage.setItem('currentUser', JSON.stringify(userDataLocal));
-                    
-                    // 3. 重新觸發染色與特效
-                    this.updateThemeUI(cloudXP); 
+                    this.updateThemeUI(cloudXP);
                 }
             } else {
                 console.warn("⚠️ 雲端找不到該用戶資料。");
             }
         } catch (e) {
-            console.error("❌ 雲端同步失敗:", e);
+            console.warn("⚠️ 雲端同步失敗，已保留本地主題。", e);
         }
     },
 
@@ -594,7 +587,7 @@ const ThemeEngine = {
 document.addEventListener('DOMContentLoaded', () => {
     // 讀取 currentUser，如果沒有就預設 0
     const user = JSON.parse(localStorage.getItem('currentUser') || '{"xp":0}');
-    ThemeEngine.apply(user.xp);
+    ThemeEngine.apply(user.username || user.account || user.xp || 0);
 });
     // 🚀 系統初始化 (window.onload)
     // ==========================================
@@ -721,7 +714,7 @@ async function awardXPAndSync(xpAmount, gameName, scoreAmount) {
     
     // 🌟 立即連動主題變色 (ThemeEngine)
     if (typeof ThemeEngine !== 'undefined' && ThemeEngine.apply) {
-        ThemeEngine.apply(newTotalXP);
+        ThemeEngine.apply(user.username || user.account || newTotalXP);
     }
 
     // 6. 準備發送給 GAS 的資料包
@@ -861,20 +854,35 @@ function toggleSidebar() {
 
     // 題目生成器
     function generateGameQuestions(subj, count) {
+        const normalizeQuestion = (q) => {
+            if (!q || !q.question) return null;
+            const normalized = Object.assign({}, q);
+
+            // 題庫防呆：沒有 options 時，自動生成單一答案選項，避免畫面當機
+            if (!Array.isArray(normalized.options) || normalized.options.length === 0) {
+                const ans = resolveAnswerText(normalized);
+                normalized.options = [String(ans ?? '未提供答案')];
+                normalized.answer = 0;
+            }
+            return normalized;
+        };
+
         if (window.generatePaper) {
             let q = window.generatePaper({ 
                 subject: subj, 
-                total: count, 
-                // 優先使用 targetTags (使用者的年級)，如果沒有則回退到科目
-                tags: targetTags.length > 0 ? targetTags : [subj] 
-            }).filter(i => i && i.question);
-            
-            // 補齊題目防止當機
+                total: count,
+                tags: targetTags.length > 0 ? targetTags : [subj]
+            });
+
+            q = Array.isArray(q) ? q.map(normalizeQuestion).filter(Boolean) : [];
+
             if (q.length < count) {
-                const backup = window.generatePaper({ subject: subj, total: count - q.length });
+                let backup = window.generatePaper({ subject: subj, total: count - q.length, tags: [subj] });
+                backup = Array.isArray(backup) ? backup.map(normalizeQuestion).filter(Boolean) : [];
                 q = q.concat(backup);
             }
-            return q;
+
+            return q.slice(0, count);
         }
         console.warn("無法載入題目生成器");
         return [];
@@ -886,6 +894,11 @@ function toggleSidebar() {
             return q.options[q.answer];
         }
         return q.answer;
+    }
+
+    function getSafeOptions(q) {
+        if (q && Array.isArray(q.options) && q.options.length > 0) return q.options;
+        return [String(resolveAnswerText(q) ?? '未提供答案')];
     }
 
   function startGame(id) {
@@ -976,7 +989,7 @@ function toggleSidebar() {
         const q = gameQuestions[currentQIdx % gameQuestions.length];
         document.getElementById('mrQuestion').innerHTML = q.question.replace(/\n/g, '<br>');
         const con = document.getElementById('mrOptions'); con.innerHTML = '';
-        q.options.forEach((opt, idx) => {
+        getSafeOptions(q).forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = "w-full py-3 text-lg font-bold bg-slate-50 border-2 border-slate-100 rounded-xl hover:bg-blue-50 transition active:scale-95";
             btn.innerHTML = opt;
@@ -992,6 +1005,7 @@ function toggleSidebar() {
     }
    function endMathRush() {
     clearInterval(timerInterval);
+    document.getElementById('mrGameArea').classList.add('hidden');
     document.getElementById('mrGameOver').classList.remove('hidden');
     
     // 修正點：移除 const，直接計算 (因為前面可能已經宣告過了)
@@ -1137,7 +1151,7 @@ function toggleSidebar() {
         const q = gameQuestions[currentQIdx % gameQuestions.length];
         document.getElementById('rpgQuestion').innerHTML = q.question;
         const con = document.getElementById('rpgOptions'); con.innerHTML = '';
-        q.options.forEach((opt, idx) => {
+        getSafeOptions(q).forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = "w-full py-3 bg-slate-50 border rounded-lg hover:bg-green-50 text-left px-4 font-bold text-slate-600";
             btn.innerHTML = opt;
@@ -1197,7 +1211,7 @@ function toggleSidebar() {
         const q = gameQuestions[currentQIdx % gameQuestions.length];
         document.getElementById('bombQuestion').innerHTML = q.question;
         const con = document.getElementById('bombOptions'); con.innerHTML = '';
-        q.options.forEach((opt, idx) => {
+        getSafeOptions(q).forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = "py-4 bg-slate-700 text-white rounded-xl font-bold hover:bg-slate-600";
             btn.innerHTML = opt;
@@ -1253,7 +1267,7 @@ function toggleSidebar() {
         const q = gameQuestions[currentQIdx % gameQuestions.length];
         document.getElementById('wheelQuestion').innerHTML = q.question;
         const con = document.getElementById('wheelOptions'); con.innerHTML = '';
-        q.options.forEach((opt, idx) => {
+        getSafeOptions(q).forEach((opt, idx) => {
             const btn = document.createElement('button');
             btn.className = "w-full py-2 bg-yellow-50 border border-yellow-200 rounded-lg text-slate-700 font-bold hover:bg-yellow-100";
             btn.innerHTML = opt;
