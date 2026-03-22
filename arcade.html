@@ -1425,28 +1425,35 @@ window.vqUpdateChunkMesh = function(chunk) {
     }
     chunk.dirty = false;
 };
-
-// 2. 完美的碰撞偵測：還沒讀取好的世界，就把你托在空中！
+// ==========================================
+// 🛡️ 鋼鐵保險版碰撞偵測
+// ==========================================
 window.vqCheckCollision = function(x, y, z) {
-    // 終極安全網：如果真的不小心掉到地下 (Y < -20)，強制傳送回高空！
-    if (y < -20) {
+    // 1. 強制高度保險：絕對不允許玩家掉到 y=10 以下（那是地底深處）
+    // 如果掉下去了，強制把你拉回地表高度
+    if (y < 10) {
         if (typeof vqControls !== 'undefined' && vqControls.getObject) {
-            vqControls.getObject().position.set(x, 80, z); // 傳送回天空
-            if (typeof vqVelocity !== 'undefined') vqVelocity.y = 0; // 煞車，重新降落
+            let player = vqControls.getObject();
+            player.position.y = 80; // 把你丟回天空
+            if (typeof vqVelocity !== 'undefined') vqVelocity.y = 0; // 重設重力加速度
         }
         return true; 
     }
 
     let currentBlockSize = window.blockSize || 10;
-    // 改用 Math.floor 確保精準對齊方塊邊界，不再有浮點數誤差
+    // 使用 Math.floor 確保精準度
     let bx = Math.floor(x / currentBlockSize);
-    let by = Math.floor((y - 5) / currentBlockSize); 
+    let by = Math.floor((y - 6) / currentBlockSize); // 稍微往下一點偵測腳底
     let bz = Math.floor(z / currentBlockSize);
 
     function checkSolid(wx, wy, wz) {
-        // 檢查舊有題目方塊
+        // 優先檢查：如果你在岩層高度 (wy < 3)，直接當作是有地板，防止掉出世界
+        if (wy <= 1) return true;
+
+        // 檢查一般題目方塊
         if (typeof window.getBlock === 'function' && window.getBlock(wx, wy, wz)) return true;
         
+        // 檢查自然地形
         const VQ_CHUNK_SIZE = 16; 
         const cx = Math.floor(wx / VQ_CHUNK_SIZE);
         const cz = Math.floor(wz / VQ_CHUNK_SIZE);
@@ -1454,24 +1461,18 @@ window.vqCheckCollision = function(x, y, z) {
         if (typeof window.vqInf !== 'undefined' && window.vqInf.chunks) {
             const chunk = window.vqInf.chunks.get(`${cx},${cz}`); 
             
-            // 🌟 最神奇的一行：如果這區塊還沒生成好，直接當作腳下有「隱形地板」托住你！
-            // 這樣你就會懸浮在半空中等待，直到草地長出來接住你！
+            // 關鍵：如果區塊還沒載入完成，就先給玩家一個隱形地板支撐，防止掉入黑洞
             if (!chunk || !chunk.baseLookup) return true; 
 
-            // 如果生成好了，就用極速字典查
             const blockType = chunk.baseLookup.get(`${wx}|${wy}|${wz}`);
-            if (blockType && blockType !== 'water' && blockType !== 'tall_grass' && 
-                blockType !== 'red_flower' && blockType !== 'yellow_flower') {
+            if (blockType && blockType !== 'water' && blockType !== 'tall_grass') {
                 return true;
             }
-        } else {
-            // 世界系統還沒啟動時，也不准掉下去
-            return true;
         }
         return false;
     }
 
-    // 檢查腳底、下半身
+    // 同時檢查腳下和膝蓋位置
     return checkSolid(bx, by, bz) || checkSolid(bx, by + 1, bz);
 };
 
