@@ -1374,7 +1374,13 @@ function getBlock(x, y, z) {
     return undefined;
 }
 
+// ==========================================
+// 🛡️ 1. 修正碰撞偵測 (加入基岩層，防止無限掉落)
+// ==========================================
 function checkCollision(x, y, z) {
+    // 🌟 絕對地板：只要玩家高度(y)低於 10，就視為踩到實體地板，強制接住！
+    if (y <= 10) return true;
+
     let gridX = Math.round(x / blockSize);
     let gridY = Math.round((y - 5) / blockSize); 
     let gridZ = Math.round(z / blockSize);
@@ -1382,23 +1388,37 @@ function checkCollision(x, y, z) {
     return false;
 }
 
-function initVoxel() {
-    if(!currentSubject) { alert("請先在上方選單選擇一個「學科」！"); return; }
-    gameQuestions = generateGameQuestions(currentSubject, 10); // 準備充足的題庫
-    if(gameQuestions.length === 0) { alert("此科目無題目！"); return; }
+// ==========================================
+// 🌱 2. 超輕量級平坦地板 (生成綠色草地)
+// ==========================================
+function generateFastVoxelFloor() {
+    const size = 60; // 生成 60x60 範圍的草地
+    const geo = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
+    const mat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+    const instanced = new THREE.InstancedMesh(geo, mat, size * size);
     
-    vqStage = 1;
-    vqTotalXP = 0;
-    cubesFound = 0;
-    document.getElementById('vq-stage').textContent = `收集進度: ${cubesFound} / ${TARGET_COUNT}`;
-    document.getElementById('vq-score').textContent = vqTotalXP;
-
-    ;
+    let dummy = new THREE.Object3D();
+    let colorObj = new THREE.Color(BLOCK_TYPES['grass']); 
+    let index = 0;
+    
+    for(let x = -size/2; x < size/2; x++) {
+        for(let z = -size/2; z < size/2; z++) {
+            setBlock(x, 0, z, 'grass'); // 讓物理引擎知道這裡有方塊
+            dummy.position.set(x * blockSize, 0, z * blockSize);
+            dummy.updateMatrix();
+            instanced.setMatrixAt(index, dummy.matrix);
+            instanced.setColorAt(index, colorObj);
+            index++;
+        }
+    }
+    instanced.instanceMatrix.needsUpdate = true;
+    instanced.instanceColor.needsUpdate = true;
+    vqScene.add(instanced);
 }
-// ==========================================
-// ✅ 安全接管 startGame
-// ==========================================
 
+// ==========================================
+// ✅ 3. 安全接管 startGame
+// ==========================================
 const baseStartGame = window.startGame;
 window.startGame = function(id) {
     if (id === 'voxel') {
@@ -1415,16 +1435,39 @@ window.startGame = function(id) {
             voxelGame.classList.remove('hidden');
             if (typeof initVoxel === 'function') initVoxel();
         } else {
-            alert("❌ 錯誤：找不到 3D 遊戲的顯示區塊！請確認 HTML 裡面有沒有 id='game-voxel' 的標籤。");
+            alert("❌ 錯誤：找不到 3D 遊戲的顯示區塊！");
         }
         return;
     }
-
     const banner = document.getElementById('voxelHeroBanner');
     if (banner) banner.classList.add('hidden');
     if (typeof baseStartGame === 'function') baseStartGame(id);
 };
+
+// ==========================================
+// 🚀 4. 終極合併版 initVoxel (題庫 + 3D世界)
+// ==========================================
 function initVoxel() {
+    // --- 第一部分：遊戲邏輯與題庫檢查 ---
+    if(!currentSubject) { 
+        alert("請先在上方選單選擇一個「學科」！"); 
+        backToMenu(); // 退回選單
+        return; 
+    }
+    gameQuestions = generateGameQuestions(currentSubject, 10);
+    if(gameQuestions.length === 0) { 
+        alert("此科目無題目！"); 
+        backToMenu();
+        return; 
+    }
+    
+    vqStage = 1;
+    vqTotalXP = 0;
+    cubesFound = 0;
+    if(document.getElementById('vq-stage')) document.getElementById('vq-stage').textContent = `收集進度: ${cubesFound} / ${TARGET_COUNT}`;
+    if(document.getElementById('vq-score')) document.getElementById('vq-score').textContent = vqTotalXP;
+
+    // --- 第二部分：建立 3D 世界 ---
     const container = document.getElementById('vq-canvas-container');
     if (!container) return;
     container.innerHTML = ''; 
@@ -1432,18 +1475,14 @@ function initVoxel() {
 
     vqScene = new THREE.Scene();
     vqScene.fog = new THREE.FogExp2(0x87ceeb, 0.002);
-
     vqCamera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 1, 2000);
     
-    // 🌟 光源設定 (為日夜交替做準備)
     vqAmbientLight = new THREE.AmbientLight(0xffffff, 0.6);
     vqScene.add(vqAmbientLight);
-    
     vqSunLight = new THREE.DirectionalLight(0xffffff, 0.8);
     vqSunLight.position.set(100, 200, 50);
     vqScene.add(vqSunLight);
-
-    vqTimeOfDay = Math.PI / 4; // 初始時間設為早晨
+    vqTimeOfDay = Math.PI / 4; 
 
     vqControls = new THREE.PointerLockControls(vqCamera, document.body);
     
@@ -1474,24 +1513,15 @@ function initVoxel() {
     });
     vqScene.add(vqControls.getObject());
 
-    // ==========================================
-    // 🛡️ 防止事件重複綁定的安全鎖 (非常重要！)
-    // ==========================================
     if (!window.__VQ_EVENTS_BOUND__) {
         window.__VQ_EVENTS_BOUND__ = true;
-
         const onKeyDown = function (event) {
             switch (event.code) {
                 case 'ArrowUp': case 'KeyW': moveForward = true; break;
                 case 'ArrowLeft': case 'KeyA': moveLeft = true; break;
                 case 'ArrowDown': case 'KeyS': moveBackward = true; break;
                 case 'ArrowRight': case 'KeyD': moveRight = true; break;
-                case 'Space': 
-                    if (canJump) {
-                        velocity.y += 150; 
-                        canJump = false; 
-                    }
-                    break; 
+                case 'Space': if (canJump) { velocity.y += 150; canJump = false; } break; 
             }
         };
         const onKeyUp = function (event) {
@@ -1505,17 +1535,15 @@ function initVoxel() {
         document.addEventListener('keydown', onKeyDown);
         document.addEventListener('keyup', onKeyUp);
 
-        // 互動射線 (偵測多顆方塊)
         const interactionRaycaster = new THREE.Raycaster();
         document.addEventListener('mousedown', (event) => {
             if(vqControls && vqControls.isLocked && event.button === 0 && window.vqTargetCubes && vqTargetCubes.length > 0) {
                 interactionRaycaster.setFromCamera(new THREE.Vector2(0,0), vqCamera);
                 const intersects = interactionRaycaster.intersectObjects(vqTargetCubes);
-                
                 if(intersects.length > 0) {
                     const hitObj = intersects[0].object;
                     if(vqCamera.position.distanceTo(hitObj.position) < 80) {
-                        currentHitCube = hitObj; // 記錄點到了哪一顆
+                        currentHitCube = hitObj; 
                         if (typeof triggerVoxelQuiz === 'function') triggerVoxelQuiz();
                     }
                 }
@@ -1532,26 +1560,18 @@ function initVoxel() {
         });
     }
 
-    // ==========================================
-    // 🌍 撒下 5 顆目標方塊
-    // ==========================================
+    // 🌟 生成草地與目標方塊！
     if (typeof spawnTargetCubes === 'function') spawnTargetCubes(TARGET_COUNT || 5); 
-    vqControls.getObject().position.set(0, 80, 0); 
+    generateFastVoxelFloor(); // 呼叫草地生成
 
-    // ==========================================
-    // 🚀 渲染器優化 (解決超慢問題的關鍵)
-    // ==========================================
-    vqRenderer = new THREE.WebGLRenderer({ antialias: false }); // 關閉抗鋸齒
-    vqRenderer.setPixelRatio(1); // 絕對不要用 window.devicePixelRatio！強制填 1
+    vqControls.getObject().position.set(0, 80, 0); // 玩家降落！
+
+    vqRenderer = new THREE.WebGLRenderer({ antialias: false });
+    vqRenderer.setPixelRatio(1);
     vqRenderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(vqRenderer.domElement);
 
-    // ==========================================
-    // 🛡️ 啟動動畫並防止循環疊加
-    // ==========================================
-    if (window.vqAnimationId) {
-        cancelAnimationFrame(window.vqAnimationId);
-    }
+    if (window.vqAnimationId) cancelAnimationFrame(window.vqAnimationId);
     prevTime = performance.now();
     if (typeof animateVoxelWorld === 'function') animateVoxelWorld();
 }
