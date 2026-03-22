@@ -540,8 +540,8 @@
                         if(obj.userData.type === 'boss') {
                             obj.userData.hp--;
                             if(obj.userData.hp <= 0) {
-                                showMsg("🎉 擊退巨魔！獲得 1000 XP 與鑽石！", '#10b981'); spawnParticles(obj.position);
-                                playerInventory['diamond'] = (playerInventory['diamond']||0)+5; syncGASXP(1000, "擊退知識巨魔"); 
+                                showMsg("🎉 擊退巨魔！獲得 100 XP 與鑽石！", '#10b981'); spawnParticles(obj.position);
+                                playerInventory['diamond'] = (playerInventory['diamond']||0)+5; syncGASXP(100, "擊退知識巨魔"); 
                                 scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); closeUI(); renderUI();
                             } else { showMsg(`✅ 攻擊成功！巨魔剩血：${obj.userData.hp}`, '#fbbf24'); openQuiz(obj); }
                         } else if(ANIMALS.find(a => a.type === obj.userData.type)) {
@@ -549,8 +549,8 @@
                             showMsg(`🍖 獲得 ${dropName}！`, '#10b981'); playerInventory[dropItem] = (playerInventory[dropItem]||0)+2; 
                             spawnParticles(obj.position); scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); closeUI(); renderUI();
                         } else {
-                            showMsg("🎉 答對！獲得物資與 200 XP", '#10b981'); modifyStat('energy', 20); playerInventory['apple'] = (playerInventory['apple']||0)+2;
-                            syncGASXP(200, "解開知識方塊"); 
+                            showMsg("🎉 答對！獲得物資與 20 XP", '#10b981'); modifyStat('energy', 20); playerInventory['apple'] = (playerInventory['apple']||0)+2;
+                            syncGASXP(20, "解開知識方塊"); 
                             spawnParticles(obj.position); scene.remove(obj); interactables.splice(interactables.indexOf(obj), 1); closeUI(); renderUI();
                         }
                     } else { 
