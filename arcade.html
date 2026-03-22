@@ -1376,34 +1376,41 @@ function getBlock(x, y, z) {
 
 
 // ==========================================
-// 🛡️ 真實地形碰撞偵測 (真正踩在方塊上！)
+// 🛡️ 真實地形碰撞偵測 (完美支援陣列搜尋版！)
 // ==========================================
 window.vqCheckCollision = function(x, y, z) {
-    // 終極安全網：萬一真的掉出世界邊緣 (Y < -100)，才強制把你托住
-    if (y < -100) return true;
+    // 終極安全網：如果掉太深，把你傳送回天空，並稍微托住你一下讓地形有時間生成
+    if (y < -50) return true; 
 
     let currentBlockSize = window.blockSize || 10;
-    // 將玩家的 3D 空間座標轉換為「方塊網格座標」
     let bx = Math.round(x / currentBlockSize);
-    let by = Math.round((y - 5) / currentBlockSize); // 玩家腳底所在的方塊
+    let by = Math.round((y - 5) / currentBlockSize); // 玩家腳底
     let bz = Math.round(z / currentBlockSize);
 
-    // 檢查某個網格有沒有「實體方塊」
     function checkSolid(wx, wy, wz) {
-        // 1. 檢查 5 顆題目方塊
+        // 1. 檢查舊有物件 (題目方塊)
         if (typeof window.getBlock === 'function' && window.getBlock(wx, wy, wz)) return true;
         
-        // 2. 檢查大自然生態系 (高山、泥土、草地)
+        // 2. 檢查大自然生態系
         const VQ_CHUNK_SIZE = 16; 
         const cx = Math.floor(wx / VQ_CHUNK_SIZE);
         const cz = Math.floor(wz / VQ_CHUNK_SIZE);
         
         if (typeof window.vqInf !== 'undefined' && window.vqInf.chunks) {
             const chunk = window.vqInf.chunks.get(`${cx},${cz}`); 
-            if (chunk && chunk.baseLookup) {
-                // 根據座標去查那一格是不是有方塊
-                const blockType = chunk.baseLookup.get(`${wx}|${wy}|${wz}`);
-                // 如果有方塊，而且「不是」水、草、花 (因為這些可以直接走過去)
+            if (chunk) {
+                let blockType = null;
+                
+                // 智慧雙重檢查：看你的世界是用哪種方式儲存方塊的
+                if (chunk.baseLookup) {
+                    blockType = chunk.baseLookup.get(`${wx}|${wy}|${wz}`);
+                } else if (chunk.baseBlocks) {
+                    // 如果沒有字典，就去陣列裡面一個一個比對座標
+                    const foundBlock = chunk.baseBlocks.find(b => b.wx === wx && b.wy === wy && b.wz === wz);
+                    if (foundBlock) blockType = foundBlock.type || 'stone'; // 預設當作石頭
+                }
+                
+                // 只要有方塊，且不是水或可穿透的植物，就是撞到實體了！
                 if (blockType && blockType !== 'water' && blockType !== 'tall_grass' && 
                     blockType !== 'red_flower' && blockType !== 'yellow_flower') {
                     return true;
@@ -1413,14 +1420,11 @@ window.vqCheckCollision = function(x, y, z) {
         return false;
     }
 
-    // 同時檢查腳底下 (by)、下半身 (by+1) 和腳趾頭 (by-1) 是否撞到方塊
+    // 檢查腳底 (by)、下半身 (by+1) 和稍微往下探 (by-1)
     return checkSolid(bx, by, bz) || checkSolid(bx, by + 1, bz) || checkSolid(bx, by - 1, bz);
 };
 
 window.checkCollision = window.vqCheckCollision;
-// ==========================================
-// 🌱 安全降落島 (保證一出生絕對有地板可以踩)
-// ==========================================
 window.generateFastVoxelFloor = function() {
     const size = 60; // 生成 60x60 的安全區
     let currentBlockSize = window.blockSize || 10;
