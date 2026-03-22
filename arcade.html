@@ -1379,21 +1379,21 @@ function getBlock(x, y, z) {
 // 🚀 終極防穿透版：極速字典 + 懸浮等待機制
 // ==========================================
 
-// 1. 在渲染區塊時，順便建立「極速搜尋字典」
 window.vqUpdateChunkMesh = function(chunk) {
     if (!chunk || !chunk.dirty) return;
     
+    // 🌟 [優化] 如果這個區塊原本就有模型，先從場景移除，避免疊加造成卡頓
+    if (chunk.mesh && typeof vqScene !== 'undefined') {
+        vqScene.remove(chunk.mesh);
+        if (chunk.mesh.geometry) chunk.mesh.geometry.dispose();
+        if (chunk.mesh.material) chunk.mesh.material.dispose();
+    }
+
     if (!window.vqInf.geometry) window.vqInf.geometry = new THREE.BoxGeometry(10, 10, 10);
     if (!window.vqInf.material) window.vqInf.material = new THREE.MeshLambertMaterial({ color: 0xffffff });
     
-    // 🌟 關鍵優化：建立極速字典，以後找方塊只要 0.0001 秒，絕對不卡頓！
-    // 🌟 確保這行有在裡面：建立快速搜尋地圖
+    // 🌟 [優化] 建立字典
     chunk.baseLookup = new Map();
-    if (chunk.baseBlocks) {
-        chunk.baseBlocks.forEach(b => {
-            chunk.baseLookup.set(`${b.wx}|${b.wy}|${b.wz}`, b.type);
-        });
-    }
     const totalBlocks = chunk.baseBlocks ? chunk.baseBlocks.length : 0;
     
     if (totalBlocks > 0) {
@@ -1402,8 +1402,6 @@ window.vqUpdateChunkMesh = function(chunk) {
         
         for (let i = 0; i < totalBlocks; i++) {
             const b = chunk.baseBlocks[i];
-            
-            // 把每個方塊的座標存進字典
             chunk.baseLookup.set(`${b.wx}|${b.wy}|${b.wz}`, b.type || 'stone');
             
             dummy.position.set(b.wx * 10, b.wy * 10, b.wz * 10);
@@ -1411,25 +1409,17 @@ window.vqUpdateChunkMesh = function(chunk) {
             chunk.mesh.setMatrixAt(i, dummy.matrix);
             
             // 替方塊上色
-            let colorHex = 0xffffff;
+            let colorHex = 0x4CAF50; // 預設草地綠
             if (typeof BLOCK_TYPES !== 'undefined' && BLOCK_TYPES[b.type]) {
                 colorHex = BLOCK_TYPES[b.type];
-            } else {
-                const fallback = {
-                    'grass': 0x4CAF50, 'dirt': 0x795548, 'stone': 0x9E9E9E,
-                    'sand': 0xEEDB9C, 'water': 0x2196F3, 'snow': 0xFFFFFF,
-                    'wood': 0x5D4037, 'oak': 0x5D4037, 'leaves': 0x388E3C
-                };
-                colorHex = fallback[b.type] || 0x4CAF50;
             }
             chunk.mesh.setColorAt(i, new THREE.Color(colorHex));
         }
         chunk.mesh.instanceMatrix.needsUpdate = true;
         if (chunk.mesh.instanceColor) chunk.mesh.instanceColor.needsUpdate = true;
-        
         if (typeof vqScene !== 'undefined') vqScene.add(chunk.mesh);
     }
-    chunk.dirty = false;
+    chunk.dirty = false; // 務必設為 false，否則每幀都會重畫，會卡死
 };
 window.vqCheckCollision = function(x, y, z) {
     // 【保險 1】絕對底線：如果掉到地底，直接強制傳送回高空
