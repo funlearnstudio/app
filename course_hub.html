@@ -366,20 +366,36 @@ window.onload = function() {
             document.getElementById('breadcrumbCurrent').textContent = title;
             document.getElementById('gradeBadge').textContent = stage === 'high_school' ? '高中部' : '國中部';
 
-            // 3. 設定快速按鈕連結
+// 3. 設定快速按鈕連結 (保留不需要調整的連結)
             document.getElementById('linkStudy').href = `study.html?filter=${subject}`;
             document.getElementById('linkArcade').href = `arcade.html?subject=${subject}`;
-            document.getElementById('linkExamAll').href = `exam.html?subject=${subject}&title=${encodeURIComponent(title + "總複習")}&count=20&grade=${encodeURIComponent(gradeParam)}`;
 
             // 4. 載入課程資料 (確保對應到你的 curriculum_integrated.js 結構)
             if(window.initCurriculumData) window.initCurriculumData();
             
-            // 這裡修正為直接從 CurriculumLibrary 取值，因為你的檔案結構看起來是 global 的
+            // 這裡修正為直接從 CurriculumLibrary 取值
             const rawData = (window.CurriculumLibrary.data ? window.CurriculumLibrary.data[subject] : window.CurriculumLibrary[subject]) || [];
             
             // 5. 過濾與排序
             currentBooks = rawData.filter(book => book.stage === stage);
+
+            // ==========================================
+            // 🌟 修正「全冊測驗」：收集所有冊別與單元的標籤，確保「全部都要」
+            // ==========================================
+            let allTags = [];
+            currentBooks.forEach(book => {
+                if (book.units) {
+                    book.units.forEach(unit => {
+                        if (unit.tags) allTags.push(...unit.tags);
+                        if (unit.topics) allTags.push(...unit.topics);
+                    });
+                }
+            });
+            // 移除重複的標籤並用逗號組合成字串
+            const allTagsString = [...new Set(allTags)].join(',');
             
+            // 重新設定全冊測驗連結，把所有收集到的標籤餵給題庫
+            document.getElementById('linkExamAll').href = `exam.html?subject=${subject}&title=${encodeURIComponent(title + "總複習")}&count=20&grade=${encodeURIComponent(allTagsString)}`;
             if (currentBooks.length === 0) {
                 document.getElementById('unitContainer').innerHTML = `
                     <div class="text-center py-20">
