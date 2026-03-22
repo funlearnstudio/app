@@ -1376,52 +1376,103 @@ function getBlock(x, y, z) {
 
 
 // ==========================================
-// 🛡️ 真實地形碰撞偵測 (完美支援陣列搜尋版！)
+// 🚀 終極防穿透版：極速字典 + 懸浮等待機制
 // ==========================================
+
+// 1. 在渲染區塊時，順便建立「極速搜尋字典」
+window.vqUpdateChunkMesh = function(chunk) {
+    if (!chunk || !chunk.dirty) return;
+    
+    if (!window.vqInf.geometry) window.vqInf.geometry = new THREE.BoxGeometry(10, 10, 10);
+    if (!window.vqInf.material) window.vqInf.material = new THREE.MeshLambertMaterial({ color: 0xffffff });
+    
+    // 🌟 關鍵優化：建立極速字典，以後找方塊只要 0.0001 秒，絕對不卡頓！
+    chunk.baseLookup = new Map();
+    const totalBlocks = chunk.baseBlocks ? chunk.baseBlocks.length : 0;
+    
+    if (totalBlocks > 0) {
+        chunk.mesh = new THREE.InstancedMesh(window.vqInf.geometry, window.vqInf.material, totalBlocks);
+        let dummy = new THREE.Object3D();
+        
+        for (let i = 0; i < totalBlocks; i++) {
+            const b = chunk.baseBlocks[i];
+            
+            // 把每個方塊的座標存進字典
+            chunk.baseLookup.set(`${b.wx}|${b.wy}|${b.wz}`, b.type || 'stone');
+            
+            dummy.position.set(b.wx * 10, b.wy * 10, b.wz * 10);
+            dummy.updateMatrix();
+            chunk.mesh.setMatrixAt(i, dummy.matrix);
+            
+            // 替方塊上色
+            let colorHex = 0xffffff;
+            if (typeof BLOCK_TYPES !== 'undefined' && BLOCK_TYPES[b.type]) {
+                colorHex = BLOCK_TYPES[b.type];
+            } else {
+                const fallback = {
+                    'grass': 0x4CAF50, 'dirt': 0x795548, 'stone': 0x9E9E9E,
+                    'sand': 0xEEDB9C, 'water': 0x2196F3, 'snow': 0xFFFFFF,
+                    'wood': 0x5D4037, 'oak': 0x5D4037, 'leaves': 0x388E3C
+                };
+                colorHex = fallback[b.type] || 0x4CAF50;
+            }
+            chunk.mesh.setColorAt(i, new THREE.Color(colorHex));
+        }
+        chunk.mesh.instanceMatrix.needsUpdate = true;
+        if (chunk.mesh.instanceColor) chunk.mesh.instanceColor.needsUpdate = true;
+        
+        if (typeof vqScene !== 'undefined') vqScene.add(chunk.mesh);
+    }
+    chunk.dirty = false;
+};
+
+// 2. 完美的碰撞偵測：還沒讀取好的世界，就把你托在空中！
 window.vqCheckCollision = function(x, y, z) {
-    // 終極安全網：如果掉太深，把你傳送回天空，並稍微托住你一下讓地形有時間生成
-    if (y < -50) return true; 
+    // 終極安全網：如果真的不小心掉到地下 (Y < -20)，強制傳送回高空！
+    if (y < -20) {
+        if (typeof vqControls !== 'undefined' && vqControls.getObject) {
+            vqControls.getObject().position.set(x, 80, z); // 傳送回天空
+            if (typeof vqVelocity !== 'undefined') vqVelocity.y = 0; // 煞車，重新降落
+        }
+        return true; 
+    }
 
     let currentBlockSize = window.blockSize || 10;
-    let bx = Math.round(x / currentBlockSize);
-    let by = Math.round((y - 5) / currentBlockSize); // 玩家腳底
-    let bz = Math.round(z / currentBlockSize);
+    // 改用 Math.floor 確保精準對齊方塊邊界，不再有浮點數誤差
+    let bx = Math.floor(x / currentBlockSize);
+    let by = Math.floor((y - 5) / currentBlockSize); 
+    let bz = Math.floor(z / currentBlockSize);
 
     function checkSolid(wx, wy, wz) {
-        // 1. 檢查舊有物件 (題目方塊)
+        // 檢查舊有題目方塊
         if (typeof window.getBlock === 'function' && window.getBlock(wx, wy, wz)) return true;
         
-        // 2. 檢查大自然生態系
         const VQ_CHUNK_SIZE = 16; 
         const cx = Math.floor(wx / VQ_CHUNK_SIZE);
         const cz = Math.floor(wz / VQ_CHUNK_SIZE);
         
         if (typeof window.vqInf !== 'undefined' && window.vqInf.chunks) {
             const chunk = window.vqInf.chunks.get(`${cx},${cz}`); 
-            if (chunk) {
-                let blockType = null;
-                
-                // 智慧雙重檢查：看你的世界是用哪種方式儲存方塊的
-                if (chunk.baseLookup) {
-                    blockType = chunk.baseLookup.get(`${wx}|${wy}|${wz}`);
-                } else if (chunk.baseBlocks) {
-                    // 如果沒有字典，就去陣列裡面一個一個比對座標
-                    const foundBlock = chunk.baseBlocks.find(b => b.wx === wx && b.wy === wy && b.wz === wz);
-                    if (foundBlock) blockType = foundBlock.type || 'stone'; // 預設當作石頭
-                }
-                
-                // 只要有方塊，且不是水或可穿透的植物，就是撞到實體了！
-                if (blockType && blockType !== 'water' && blockType !== 'tall_grass' && 
-                    blockType !== 'red_flower' && blockType !== 'yellow_flower') {
-                    return true;
-                }
+            
+            // 🌟 最神奇的一行：如果這區塊還沒生成好，直接當作腳下有「隱形地板」托住你！
+            // 這樣你就會懸浮在半空中等待，直到草地長出來接住你！
+            if (!chunk || !chunk.baseLookup) return true; 
+
+            // 如果生成好了，就用極速字典查
+            const blockType = chunk.baseLookup.get(`${wx}|${wy}|${wz}`);
+            if (blockType && blockType !== 'water' && blockType !== 'tall_grass' && 
+                blockType !== 'red_flower' && blockType !== 'yellow_flower') {
+                return true;
             }
+        } else {
+            // 世界系統還沒啟動時，也不准掉下去
+            return true;
         }
         return false;
     }
 
-    // 檢查腳底 (by)、下半身 (by+1) 和稍微往下探 (by-1)
-    return checkSolid(bx, by, bz) || checkSolid(bx, by + 1, bz) || checkSolid(bx, by - 1, bz);
+    // 檢查腳底、下半身
+    return checkSolid(bx, by, bz) || checkSolid(bx, by + 1, bz);
 };
 
 window.checkCollision = window.vqCheckCollision;
