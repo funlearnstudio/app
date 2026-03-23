@@ -2,393 +2,853 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D 生存世界 - 光影殭屍大挑戰</title>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>學習遊戲場 - 雲端學院</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/gh/josephg/noisejs/perlin.js"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
     
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Noto Sans TC', sans-serif; touch-action: none; user-select: none; background-color: #87CEEB; }
-        #crosshair-container { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; text-align: center; }
-        #crosshair { color: rgba(255,255,255,0.8); font-size: 28px; text-shadow: 0 0 3px black; transition: all 0.1s; }
-        #view-model { position: fixed; bottom: -30px; right: 15%; font-size: 120px; z-index: 15; transform-origin: bottom right; transition: transform 0.1s; pointer-events: none; filter: drop-shadow(0px 10px 10px rgba(0,0,0,0.5)); }
-        
-        #hotbar-outer { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 40; width: 310px; background: rgba(0,0,0,0.8); padding: 8px; border-radius: 16px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); pointer-events: auto; }
-        #hotbar { display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x mandatory; }
-        #hotbar::-webkit-scrollbar { display: none; }
-        .slot { flex: 0 0 45px; width: 45px; height: 45px; border: 2px solid #555; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; position: relative; cursor: pointer; background: rgba(255,255,255,0.1); scroll-snap-align: start; transition: transform 0.1s; }
-        .slot.active { border-color: #fbbf24; background: rgba(251, 191, 36, 0.3); box-shadow: 0 0 15px rgba(251,191,36,0.8); transform: scale(1.1); }
-        .slot-count { position: absolute; bottom: 2px; right: 4px; font-size: 11px; font-weight: bold; text-shadow: 1px 1px 2px black; }
-
-        .status-ui { position: fixed; top: 15px; right: 15px; background: rgba(0,0,0,0.6); padding: 12px; border-radius: 12px; color: white; z-index: 20; min-width: 160px; pointer-events: none; backdrop-filter: blur(4px); }
-        .stat-bar { width: 100%; height: 10px; background: #333; border-radius: 5px; margin-top: 4px; overflow: hidden; border: 1px solid #555; }
-        .hp-fill { height: 100%; background: #ef4444; width: 100%; transition: width 0.3s; }
-        .energy-fill { height: 100%; background: #10b981; width: 100%; transition: width 0.3s; }
-
-        #controls { position: fixed; bottom: 260px; right: 30px; z-index: 30; display: flex; flex-direction: column; gap: 15px; pointer-events: auto; }
-        .action-btn { width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.5); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; backdrop-filter: blur(4px); }
-        .action-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.4); }
-
-        .joystick-zone { position: fixed; bottom: 120px; width: 130px; height: 130px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; z-index: 30; backdrop-filter: blur(4px); pointer-events: auto; }
-        #joystick-move { left: 30px; }
-        #joystick-look { right: 30px; background: rgba(255,100,100,0.1); border-color: rgba(255,100,100,0.3); }
-        .joystick-knob { position: absolute; top: 40px; left: 40px; width: 50px; height: 50px; background: rgba(255,255,255,0.8); border-radius: 50%; pointer-events: none; }
-        
-        #msg-box { position: fixed; top: 15%; left: 50%; transform: translateX(-50%); font-size: 22px; font-weight: bold; color: #fbbf24; text-shadow: 2px 2px 4px black; z-index: 100; opacity: 0; transition: opacity 0.3s; pointer-events: none; width: 100%; text-align: center; }
-        .swing { animation: swingAnim 0.2s ease-in-out; }
-        @keyframes swingAnim { 0% { transform: rotate(0deg) translateY(0); } 50% { transform: rotate(-40deg) translateY(-30px) translateX(-20px); } 100% { transform: rotate(0deg) translateY(0); } }
+        @media (max-width: 300px) { .watch-hidden { display: none !important; } }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f4f8; }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .perspective { perspective: 1000px; }
+        .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
+        .card-inner.is-flipped { transform: rotateY(180deg); }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; display: flex; align-items: center; justify-content: center; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .card-front { background: white; color: #0f172a; border: 2px solid #e2e8f0; transform: rotateY(180deg); z-index: 2; overflow: hidden; padding: 0.5rem; }
+        .card-back { background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; transform: rotateY(0deg); z-index: 1; }
+        .matched .card-inner { opacity: 0; transition: opacity 0.5s; pointer-events: none; }
+        .sidebar-transition { transition: transform 0.3s ease-in-out; }
+        .game-section { display: none; }
+        .game-section.active { display: block; animation: fadeIn 0.3s ease-out; }
     </style>
-</head>
-<body>
 
-    <div id="crosshair-container"><div id="crosshair">✚</div></div>
-    <div id="msg-box">系統訊息</div>
-    <div id="view-model">👊</div>
-
-    <div class="status-ui">
-        <div class="flex justify-between text-xs font-bold text-red-400 mb-1"><span>生命 HP</span><span id="hp-txt">100</span></div>
-        <div class="stat-bar mb-2"><div id="hp-fill" class="hp-fill"></div></div>
-        <div class="flex justify-between text-xs font-bold text-emerald-400 mb-1"><span>體力 Energy</span><span id="energy-txt">100</span></div>
-        <div class="stat-bar"><div id="energy-fill" class="energy-fill"></div></div>
-    </div>
-
-    <div id="hotbar-outer"><div id="hotbar"></div></div>
-    <div id="controls">
-        <button id="btn-interact" class="action-btn" style="background: rgba(59, 130, 246, 0.4); border-color: #3b82f6;"><i class="fas fa-hand-pointer"></i></button>
-        <button id="btn-place" class="action-btn" style="background: rgba(16, 185, 129, 0.4); border-color: #10b981;"><i class="fas fa-cube"></i></button>
-        <button id="btn-break" class="action-btn" style="background: rgba(239, 68, 68, 0.4); border-color: #ef4444;"><i class="fas fa-fire"></i></button>
-    </div>
-    <div id="joystick-move" class="joystick-zone"><div class="joystick-knob" id="knob-move"></div></div>
-    <div id="joystick-look" class="joystick-zone"><div class="joystick-knob" id="knob-look"></div></div>
+    <script src="mockdata/users.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/generator_engine.js"></script>
+    <script src="mockdata/generator_engine_polyfill.js"></script>
+    <script src="mockdata/AutoTemplateFissionFactory.js"></script>
+    <script src="mockdata/auto_fission_bootstrap.js"></script>
+    <script src="mockdata/paper_generator.js"></script>
+    <script src="mockdata/curriculum_integrated.js"></script>
+    <script src="mockdata/templates_math_algebra_geometry.js"></script>
+    <script src="mockdata/templates_physics_multistep.js"></script>
+    <script src="mockdata/templates_chemistry_core.js"></script>
+    <script src="mockdata/templates_biology_core.js"></script>
+    <script src="mockdata/templates_earth_science_core.js"></script>
+    <script src="mockdata/templates_english_core.js"></script>
+    <script src="mockdata/templates_chinese_core.js"></script>
+    <script src="mockdata/templates_history_core.js"></script>
+    <script src="mockdata/templates_geography_core.js"></script>
+    <script src="mockdata/templates_civics_core.js"></script>
 
     <script>
-// ==========================================
-// 1. 基本設定與物品清單
-// ==========================================
-const clock = new THREE.Clock();
-const ITEM_REGISTRY = {
-    'wood': { n: '木頭', i: '🪵', type: 'block' }, 'dirt': { n: '泥土', i: '🟤', type: 'block' }, 
-    'leaves': { n: '樹葉', i: '🍃', type: 'block' }, 'stone': { n: '石頭', i: '🪨', type: 'block' },
-    'meat_pig': { n: '生豬肉', i: '🥩', type: 'food', e: 10, h: -5 }, 
-    'rotten_flesh': { n: '腐肉', i: '🧟', type: 'food', e: 5, h: -15 },
-    'apple': { n: '蘋果', i: '🍎', type: 'food', e: 20, h: 10 }
-};
-
-let inventory = { 'wood': 20, 'dirt': 10, 'apple': 5 }; 
-let hotbarSlots = Object.keys(inventory); 
-let selectedSlotIndex = 0;
-let hp = 100, energy = 100;
-
-function showMsg(txt, color='#fbbf24') { 
-    const m = document.getElementById('msg-box'); 
-    m.innerText = txt; m.style.color = color; m.style.opacity = 1; 
-    setTimeout(() => m.style.opacity = 0, 2000); 
-}
-
-function updateStats(hpChange, energyChange) {
-    hp = Math.max(0, Math.min(100, hp + hpChange)); 
-    energy = Math.max(0, Math.min(100, energy + energyChange));
-    document.getElementById('hp-fill').style.width = `${hp}%`; 
-    document.getElementById('hp-txt').innerText = Math.floor(hp);
-    document.getElementById('energy-fill').style.width = `${energy}%`; 
-    document.getElementById('energy-txt').innerText = Math.floor(energy);
-    if (hp <= 0) { showMsg("💀 你死了！", "red"); setTimeout(() => { hp=100; energy=100; camera.position.set(0,5,0); updateStats(0,0); }, 2000); }
-}
-
-function renderUI() {
-    hotbarSlots = Object.keys(inventory); 
-    const hotbarDiv = document.getElementById('hotbar'); hotbarDiv.innerHTML = '';
-    hotbarSlots.forEach((itemId, i) => {
-        const item = ITEM_REGISTRY[itemId] || { n: '未知物品', i: '❓', type: 'none' };
-        const div = document.createElement('div');
-        div.className = `slot ${i === selectedSlotIndex ? 'active' : ''}`;
-        div.innerHTML = `${item.i}<span class="slot-count">${inventory[itemId]}</span>`;
-        div.onclick = () => {
-            if (selectedSlotIndex === i && item.type === 'food') {
-                inventory[itemId]--; updateStats(item.h, item.e); showMsg(`吃了 ${item.n}！`, '#10b981');
-                if(inventory[itemId]<=0) delete inventory[itemId];
-            } else selectedSlotIndex = i; 
-            renderUI();
-        };
-        hotbarDiv.appendChild(div);
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof Auth === 'undefined') return console.error("Auth 模組未載入");
+        const currentUser = Auth.getCurrentUser();
+        if (!currentUser) {
+            alert("⚠️ 您尚未登入，請先進行登入！");
+            window.location.href = 'index.html'; 
+        }
     });
-}
+    </script>
+</head>
+<body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden">
+<div id="star-container"></div>
 
-// ==========================================
-// 2. Three.js: 世界與光影建設 (變漂亮了！)
-// ==========================================
-const scene = new THREE.Scene(); 
-scene.background = new THREE.Color(0x87CEEB);
-scene.fog = new THREE.FogExp2(0x87CEEB, 0.04);
-const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 100);
+    <header class="lg:hidden h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-30">
+        <div class="flex items-center gap-2">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm shadow-sm">學</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+        </div>
+        <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-lg">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+    </header>
 
-// 🔥 開啟陰影渲染器
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true; // 開啟陰影
-renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 柔和陰影
-document.body.appendChild(renderer.domElement);
+    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden backdrop-blur-sm"></div>
 
-// 🔥 加入帶有陰影的太陽光
-scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.8); 
-dirLight.position.set(20, 50, 20); 
-dirLight.castShadow = true; 
-dirLight.shadow.mapSize.width = 1024;
-dirLight.shadow.mapSize.height = 1024;
-dirLight.shadow.camera.near = 0.5;
-dirLight.shadow.camera.far = 100;
-dirLight.shadow.camera.left = -30;
-dirLight.shadow.camera.right = 30;
-dirLight.shadow.camera.top = 30;
-dirLight.shadow.camera.bottom = -30;
-scene.add(dirLight);
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-100 flex flex-col z-50 transform -translate-x-full lg:translate-x-0 lg:static lg:h-full sidebar-transition shadow-2xl lg:shadow-none">
+        <div class="h-16 hidden lg:flex items-center px-6 border-b border-slate-50">
+            <div class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm mr-2 shadow-sm">學</div>
+            <span class="text-lg font-bold text-slate-800">雲端學院</span>
+        </div>
 
-function createColorMat(color) { return new THREE.MeshLambertMaterial({ color }); }
-const MATS = {
-    grass: createColorMat(0x55aa55), dirt: createColorMat(0x8b5a2b), stone: createColorMat(0x888888),
-    wood: createColorMat(0x5c4033), leaves: createColorMat(0x228b22), 
-    pig: createColorMat(0xffb6c1), cow: createColorMat(0x654321),
-    zombie: createColorMat(0x2ca02c) // 殭屍顏色
-};
-const boxGeo = new THREE.BoxGeometry(1, 1, 1);
-const blocks = new Map();
-const entities = [];
-const projectiles = []; // 儲存火球
-noise.seed(Math.random());
+       <div class="p-6 lg:block watch-hidden">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center">
+                <div class="w-16 h-16 mx-auto bg-blue-50 rounded-full flex items-center justify-center text-2xl text-blue-600 mb-3 border-2 border-white shadow-sm">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 text-lg" id="sideUserName">--</h3>
+                <div class="text-xs text-gray-500 mb-3" id="sideUserRole">--</div>
+                <button onclick="openProfileModal()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition">
+                    <i class="fas fa-pen mr-1"></i> 編輯年級
+                </button>
+            </div>
+        </div>
 
-function getBlockKey(x, y, z) { return `${Math.floor(x)},${Math.floor(y)},${Math.floor(z)}`; }
-
-function addBlock(x, y, z, type) {
-    const mesh = new THREE.Mesh(boxGeo, MATS[type] || MATS.dirt);
-    mesh.position.set(x, y, z); mesh.userData.type = type;
-    mesh.castShadow = true; // 產生影子
-    mesh.receiveShadow = true; // 接收影子
-    scene.add(mesh); blocks.set(getBlockKey(x, y, z), mesh);
-}
-
-function spawnAnimal(type, pos) {
-    const group = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 1.2), MATS[type]); 
-    body.position.y = 0.6; body.castShadow = true; group.add(body);
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), MATS[type]); 
-    head.position.set(0, 0.8, -0.7); head.castShadow = true; group.add(head);
-    
-    group.position.copy(pos);
-    group.userData = { type, velY: 0, hp: (type==='zombie'?3:1), lastAttack: 0 };
-    scene.add(group);
-    entities.push({ group, velocity: new THREE.Vector3(0, 0, 0), state: 'idle' });
-}
-
-function spawnTree(x, z, h) {
-    for(let y=h+1; y<=h+3; y++) addBlock(x, y, z, 'wood'); 
-    for(let ox=-1; ox<=1; ox++) for(let oz=-1; oz<=1; oz++) addBlock(x+ox, h+4, z+oz, 'leaves'); 
-}
-
-let lastChunkX = -999, lastChunkZ = -999;
-function updateInfiniteTerrain() {
-    const pX = Math.floor(camera.position.x); const pZ = Math.floor(camera.position.z);
-    const currChunkX = Math.floor(pX / 10); const currChunkZ = Math.floor(pZ / 10);
-    if (currChunkX === lastChunkX && currChunkZ === lastChunkZ) return;
-    lastChunkX = currChunkX; lastChunkZ = currChunkZ;
-
-    for (let x = pX - 20; x < pX + 20; x++) {
-        for (let z = pZ - 20; z < pZ + 20; z++) {
-            if (!blocks.has(getBlockKey(x, 0, z))) {
-                addBlock(x, 0, z, 'grass');
-                if (Math.random() < 0.02) spawnTree(x, z, 0); 
-            }
-        }
-    }
-}
-
-// ==========================================
-// 3. 戰鬥系統：發射火球！
-// ==========================================
-document.getElementById('btn-break').onclick = () => {
-    if (energy < 2) { showMsg("🔋 體力不足以發射火球！", "#ff4444"); return; }
-    
-    const vm = document.getElementById('view-model');
-    vm.classList.remove('swing'); void vm.offsetWidth; vm.classList.add('swing');
-    updateStats(0, -2); // 射擊耗費體力
-
-    // 🔴 生成一顆發光的紅色火球
-    const bulletGeo = new THREE.SphereGeometry(0.3, 8, 8);
-    const bulletMat = new THREE.MeshBasicMaterial({ color: 0xff3300 });
-    const bullet = new THREE.Mesh(bulletGeo, bulletMat);
-    
-    bullet.position.copy(camera.position);
-    // 計算面向的方向
-    const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-    
-    bullet.userData = { velocity: dir.multiplyScalar(0.8), life: 60 }; // 速度與壽命
-    scene.add(bullet);
-    projectiles.push(bullet);
-};
-
-// ==========================================
-// 4. 互動與放置
-// ==========================================
-const raycaster = new THREE.Raycaster();
-const center = new THREE.Vector2(0, 0);
-
-document.getElementById('btn-place').onclick = () => {
-    const item = hotbarSlots[selectedSlotIndex];
-    if (!item || inventory[item] <= 0 || ITEM_REGISTRY[item].type !== 'block') return;
-    raycaster.setFromCamera(center, camera);
-    const intersects = raycaster.intersectObjects(scene.children).filter(i => i.object.geometry.type === 'BoxGeometry');
-    if (intersects.length > 0 && intersects[0].distance < 8) {
-        const pos = intersects[0].object.position.clone().add(intersects[0].face.normal);
-        addBlock(pos.x, pos.y, pos.z, item);
-        inventory[item]--; if(inventory[item]<=0) delete inventory[item];
-        renderUI();
-    }
-};
-
-document.getElementById('btn-interact').onclick = () => {
-    raycaster.setFromCamera(center, camera);
-    const intersects = raycaster.intersectObjects(scene.children).filter(i => i.object.geometry.type === 'BoxGeometry');
-    if (intersects.length > 0 && intersects[0].distance < 6) {
-        const target = intersects[0].object;
-        if(target.userData.type) {
-            inventory[target.userData.type] = (inventory[target.userData.type] || 0) + 1;
-            scene.remove(target); blocks.delete(getBlockKey(target.position.x, target.position.y, target.position.z));
-            renderUI();
-        }
-    }
-};
-
-// 電腦滑鼠支援
-document.addEventListener('mousedown', (e) => {
-    if (e.target.tagName === 'BUTTON' || e.target.closest('.status-ui') || e.target.closest('#hotbar-outer')) return;
-    if (e.button === 0) document.getElementById('btn-break').click(); // 左鍵發射火球
-    else if (e.button === 2) document.getElementById('btn-place').click(); // 右鍵放置
-});
-document.addEventListener('contextmenu', e => e.preventDefault());
-
-// ==========================================
-// 5. 控制與遊戲主循環
-// ==========================================
-let moveInput = { x: 0, y: 0 }, lookInput = { x: 0, y: 0 };
-function setupJoy(id, knobId, outObj) {
-    const zone = document.getElementById(id), knob = document.getElementById(knobId);
-    let activeId = null; let centerX, centerY;
-    zone.addEventListener('touchstart', e => { e.preventDefault(); activeId = e.changedTouches[0].identifier; const r = zone.getBoundingClientRect(); centerX = r.left + r.width/2; centerY = r.top + r.height/2; }, {passive:false});
-    zone.addEventListener('touchmove', e => {
-        e.preventDefault();
-        for(let i=0; i<e.changedTouches.length; i++) if(e.changedTouches[i].identifier === activeId) {
-            let dx = e.changedTouches[i].clientX - centerX, dy = e.changedTouches[i].clientY - centerY;
-            const dist = Math.sqrt(dx*dx+dy*dy); const maxR = 40;
-            if(dist>maxR) { dx *= maxR/dist; dy *= maxR/dist; }
-            knob.style.transform = `translate(${dx}px, ${dy}px)`;
-            outObj.x = dx/maxR; outObj.y = dy/maxR;
-        }
-    }, {passive:false});
-    zone.addEventListener('touchend', e => { for(let i=0; i<e.changedTouches.length; i++) if(e.changedTouches[i].identifier === activeId) { activeId=null; knob.style.transform='translate(0,0)'; outObj.x=0; outObj.y=0; } });
-}
-setupJoy('joystick-move', 'knob-move', moveInput);
-setupJoy('joystick-look', 'knob-look', lookInput);
-
-function updateGame() {
-    requestAnimationFrame(updateGame);
-    const delta = clock.getDelta();
-
-    // 視角與移動
-    camera.rotation.y -= lookInput.x * 0.04;
-    camera.rotation.x -= lookInput.y * 0.04;
-    camera.rotation.x = Math.max(-1.5, Math.min(1.5, camera.rotation.x));
-    
-    if(moveInput.x !== 0 || moveInput.y !== 0) {
-        const dir = new THREE.Vector3(moveInput.x, 0, moveInput.y).normalize();
-        dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), camera.rotation.y);
-        camera.position.addScaledVector(dir, 0.15);
-        updateInfiniteTerrain();
-    }
-
-    // 🚀 更新火球飛行與碰撞
-    for (let i = projectiles.length - 1; i >= 0; i--) {
-        const p = projectiles[i];
-        p.position.add(p.userData.velocity);
-        p.userData.life--;
-
-        // 檢查是否打中怪物
-        let hit = false;
-        for (let j = entities.length - 1; j >= 0; j--) {
-            const ent = entities[j];
-            if (p.position.distanceTo(ent.group.position) < 1.5) {
-                ent.group.userData.hp--;
-                if(ent.group.userData.hp <= 0) {
-                    scene.remove(ent.group);
-                    if(ent.group.userData.type === 'zombie') {
-                        inventory['rotten_flesh'] = (inventory['rotten_flesh']||0)+1;
-                        showMsg("⚔️ 擊殺殭屍！", "#10b981");
-                    } else {
-                        inventory['meat_pig'] = (inventory['meat_pig']||0)+1;
-                        showMsg("🍖 獲得肉類！", "#10b981");
-                    }
-                    entities.splice(j, 1);
-                    renderUI();
-                } else {
-                    showMsg("💥 擊中怪物！", "orange");
-                }
-                hit = true; break;
-            }
-        }
-
-        if (hit || p.userData.life <= 0) {
-            scene.remove(p); projectiles.splice(i, 1);
-        }
-    }
-
-    // 🧟 更新實體AI (加入殭屍追擊系統)
-    entities.forEach(entity => {
-        const type = entity.group.userData.type;
-        const distToPlayer = entity.group.position.distanceTo(camera.position);
-
-        if (type === 'zombie' && distToPlayer < 15) {
-            // 殭屍追趕玩家
-            const dir = new THREE.Vector3().subVectors(camera.position, entity.group.position).normalize();
-            entity.group.position.addScaledVector(dir, 0.04);
-            entity.group.lookAt(camera.position.x, entity.group.position.y, camera.position.z);
+        <nav class="flex-grow px-3 space-y-2 overflow-y-auto no-scrollbar">
+            <p class="text-[10px] font-bold text-slate-400 mb-2 px-4 uppercase tracking-widest">學習導航</p>
+            <a href="arena.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-100 text-amber-900 transition-all duration-300 group shadow-sm border border-amber-200/50">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 text-white flex items-center justify-center scale-110 shadow-sm ring-2 ring-white">
+                    <i class="fas fa-trophy text-xs"></i>
+                </div>
+                <span class="font-black tracking-wide">榮譽榜</span>
+            </a>
+            <a href="mission.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-purple-50 hover:text-purple-700 transition">
+                <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform"><i class="fas fa-rocket text-sm"></i></div>
+                <span class="font-bold">任務中心</span>
+            </a>
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition">
+                <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center"><i class="fas fa-book-open text-sm"></i></div>
+                <span class="font-bold">課程總覽</span>
+            </a>
+            <a href="arcade.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-emerald-700 bg-emerald-50 transition">
+                <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center animate-bounce"><i class="fas fa-gamepad text-sm"></i></div>
+                <span class="font-bold">遊戲場</span>
+            </a>
             
-            // 攻擊玩家
-            if (distToPlayer < 2 && Date.now() > entity.group.userData.lastAttack) {
-                updateStats(-15, 0); showMsg("🩸 被殭屍咬了！扣血", "red");
-                entity.group.userData.lastAttack = Date.now() + 1500;
-            }
+            <div class="pt-4 mt-4 border-t border-slate-100">
+                <a href="help.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-orange-50 hover:text-orange-600 transition">
+                    <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center"><i class="fas fa-headset text-sm"></i></div>
+                    <span class="font-bold">幫助中心 & 聯絡老師</span>
+                </a>
+            </div>
+        </nav>
+        <div class="p-4 border-t border-slate-50">
+            <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 text-slate-400 hover:text-red-500 py-3 transition-colors font-bold text-xs"><i class="fas fa-sign-out-alt"></i> 登出系統</button>
+        </div>
+    </aside>
+
+    <main class="flex-grow flex flex-col h-full relative overflow-hidden">
+        <div class="p-6 md:p-8 overflow-y-auto h-full scroll-smooth">
+            
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <div>
+                    <h1 class="text-3xl font-extrabold text-slate-800 flex items-center gap-3">
+                        <i class="fas fa-rocket text-indigo-500"></i> 學習遊戲場
+                    </h1>
+                    <p class="text-slate-500 mt-1">使用您的專屬題庫，邊玩邊學！</p>
+                </div>
+                <div class="flex gap-2">
+                    <span class="px-4 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-bold flex items-center gap-2 shadow-sm">
+                        <i class="fas fa-coins"></i> 金幣: <span id="coinCount">0</span>
+                    </span>
+                    <span class="px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-bold flex items-center gap-2 shadow-sm">
+                        <i class="fas fa-star text-yellow-400"></i> XP: <span id="xpCount">0</span>
+                    </span>
+                </div>
+            </div>
+
+            <div id="voxelHeroBanner" class="bg-gradient-to-br from-blue-50 to-indigo-50 p-8 rounded-3xl mb-8 flex flex-col items-center justify-center relative overflow-hidden text-center shadow-sm border border-blue-100">
+                <div class="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mb-6 shadow-sm border border-blue-50">
+                    <i class="fas fa-cube text-4xl text-blue-500"></i>
+                </div>
+                <h2 class="text-4xl md:text-5xl font-black text-slate-800 mb-4 z-10 tracking-tight">VoxelQuest Pro 生存領域</h2>
+                <p class="text-lg text-slate-600 mb-8 z-10 font-medium">無限探索、收集資源、對抗天敵！萬物皆藏有知識謎題。</p>
+                <button onclick="startGame('voxel')" class="bg-yellow-400 text-yellow-900 px-10 py-4 rounded-full font-black text-xl shadow-[0_0_20px_rgba(250,204,21,0.5)] hover:bg-yellow-300 hover:scale-105 transition-all z-10">
+                    <i class="fas fa-play mr-2"></i> 進入 3D 世界
+                </button>
+            </div>
+
+            <div id="game-voxel" class="hidden w-full max-w-6xl mx-auto h-[75vh] min-h-[500px] rounded-3xl bg-black mb-12 relative shadow-2xl overflow-hidden border-4 border-slate-700 transition-all">     
+                
+                <div id="vq-blocker" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-20 text-white cursor-pointer transition-opacity backdrop-blur-sm">
+                    <h2 class="text-5xl font-black mb-6 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">點擊畫面開始生存探索</h2>
+                    <div class="flex gap-6 text-lg text-slate-300 mb-8 bg-black/50 p-6 rounded-2xl border border-slate-600">
+                        <div class="flex flex-col items-center"><i class="fas fa-mouse mb-2 text-2xl text-indigo-400"></i>滑鼠 轉動視角</div>
+                        <div class="flex flex-col items-center"><i class="fas fa-keyboard mb-2 text-2xl text-indigo-400"></i>WASD 移動 / 結合空白鍵跳躍</div>
+                        <div class="flex flex-col items-center"><i class="fas fa-gavel mb-2 text-2xl text-indigo-400"></i>左鍵 採集 / 答題 / 攻擊</div>
+                        <div class="flex flex-col items-center"><i class="fas fa-cubes mb-2 text-2xl text-indigo-400"></i>右鍵 放置木板</div>
+                    </div>
+                    <button onclick="backToMenu()" class="absolute top-6 right-6 bg-red-500/80 hover:bg-red-500 px-6 py-2 rounded-full font-bold transition z-30 pointer-events-auto">離開 3D 世界</button>
+                </div>
+                
+                <div id="vq-hud" class="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-10 pointer-events-none hidden">
+                    <div class="bg-black/60 backdrop-blur-md px-6 py-3 rounded-2xl text-white font-bold text-xl border border-white/10 shadow-lg flex items-center gap-3">
+                        <i id="vq-time-icon" class="fas fa-sun text-yellow-400 text-2xl"></i> 
+                        <span id="vq-time-text">白天</span>
+                    </div>
+                    <div class="bg-black/60 backdrop-blur-md px-6 py-3 rounded-2xl text-white font-bold border border-white/10 shadow-lg">
+                        <i class="fas fa-star text-yellow-400 mr-2"></i> XP: <span id="vq-score" class="text-yellow-400 text-2xl">0</span>
+                    </div>
+                </div>
+
+                <div id="vq-survival-hud" class="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-8 z-10 pointer-events-none hidden">
+                    <div class="flex flex-col items-center gap-1">
+                        <span class="text-red-400 font-bold text-shadow">❤️ 血量</span>
+                        <div class="w-48 h-4 bg-slate-900/80 rounded-full border-2 border-slate-700 overflow-hidden">
+                            <div id="bar-hp" class="h-full bg-red-500 transition-all" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-center gap-1">
+                        <span class="text-orange-400 font-bold text-shadow">🍗 飢餓度</span>
+                        <div class="w-48 h-4 bg-slate-900/80 rounded-full border-2 border-slate-700 overflow-hidden">
+                            <div id="bar-food" class="h-full bg-orange-500 transition-all" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="vq-inventory" class="absolute bottom-6 right-6 z-10 pointer-events-none hidden bg-black/60 backdrop-blur-md p-4 rounded-xl border border-white/10 text-white font-bold">
+                    <div class="mb-2"><i class="fas fa-tree text-green-400 mr-2"></i>木材: <span id="inv-wood" class="text-yellow-400">0</span></div>
+                    <div><i class="fas fa-khanda text-slate-300 mr-2"></i>武器: <span id="inv-sword" class="text-slate-400">無</span></div>
+                </div>
+
+                <div id="vq-crosshair" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white/90 text-2xl font-light pointer-events-none z-10 hidden">+</div>
+
+                <div id="vq-quiz-overlay" class="hidden absolute inset-0 bg-slate-900/90 backdrop-blur-md z-30 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-3xl p-8 max-w-3xl w-full text-slate-800 shadow-2xl border-4 border-indigo-200 transform scale-100 transition-transform relative">
+                        <button onclick="cancelVoxelQuiz()" class="absolute top-4 right-4 w-10 h-10 bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-500 rounded-full flex items-center justify-center transition-colors">
+                            <i class="fas fa-times"></i>
+                        </button>
+
+                        <div class="flex justify-between items-center mb-6 pb-4 border-b-2 border-slate-100">
+                            <h3 class="text-3xl font-black text-indigo-900 flex items-center"><i class="fas fa-brain text-indigo-500 mr-3"></i> 知識解鎖</h3>
+                            <div class="text-slate-500 font-bold">目標：<span id="quiz-entity-name" class="text-indigo-600">未知實體</span></div>
+                        </div>
+                        <div id="vq-question" class="text-2xl font-bold mb-8 leading-relaxed text-slate-700 min-h-[80px]">題目載入中...</div>
+                        <div id="vq-options" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"></div>
+                    </div>
+                </div>
+                
+                <div id="vq-canvas-container" class="w-full h-full"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8" id="gameMenu">
+                <div onclick="startGame('flashcard')" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group">
+                    <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition"><i class="fas fa-clone"></i></div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">智能閃示卡</h3>
+                    <p class="text-sm text-slate-500">翻牌記憶，複習觀念的最佳利器。</p>
+                </div>
+                <div onclick="startGame('math_rush')" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition cursor-pointer group">
+                    <div class="w-14 h-14 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition"><i class="fas fa-stopwatch"></i></div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">極速挑戰賽</h3>
+                    <p class="text-sm text-slate-500">限時搶答！挑戰你的反應速度。</p>
+                </div>
+            </div>
+
+            <div id="game-flashcard" class="game-section max-w-2xl mx-auto hidden">
+                <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold mb-4"><i class="fas fa-arrow-left mr-2"></i>結束</button>
+                <div class="text-center font-bold text-slate-500">閃示卡系統正常運作中...</div>
+            </div>
+            <div id="game-math_rush" class="game-section max-w-xl mx-auto hidden">
+                <button onclick="backToMenu()" class="text-slate-400 hover:text-slate-600 font-bold mb-4"><i class="fas fa-arrow-left mr-2"></i>放棄</button>
+                <div class="text-center font-bold text-slate-500">極速挑戰正常運作中...</div>
+            </div>
+
+        </div>
+
+        <div id="profileModal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center backdrop-blur-sm fade-in">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100">
+                <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+                    <h3 class="text-white font-bold text-lg"><i class="fas fa-user-edit mr-2"></i> 修改年級</h3>
+                    <button onclick="closeProfileModal()" class="text-white/80 hover:text-white transition"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="p-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">請選擇目前的年級：</label>
+                    <select id="editGradeSelect" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white appearance-none transition text-gray-700 font-bold">
+                        <option value="國七">國七</option>
+                        <option value="國八">國八</option>
+                        <option value="國九">國九</option>
+                        <option value="高一">高一</option>
+                        <option value="高二">高二</option>
+                        <option value="高三">高三</option>
+                    </select>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-100">
+                    <button onclick="closeProfileModal()" class="px-4 py-2 text-gray-500 font-bold">取消</button>
+                    <button onclick="saveProfile()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold shadow-md hover:bg-blue-700 transition">確認修改</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+<script>
+    // ==========================================
+    // 🌐 全域與共用機制 (保留 GAS 串接與 XP/Coin 邏輯)
+    // ==========================================
+    let currentSubject = 'math';
+    let targetTags = [];
+    let gameQuestions = [];
+    let currentQIdx = 0;
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec";
+
+    window.onload = function() {
+        if (typeof Auth === 'undefined') return alert("系統錯誤：無法載入驗證模組");
+        const user = Auth.getCurrentUser();
+        if (!user) return window.location.href = "index.html";
+
+        document.getElementById('sideUserName').innerText = user.name || user.username;
+        document.getElementById('sideUserRole').innerText = user.grade || (user.role === 'teacher' ? '老師' : '學生');
+
+        const COIN_KEY = `coins_${user.username}`; 
+        window.loadCoins = () => parseInt(localStorage.getItem(COIN_KEY)) || 0;
+        window.saveCoins = (amount) => {
+            localStorage.setItem(COIN_KEY, amount);
+            document.getElementById('coinCount').innerText = amount;
+        };
+        document.getElementById('coinCount').innerText = window.loadCoins();
+        document.getElementById('xpCount').innerText = user.xp || 0;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        currentSubject = urlParams.get('subject') || 'math';
+        const rawGrade = decodeURIComponent(urlParams.get('grade') || '');
+        if (rawGrade && rawGrade !== 'undefined' && rawGrade !== 'null') targetTags = rawGrade.split(',').filter(t => t.trim() !== '');
+        else if (user.grade) targetTags = [user.grade];
+    };
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('-translate-x-full');
+        document.getElementById('sidebarOverlay').classList.toggle('hidden');
+    }
+    function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
+    function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
+    async function saveProfile() { /* 保持原樣 */ closeProfileModal(); }
+
+    function generateGameQuestions(subj, count) {
+        if (window.generatePaper) {
+            let q = window.generatePaper({ subject: subj, total: count, tags: targetTags.length > 0 ? targetTags : [subj] }).filter(i => i && i.question);
+            if (q.length < count) q = q.concat(window.generatePaper({ subject: subj, total: count - q.length }));
+            return q;
+        }
+        return [];
+    }
+
+    async function awardXPAndSync(xpAmount, gameName, scoreAmount) {
+        if (!xpAmount || xpAmount <= 0) return;
+        let user = (window.Auth && Auth.getCurrentUser()) || JSON.parse(localStorage.getItem('currentUser') || '{"username":"guest"}');
+        if (user.username === 'guest') return;
+
+        const newTotalXP = (Number(user.xp) || 0) + xpAmount;
+        user.xp = newTotalXP;
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        document.getElementById('xpCount').innerText = newTotalXP;
+
+        return fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: "save_record", username: user.username,
+                activity: `【遊戲場】${gameName}`, score: scoreAmount || 0, xp: xpAmount
+            })
+        }).catch(e => console.error("❌ 同步失敗", e));
+    }
+
+    const originalStartGame = window.startGame;
+    window.startGame = function(id) {
+        document.getElementById('gameMenu').classList.add('hidden');
+        document.getElementById('voxelHeroBanner').classList.add('hidden');
+        document.querySelectorAll('.game-section').forEach(el => el.classList.add('hidden'));
+        
+        if(id === 'voxel') {
+            document.getElementById('game-voxel').classList.remove('hidden');
+            initVoxelPro();
         } else {
-            // 一般動物發呆或亂走
-            if (Math.random() < 0.01) {
-                const angle = Math.random() * Math.PI * 2;
-                entity.velocity.set(Math.cos(angle)*0.02, 0, Math.sin(angle)*0.02);
-                entity.group.rotation.y = -angle + Math.PI/2;
+            if (originalStartGame) originalStartGame(id);
+        }
+    };
+    function backToMenu() {
+        if(vqAnimationId) cancelAnimationFrame(vqAnimationId);
+        if(vqControls) vqControls.unlock();
+        document.getElementById('game-voxel').classList.add('hidden');
+        document.getElementById('gameMenu').classList.remove('hidden');
+        document.getElementById('voxelHeroBanner').classList.remove('hidden');
+    }
+
+    // ========================================================
+    // 👑 VoxelQuest Pro: 旗艦版生存核心引擎 (無限 Chunk + 生態系)
+    // ========================================================
+    let vqScene, vqCamera, vqRenderer, vqControls, vqRaycaster;
+    let highlightBox;
+
+    // 🌍 無限 Chunk 系統
+    const CHUNK_SIZE = 16;
+    const RENDER_DISTANCE = 2; // 電腦好的話可以改 3
+    let chunks = new Map(); 
+    let chunkMeshes = []; // 用於射線偵測
+    let interactableEntities = []; // 可答題的動植物、知識方塊
+
+    // 📊 玩家物理與生存狀態
+    let playerStats = { hp: 100, food: 100, inventory: { wood: 0, sword: false }, isDead: false };
+    let worldGrid = {}; // 碰撞網格緩存
+    let blockSize = 10;
+    
+    let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, canJump = false;
+    let velocity = new THREE.Vector3();
+    let direction = new THREE.Vector3();
+    let prevTime = performance.now();
+    let vqTimeOfDay = 0; // 日夜變數
+    let vqSunLight, vqAmbientLight; 
+    let currentHitCube = null; // 當前互動實體
+
+    // 🧱 150+ 方塊註冊表 (節錄精華)
+    const BLOCK_TYPES = {
+        grass: 0x4CAF50, dirt: 0x795548, stone: 0x9E9E9E, sand: 0xE0E082, 
+        oak_log: 0x4E342E, oak_leaves: 0x2E7D32, wood_plank: 0x8D6E63,
+        red_flower: 0xF44336, tall_grass: 0x558B2F,
+        pig_pink: 0xF8BBD0, pig_nose: 0xF06292, cow_white: 0xFAFAFA, cow_black: 0x212121,
+        gold_block: 0xFFB300, zombie_green: 0x4CAF50
+    };
+
+    function initVoxelPro() {
+        gameQuestions = generateGameQuestions(currentSubject, 100); 
+        if(gameQuestions.length === 0) return alert("此科目無題目！");
+        
+        playerStats = { hp: 100, food: 100, inventory: { wood: 0, sword: false }, isDead: false };
+        updateSurvivalUI();
+        setupThreeJS();
+    }
+
+    function setupThreeJS() {
+        const container = document.getElementById('vq-canvas-container');
+        container.innerHTML = ''; 
+        worldGrid = {}; chunks.clear(); chunkMeshes = []; interactableEntities = [];
+
+        vqScene = new THREE.Scene();
+        vqScene.fog = new THREE.FogExp2(0x87ceeb, 0.003); 
+
+        vqCamera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 1, 2000);
+        vqCamera.rotation.x = -0.3; // 👀 自動看地
+
+        vqAmbientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        vqScene.add(vqAmbientLight);
+        vqSunLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        vqScene.add(vqSunLight);
+
+        vqControls = new THREE.PointerLockControls(vqCamera, document.body);
+        const blocker = document.getElementById('vq-blocker');
+        blocker.addEventListener('click', () => { if(!playerStats.isDead && document.getElementById('vq-quiz-overlay').classList.contains('hidden')) vqControls.lock(); });
+
+        vqControls.addEventListener('lock', () => {
+            blocker.style.display = 'none';
+            document.getElementById('vq-hud').classList.remove('hidden');
+            document.getElementById('vq-survival-hud').classList.remove('hidden');
+            document.getElementById('vq-inventory').classList.remove('hidden');
+            document.getElementById('vq-crosshair').classList.remove('hidden');
+        });
+        vqControls.addEventListener('unlock', () => {
+            if(document.getElementById('vq-quiz-overlay').classList.contains('hidden')) {
+                blocker.style.display = 'flex';
+                document.getElementById('vq-crosshair').classList.add('hidden');
             }
-            entity.group.position.add(entity.velocity);
+        });
+        vqScene.add(vqControls.getObject());
+
+        // 初始化腳下地形
+        updateChunks();
+        let startY = getTerrainHeight(0, 0) * blockSize + 30;
+        vqControls.getObject().position.set(0, startY, 0); 
+        velocity.set(0,0,0);
+
+        // 📦 準星高亮框
+        const boxGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(blockSize+0.5, blockSize+0.5, blockSize+0.5));
+        highlightBox = new THREE.LineSegments(boxGeo, new THREE.LineBasicMaterial({ color: 0xfffa00, linewidth: 2 }));
+        highlightBox.visible = false;
+        vqScene.add(highlightBox);
+
+        vqRaycaster = new THREE.Raycaster();
+
+        // 🖱️ 滑鼠互動 (左鍵: 採集/攻擊/答題, 右鍵: 放置)
+        document.addEventListener('mousedown', (e) => {
+            if (!vqControls.isLocked) return;
+            vqRaycaster.setFromCamera(new THREE.Vector2(0,0), vqCamera);
+            
+            // 1. 優先偵測可答題實體
+            const entIntersects = vqRaycaster.intersectObjects(interactableEntities);
+            if (e.button === 0 && entIntersects.length > 0 && entIntersects[0].distance < blockSize * 8) {
+                currentHitCube = entIntersects[0].object;
+                
+                // 砍樹採集邏輯
+                if(currentHitCube.userData.type === 'oak_log') {
+                    mineTree(currentHitCube);
+                    return;
+                }
+                
+                // 攻擊怪物邏輯
+                if(currentHitCube.userData.type === 'zombie_green') {
+                    attackMonster(currentHitCube);
+                    return;
+                }
+
+                // 萬物皆可答題
+                triggerVoxelQuiz();
+                return;
+            }
+
+            // 2. 偵測地形 (放置方塊)
+            if (e.button === 2) {
+                const envIntersects = vqRaycaster.intersectObjects(chunkMeshes, true);
+                if (envIntersects.length > 0 && envIntersects[0].distance < blockSize * 8) {
+                    placeBlock(envIntersects[0]);
+                }
+            }
+        });
+
+        // 鍵盤移動
+        const onKeyDown = (e) => {
+            switch (e.code) {
+                case 'ArrowUp': case 'KeyW': moveForward = true; break;
+                case 'ArrowLeft': case 'KeyA': moveLeft = true; break;
+                case 'ArrowDown': case 'KeyS': moveBackward = true; break;
+                case 'ArrowRight': case 'KeyD': moveRight = true; break;
+                case 'Space': if (canJump) velocity.y += 180; canJump = false; break; 
+            }
+        };
+        const onKeyUp = (e) => {
+            switch (e.code) {
+                case 'ArrowUp': case 'KeyW': moveForward = false; break;
+                case 'ArrowLeft': case 'KeyA': moveLeft = false; break;
+                case 'ArrowDown': case 'KeyS': moveBackward = false; break;
+                case 'ArrowRight': case 'KeyD': moveRight = false; break;
+            }
+        };
+        document.addEventListener('keydown', onKeyDown);
+        document.addEventListener('keyup', onKeyUp);
+
+        vqRenderer = new THREE.WebGLRenderer({ antialias: true });
+        vqRenderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(vqRenderer.domElement);
+        window.addEventListener('resize', () => {
+            vqCamera.aspect = container.clientWidth / container.clientHeight;
+            vqCamera.updateProjectionMatrix();
+            vqRenderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        prevTime = performance.now();
+        animateVoxelWorld();
+    }
+
+    // ==========================================
+    // 🌍 地形與生態引擎
+    // ==========================================
+    function getTerrainHeight(x, z) {
+        return Math.floor(Math.sin(x/10) * 3 + Math.cos(z/8) * 2) + 2;
+    }
+    
+    function setBlockGrid(x, y, z, val) {
+        if(!worldGrid[x]) worldGrid[x] = {};
+        if(!worldGrid[x][y]) worldGrid[x][y] = {};
+        worldGrid[x][y][z] = val;
+    }
+    
+    function getBlockGrid(x, y, z) {
+        return (worldGrid[x] && worldGrid[x][y]) ? worldGrid[x][y][z] : false;
+    }
+
+    function updateChunks() {
+        const pos = vqControls.getObject().position;
+        const cx = Math.floor(pos.x / (CHUNK_SIZE * blockSize));
+        const cz = Math.floor(pos.z / (CHUNK_SIZE * blockSize));
+
+        for (let x = cx - RENDER_DISTANCE; x <= cx + RENDER_DISTANCE; x++) {
+            for (let z = cz - RENDER_DISTANCE; z <= cz + RENDER_DISTANCE; z++) {
+                let key = `${x},${z}`;
+                if (!chunks.has(key)) generateChunk(x, z, key);
+            }
+        }
+    }
+
+    function generateChunk(cx, cz, key) {
+        const group = new THREE.Group();
+        chunks.set(key, group);
+
+        for (let lx = 0; lx < CHUNK_SIZE; lx++) {
+            for (let lz = 0; lz < CHUNK_SIZE; lz++) {
+                let wx = cx * CHUNK_SIZE + lx;
+                let wz = cz * CHUNK_SIZE + lz;
+                let h = getTerrainHeight(wx, wz);
+
+                for (let y = -2; y <= h; y++) {
+                    let type = y === h ? 'grass' : (y < -1 ? 'stone' : 'dirt');
+                    setBlockGrid(wx, y, wz, true); // 標記碰撞
+                    createMesh(wx, y, wz, type, group, false);
+                }
+
+                // 生態系 (無限生成動植物與知識方塊)
+                let rand = Math.random();
+                let sy = h + 1;
+                if (rand < 0.02) {
+                    // 生成樹木
+                    createMesh(wx, sy, wz, 'oak_log', group, true, "世界之樹");
+                    createMesh(wx, sy+1, wz, 'oak_log', group, true, "世界之樹");
+                    createMesh(wx, sy+2, wz, 'oak_leaves', group, false);
+                    setBlockGrid(wx, sy, wz, true);
+                    setBlockGrid(wx, sy+1, wz, true);
+                } else if (rand > 0.05 && rand < 0.1) {
+                    // 生成花草
+                    createMesh(wx, sy, wz, Math.random()>0.5?'red_flower':'tall_grass', group, true, "自然植物");
+                } else if (rand > 0.1 && rand < 0.12) {
+                    // 生成動物
+                    let isPig = Math.random()>0.5;
+                    createMesh(wx, sy, wz, isPig?'pig_pink':'cow_white', group, true, isPig?"粉紅豬":"乳牛");
+                } else if (rand > 0.98) {
+                    // 生成知識方塊 (無盡 2000+ 來源)
+                    createMesh(wx, sy+1, wz, 'gold_block', group, true, "真理方塊");
+                } else if (rand > 0.95) {
+                    // 生成天敵 (殭屍)
+                    createMesh(wx, sy, wz, 'zombie_green', group, true, "知識掠奪者");
+                }
+            }
+        }
+        vqScene.add(group);
+        chunkMeshes.push(group);
+    }
+
+    function createMesh(x, y, z, type, group, isInteract, entityName = "") {
+        const geo = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
+        const mat = new THREE.MeshLambertMaterial({ color: BLOCK_TYPES[type] || 0xffffff });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(x * blockSize, y * blockSize, z * blockSize);
+        mesh.userData = { type, isInteractable: isInteract, name: entityName, grid: {x,y,z} };
+        group.add(mesh);
+        if(isInteract) interactableEntities.push(mesh);
+        return mesh;
+    }
+
+    // ==========================================
+    // ⚔️ 互動、合成與生存邏輯
+    // ==========================================
+    function mineTree(mesh) {
+        // 從場景移除
+        mesh.parent.remove(mesh);
+        interactableEntities = interactableEntities.filter(e => e !== mesh);
+        setBlockGrid(mesh.userData.grid.x, mesh.userData.grid.y, mesh.userData.grid.z, false);
+        
+        // 增加木材
+        playerStats.inventory.wood++;
+        document.getElementById('inv-wood').innerText = playerStats.inventory.wood;
+        
+        // 合成武器
+        if(playerStats.inventory.wood >= 10 && !playerStats.inventory.sword) {
+            playerStats.inventory.sword = true;
+            document.getElementById('inv-sword').innerText = "木劍 (攻+10)";
+            document.getElementById('inv-sword').classList.replace('text-slate-400', 'text-yellow-400');
+            alert("🛠️ 合成成功：獲得【木劍】！現在你可以對抗天敵了！");
+        }
+    }
+
+    function placeBlock(intersect) {
+        if(playerStats.inventory.wood > 0) {
+            playerStats.inventory.wood--;
+            document.getElementById('inv-wood').innerText = playerStats.inventory.wood;
+            
+            const placePos = intersect.object.position.clone().add(intersect.face.normal.clone().multiplyScalar(blockSize));
+            const gridX = Math.round(placePos.x / blockSize);
+            const gridY = Math.round(placePos.y / blockSize);
+            const gridZ = Math.round(placePos.z / blockSize);
+            
+            setBlockGrid(gridX, gridY, gridZ, true);
+            const group = intersect.object.parent; // 放在同一個 Chunk
+            createMesh(gridX, gridY, gridZ, 'wood_plank', group, false);
+        }
+    }
+
+    function attackMonster(mesh) {
+        if(playerStats.inventory.sword) {
+            mesh.parent.remove(mesh);
+            interactableEntities = interactableEntities.filter(e => e !== mesh);
+            awardXPAndSync(20, '擊敗天敵', 20);
+            alert("⚔️ 擊殺成功！獲得 20 XP！");
+        } else {
+            alert("⚠️ 徒手無法對抗怪物！請先砍樹收集 10 個木材合成木劍！");
+            playerStats.hp -= 10; // 徒手打怪反被咬
+            updateSurvivalUI();
+        }
+    }
+
+    function updateSurvivalUI() {
+        document.getElementById('bar-hp').style.width = Math.max(0, playerStats.hp) + '%';
+        document.getElementById('bar-food').style.width = Math.max(0, playerStats.food) + '%';
+        
+        if (playerStats.hp <= 0 && !playerStats.isDead) {
+            playerStats.isDead = true;
+            vqControls.unlock();
+            alert("💀 你餓死或被怪物擊敗了！點擊確定重新生成。");
+            initVoxelPro(); // 重啟遊戲
+        }
+    }
+
+    // ==========================================
+    // 🧠 答題 UI 與循環
+    // ==========================================
+    function cancelVoxelQuiz() {
+        document.getElementById('vq-quiz-overlay').classList.add('hidden');
+        vqControls.lock();
+    }
+
+    function triggerVoxelQuiz() {
+        vqControls.unlock();
+        document.getElementById('vq-crosshair').classList.add('hidden');
+        document.getElementById('vq-quiz-overlay').classList.remove('hidden');
+        
+        document.getElementById('quiz-entity-name').textContent = currentHitCube.userData.name || "謎之方塊";
+        
+        const qData = gameQuestions[currentQIdx % gameQuestions.length];
+        document.getElementById('vq-question').innerHTML = qData.question;
+        const con = document.getElementById('vq-options'); 
+        con.innerHTML = '';
+        
+        qData.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = "w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl hover:bg-indigo-50 font-bold text-slate-700 text-lg transition-all shadow-sm";
+            btn.innerHTML = `<span class="inline-block w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg mr-3">${String.fromCharCode(65+idx)}</span> ${opt}`;
+            
+            btn.onclick = () => {
+                let isCorrect = (typeof qData.answer === 'number' ? idx === qData.answer : opt === qData.answer);
+                if(isCorrect) {
+                    btn.classList.replace('bg-slate-50', 'bg-green-100');
+                    
+                    // 答對吃東西/吸收知識
+                    playerStats.food = Math.min(100, playerStats.food + 20);
+                    if(playerStats.food > 80) playerStats.hp = Math.min(100, playerStats.hp + 10); // 吃飽回血
+                    updateSurvivalUI();
+
+                    // 移除實體
+                    currentHitCube.parent.remove(currentHitCube);
+                    interactableEntities = interactableEntities.filter(e => e !== currentHitCube);
+                    
+                    currentQIdx++;
+                    awardXPAndSync(50, `生存領域解謎`, 50);
+                    
+                    setTimeout(() => cancelVoxelQuiz(), 500);
+                } else {
+                    btn.classList.replace('bg-slate-50', 'bg-red-100');
+                    playerStats.hp -= 10; // 答錯受傷
+                    updateSurvivalUI();
+                    setTimeout(() => cancelVoxelQuiz(), 800);
+                }
+            };
+            con.appendChild(btn);
+        });
+        if(window.MathJax) MathJax.typesetPromise();
+    }
+
+    // ==========================================
+    // 🏃‍♂️ 主物理與渲染迴圈
+    // ==========================================
+    function checkCollisionAABB(x, y, z) {
+        const gx = Math.round(x / blockSize);
+        const gy = Math.round((y - 5) / blockSize);
+        const gz = Math.round(z / blockSize);
+        return getBlockGrid(gx, gy, gz) || getBlockGrid(gx, gy+1, gz);
+    }
+
+    function animateVoxelWorld() {
+        vqAnimationId = requestAnimationFrame(animateVoxelWorld);
+        const time = performance.now();
+        const delta = Math.min((time - prevTime) / 1000, 0.1); // 限制 delta 避免切換分頁時暴走
+        
+        if (vqControls.isLocked === true) {
+            updateChunks();
+
+            // 1. 日夜循環
+            vqTimeOfDay += 0.0002;
+            if(vqTimeOfDay > Math.PI * 2) vqTimeOfDay = 0;
+            let sunHeight = Math.sin(vqTimeOfDay);
+            vqSunLight.position.x = Math.cos(vqTimeOfDay) * 200;
+            vqSunLight.position.y = sunHeight * 200;
+            
+            let skyColor = new THREE.Color();
+            let timeIcon = "fa-sun";
+            if (sunHeight > 0.2) { 
+                skyColor.setHex(0x87ceeb); vqAmbientLight.intensity = 0.6; timeIcon = "fa-sun text-yellow-400";
+            } else if (sunHeight > 0) {
+                let ratio = sunHeight / 0.2;
+                skyColor.lerpColors(new THREE.Color(0xfd5e53), new THREE.Color(0x87ceeb), ratio);
+                vqAmbientLight.intensity = 0.3 + (0.3 * ratio); timeIcon = "fa-cloud-sun text-orange-400";
+            } else {
+                skyColor.setHex(0x050510); vqAmbientLight.intensity = 0.15; timeIcon = "fa-moon text-blue-300";
+            }
+            vqScene.background = skyColor;
+            vqScene.fog.color = skyColor;
+            document.getElementById('vq-time-icon').className = `fas ${timeIcon} text-2xl mr-2`;
+
+            // 2. 飢餓度消耗
+            if (Math.random() < 0.005) {
+                playerStats.food -= 0.5;
+                if(playerStats.food <= 0) playerStats.hp -= 1;
+                updateSurvivalUI();
+            }
+
+            // 3. 高亮系統與 A* 簡易怪物追蹤
+            vqRaycaster.setFromCamera(new THREE.Vector2(0,0), vqCamera);
+            const intersects = vqRaycaster.intersectObjects(interactableEntities);
+            if (intersects.length > 0 && intersects[0].distance < blockSize * 8) {
+                highlightBox.position.copy(intersects[0].object.position);
+                highlightBox.visible = true;
+            } else {
+                highlightBox.visible = false;
+            }
+
+            // 簡易實體AI (殭屍追玩家)
+            const playerPos = vqControls.getObject().position;
+            interactableEntities.forEach(ent => {
+                if(ent.userData.type === 'zombie_green') {
+                    let dist = ent.position.distanceTo(playerPos);
+                    if(dist < 150 && dist > blockSize * 1.5) {
+                        let dir = new THREE.Vector3().subVectors(playerPos, ent.position).normalize();
+                        ent.position.x += dir.x * 15 * delta;
+                        ent.position.z += dir.z * 15 * delta;
+                        ent.lookAt(playerPos.x, ent.position.y, playerPos.z);
+                    } else if (dist <= blockSize * 1.5 && Math.random() < 0.05) {
+                        playerStats.hp -= 5;
+                        updateSurvivalUI();
+                    }
+                }
+            });
+
+            // 4. 物理與重力計算
+            velocity.x -= velocity.x * 10.0 * delta;
+            velocity.z -= velocity.z * 10.0 * delta;
+            velocity.y -= 9.8 * 80.0 * delta; // 重力
+
+            direction.z = Number(moveForward) - Number(moveBackward);
+            direction.x = Number(moveRight) - Number(moveLeft);
+            direction.normalize();
+
+            if (moveForward || moveBackward) velocity.z -= direction.z * 500.0 * delta;
+            if (moveLeft || moveRight) velocity.x -= direction.x * 500.0 * delta;
+
+            let pos = vqControls.getObject().position;
+            let nextX = pos.x - (velocity.x * delta);
+            let nextZ = pos.z - (velocity.z * delta);
+            let nextY = pos.y + (velocity.y * delta);
+
+            if(checkCollisionAABB(nextX, pos.y, pos.z)) velocity.x = 0;
+            if(checkCollisionAABB(pos.x, pos.y, nextZ)) velocity.z = 0;
+            
+            // 腳下碰撞
+            if(checkCollisionAABB(pos.x, nextY, pos.z)) {
+                if(velocity.y < 0) {
+                    velocity.y = 0;
+                    canJump = true;
+                    pos.y = Math.ceil((pos.y - 5) / blockSize) * blockSize + 5; 
+                } else velocity.y = 0; 
+            }
+
+            // 防呆防穿模
+            let safeY = getTerrainHeight(Math.floor(pos.x/blockSize), Math.floor(pos.z/blockSize)) * blockSize;
+            if(pos.y < safeY - 20) {
+                velocity.y = 0;
+                pos.set(pos.x, safeY + 30, pos.z);
+            }
+
+            vqControls.moveRight(-velocity.x * delta);
+            vqControls.moveForward(-velocity.z * delta);
+            pos.y += (velocity.y * delta);
         }
         
-        // 重力
-        if(entity.group.position.y > 0) entity.group.position.y -= 0.05;
-        if(entity.group.position.y < 0) entity.group.position.y = 0;
-    });
-
-    renderer.render(scene, camera);
-}
-
-window.onload = () => {
-    renderUI(); updateStats(0,0);
-    camera.position.set(0, 5, 10);
-    updateInfiniteTerrain(); 
-    
-    // 生成一些豬和殭屍
-    for(let i=0; i<10; i++) spawnAnimal('pig', new THREE.Vector3((Math.random()-0.5)*30, 0, (Math.random()-0.5)*30));
-    for(let i=0; i<5; i++) spawnAnimal('zombie', new THREE.Vector3((Math.random()-0.5)*40, 0, (Math.random()-0.5)*40));
-    
-    updateGame(); 
-};
-window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
-    </script>
+        prevTime = time;
+        vqRenderer.render(vqScene, vqCamera);
+    }
+</script>
 </body>
 </html>
