@@ -858,7 +858,7 @@ function toggleSidebar() {
         return map[code] || code;
     }
 
-  function generateGameQuestions(subj, count) {
+function generateGameQuestions(subj, count) {
         let q = [];
         
         try {
@@ -872,13 +872,12 @@ function toggleSidebar() {
                 }).filter(i => i && i.question);
                 
                 // 2. 備用嘗試：如果題目不夠，改用最基礎的 [科目名稱] 再次生成
-                // (加上 tags 避免 biology_core 吃到 null 而崩潰)
                 if (q.length < count) {
                     try {
                         const backup = window.generatePaper({ 
                             subject: subj, 
                             total: count - q.length,
-                            tags: [subj] // 這裡一定要給基礎 tag
+                            tags: [subj] 
                         }).filter(i => i && i.question); 
                         q = q.concat(backup);
                     } catch (backupErr) {
@@ -887,36 +886,37 @@ function toggleSidebar() {
                 }
             }
         } catch (e) {
-            // 捕捉到了 templates_biology_core.js 的崩潰，防止影響整個遊戲
             console.error("❌ 題庫引擎發生嚴重錯誤:", e);
         }
 
-        // 3. 終極安全防線 (Fallback)：
-        // 如果引擎徹底壞掉，或是生出來的題目還是不夠，我們塞入基礎假資料讓遊戲能正常運作
-        if (q.length < count) {
-            console.warn(`⚠️ 只成功生成了 ${q.length} 題，系統將自動補齊至 ${count} 題以維持遊戲運作。`);
-            for (let i = q.length; i < count; i++) {
-                // 根據科目給予簡單的測試題目
-                if (subj === 'biology' || subj === '生物') {
-                    q.push({
-                        question: `【系統備用題】維持生命現象的基本單位為何？`,
-                        options: ['細胞', '組織', '器官', '系統'].sort(() => Math.random() - 0.5),
-                        answer: '細胞'
-                    });
-                } else {
-                    let a = Math.floor(Math.random()*10)+1, b = Math.floor(Math.random()*10)+1;
-                    q.push({ 
-                        question: `【系統備用題】 ${a} + ${b} = ?`, 
-                        options: [a+b, a+b+1, a+b-1, a+b+2].sort(() => Math.random() - 0.5), 
-                        answer: a+b 
-                    });
-                }
+        // 3. 終極安全防線：改為「重複使用已生成的真實題目」
+        if (q.length > 0 && q.length < count) {
+            console.warn(`⚠️ 題庫數量不足 (僅成功產出 ${q.length} 題)，將重複使用這些題目補齊至 ${count} 題。`);
+            
+            let originalQuestions = [...q]; // 備份已成功取出的原始題目
+            let i = 0;
+            
+            // 不斷循環加入原本的題目，直到數量達到遊戲要求的 count
+            while (q.length < count) {
+                // 使用 JSON 轉換進行深拷貝，避免題目物件的選項狀態互相干擾
+                let clonedQuestion = JSON.parse(JSON.stringify(originalQuestions[i % originalQuestions.length]));
+                q.push(clonedQuestion);
+                i++;
+            }
+        } else if (q.length === 0) {
+            // 萬一連「半題」都產不出來（極端情況），為了避免遊戲卡死才給一題保底，並重複它
+            console.warn(`⚠️ 完全無法生成任何題目，啟用緊急保底。`);
+            let emergencyQ = (subj === 'biology' || subj === '生物') 
+                ? { question: "維持生命現象的基本單位為何？", options: ['細胞', '組織', '器官', '系統'], answer: '細胞' }
+                : { question: "1 + 1 = ?", options: [1, 2, 3, 4], answer: 2 };
+            
+            while (q.length < count) {
+                q.push(JSON.parse(JSON.stringify(emergencyQ)));
             }
         }
         
         return q;
     }
-
     function resolveAnswerText(q) {
         if (!q) return "???";
         if (typeof q.answer === 'number' && q.options && q.options[q.answer]) return q.options[q.answer];
