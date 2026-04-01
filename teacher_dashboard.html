@@ -736,148 +736,166 @@
                 </button>`;
     }
 
-    async function refreshForum() {
-        const forumList = document.getElementById('forumList');
-        if (!forumList) return;
-        forumList.innerHTML = '<div class="text-center p-10"><i class="fas fa-spinner fa-spin text-3xl text-blue-500 mb-3"></i><p class="text-slate-500 font-bold">正在從雲端讀取討論區資料...</p></div>';
-        
-        try {
-            const response = await fetch(GAS_URL + "?action=get_forum_posts");
-            const data = await response.json();
-            
-            if (!data || data.length === 0) {
-                forumList.innerHTML = '<div class="text-center p-10 bg-slate-50 rounded-2xl border border-slate-100"><i class="fas fa-comments text-4xl text-slate-300 mb-3"></i><p class="text-slate-500 font-bold">目前討論區尚無任何貼文</p></div>';
-                return;
-            }
-            
-            const validPosts = data.filter(p => !p.parentId).reverse();
-            let html = '';
-            
-            validPosts.forEach(post => {
-                const isResolved = post.status === 'resolved';
-                const statusBadge = isResolved 
-                    ? '<span class="bg-green-100 text-green-600 text-[10px] px-2 py-1 rounded-md font-black uppercase tracking-widest ml-2"><i class="fas fa-check-circle mr-1"></i>已解決</span>'
-                    : '';
-                const postTitle = post.title || '無標題提問';
-                const questionText = post.content || '';
-                
-                let aiHtml = '';
-                if (post.aiReply) {
-                    aiHtml = `
-                    <div class="mt-4 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
-                        <div class="flex items-center gap-2 mb-2">
-                            <div class="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs"><i class="fas fa-robot"></i></div>
-                            <span class="text-xs font-black text-blue-700">AI 輔助精靈回覆</span>
-                        </div>
-                        ${createExpandableText(post.aiReply, 100)}
-                    </div>`;
-                }
+// ==========================================
+// 📢 討論區管理：載入論壇貼文 (支援顯示 AI 與所有人留言)
+// ==========================================
+async function refreshForum() {
+    const forumList = document.getElementById('forumList'); 
+    if (!forumList) return;
 
-                let repliesHtml = '';
-                const replies = data.filter(r => r.parentId === post.id);
-                if (replies.length > 0) {
-                    repliesHtml = '<div class="mt-4 space-y-3">';
-                    replies.forEach(reply => {
-                        const isTeacher = reply.role === 'teacher' || reply.role === 'admin';
-                        const badgeColor = isTeacher ? 'bg-amber-500' : 'bg-slate-400';
-                        const bgColor = isTeacher ? 'bg-amber-50 border-amber-100' : 'bg-slate-50 border-slate-100';
-                        
-                        repliesHtml += `
-                        <div class="${bgColor} p-4 rounded-xl border flex gap-3">
-                            <div class="w-8 h-8 rounded-full ${badgeColor} text-white flex items-center justify-center text-xs shrink-0 font-bold">
-                                ${isTeacher ? '<i class="fas fa-chalkboard-teacher"></i>' : (reply.author ? reply.author[0] : '匿')}
-                            </div>
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2">
-                                    <span class="font-bold text-sm text-slate-800">${reply.author || '匿名'}</span>
-                                    ${isTeacher ? '<span class="text-[9px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded font-black uppercase">教師</span>' : ''}
-                                    <span class="text-[10px] text-slate-400">${reply.timestamp || reply.date || ''}</span>
-                                </div>
-                                <div class="mt-1 text-sm text-slate-700">${reply.content}</div>
-                            </div>
-                        </div>`;
-                    });
-                    repliesHtml += '</div>';
-                }
+    forumList.innerHTML = '<div class="text-center p-10 text-slate-400"><i class="fas fa-spinner fa-spin text-3xl mb-3"></i><br>正在同步討論區資料...</div>';
+
+    try {
+        // 取得所有論壇資料
+        const response = await fetch(`${GAS_URL}?action=get_forum_posts`);
+        const data = await response.json();
+
+        // 過濾出主貼文 (沒有 parentId 的才算主貼文)
+        const posts = data.filter(p => !p.parentId);
+
+        if (posts.length === 0) {
+            forumList.innerHTML = '<div class="text-center p-8 text-slate-400">目前沒有任何討論貼文。</div>';
+            return;
+        }
+
+        let html = '';
+        posts.reverse().forEach(post => {
+            // 1. 抓取這篇貼文底下的所有子留言 (相容新舊寫法)
+            const replies = post.replies || data.filter(r => r.parentId === post.id);
+            
+            let repliesHtml = "";
+            if (replies && replies.length > 0) {
+                repliesHtml = `<div class="mt-4 bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+                    <h4 class="text-xs font-bold text-slate-500 mb-2"><i class="fas fa-comments"></i> 留言紀錄：</h4>`;
                 
-                html += `
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-4 transition-all hover:shadow-md">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center font-black">${(post.author || '生')[0]}</div>
-                            <div>
-                                <h3 class="font-bold text-slate-800 text-base">${post.author || '匿名學生'} ${statusBadge}</h3>
-                                <span class="text-[10px] font-bold text-slate-400">${post.timestamp || post.date || '未知時間'}</span>
+                replies.forEach(r => {
+                    const isAI = r.author && r.author.includes('AI');
+                    const isTeacher = r.isTeacher || r.role === 'teacher' || (r.author && r.author.includes('老師'));
+                    
+                    let badge = "";
+                    let bgClass = "bg-white border-slate-200";
+                    if (isAI) {
+                        badge = `<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold ml-2">AI 助教</span>`;
+                        bgClass = "bg-purple-50/50 border-purple-100";
+                    } else if (isTeacher) {
+                        badge = `<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold ml-2">教師回覆</span>`;
+                        bgClass = "bg-indigo-50/50 border-indigo-100";
+                    }
+
+                    // 支援 Markdown (如果有的話)
+                    const contentStr = typeof marked !== 'undefined' ? marked.parse(r.content) : r.content;
+
+                    repliesHtml += `
+                        <div class="${bgClass} p-3 rounded-lg border text-sm shadow-sm">
+                            <div class="flex justify-between items-center mb-1">
+                                <div class="font-bold text-slate-700 flex items-center">${r.author || r.name} ${badge}</div>
+                                <div class="text-[10px] text-slate-400">${r.date || ''}</div>
                             </div>
+                            <div class="text-slate-600 whitespace-pre-wrap markdown-body">${contentStr}</div>
                         </div>
-                        <div class="flex gap-2">
-                            <span class="text-[10px] font-black text-slate-400 border border-slate-200 px-2 py-1 rounded-md hidden md:inline-block bg-slate-50">ID: ${post.id}</span>
-                            <button onclick="deleteForumPost('${post.id}')" class="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white rounded-lg text-xs font-black transition-colors border border-red-100 shadow-sm flex items-center gap-1">
-                                <i class="fas fa-trash-alt"></i> 刪除
-                            </button>
-                        </div>
-                    </div>
-                    <div class="mb-4">
-                        <span class="text-[10px] font-black text-indigo-500 bg-indigo-50 px-2 py-1 rounded uppercase tracking-widest"><i class="fas fa-question-circle mr-1"></i>學生提問</span>
-                        <h4 class="text-lg font-black text-slate-800 mt-3 mb-2">${postTitle}</h4>
-                        <p class="text-sm text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-100 whitespace-pre-wrap">${questionText}</p>
-                    </div>
-                    ${aiHtml}
-                    ${repliesHtml}
-                    <div class="flex gap-2 pt-4 border-t border-slate-100 mt-4">
-                        <input id="admin-input-${post.id}" type="text" placeholder="補充回覆或訂正..." class="flex-grow bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold">
-                        <button onclick="adminReply('${post.id}')" class="bg-blue-600 text-white px-5 py-2 rounded-xl text-sm font-black hover:bg-blue-700 shadow-md">送出</button>
-                    </div>
+                    `;
+                });
+                repliesHtml += `</div>`;
+            }
+
+            // 2. 舊版 AI 欄位相容性
+            let aiHtml = "";
+            if (post.aiReply && post.aiReply.trim() !== "") {
+                const parsedAI = typeof marked !== 'undefined' ? marked.parse(post.aiReply) : post.aiReply;
+                aiHtml = `
+                <div class="mt-3 bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm">
+                    <div class="font-bold text-blue-700 mb-2"><i class="fas fa-robot"></i> AI 助教 (自動回覆)</div>
+                    <div class="text-slate-600 whitespace-pre-wrap markdown-body">${parsedAI}</div>
                 </div>`;
-            });
-            
-            forumList.innerHTML = html;
-        } catch (error) {
-            console.error("載入討論區失敗:", error);
-            forumList.innerHTML = '<div class="text-red-500 text-center py-10 font-bold bg-red-50 rounded-2xl border border-red-100"><i class="fas fa-exclamation-circle text-3xl mb-3"></i><br>無法載入討論區，請檢查網路連線或 GAS 網址設定。</div>';
-        }
-    }
-
-    async function adminReply(postId) {
-        const inputElement = document.getElementById(`admin-input-${postId}`);
-        if (!inputElement) return;
-        const content = inputElement.value.trim();
-        if (!content) return alert("⚠️ 請先輸入回覆內容！");
-        
-        inputElement.disabled = true;
-        inputElement.placeholder = "傳送中...";
-        
-        const user = JSON.parse(localStorage.getItem('currentUser')) || { name: '教師' };
-        
-        try {
-            const payload = {
-                action: "add_forum_post",
-                parentId: postId,
-                author: user.name,
-                role: "teacher",
-                content: content
-            };
-            const response = await fetch(GAS_URL, {
-                method: 'POST',
-                body: JSON.stringify(payload)
-            });
-            const res = await response.json();
-            
-            if (res.result === "success") {
-                inputElement.value = "";
-                refreshForum();
-            } else {
-                alert("❌ 回覆失敗：" + res.message);
             }
-        } catch (error) {
-            console.error("回覆錯誤:", error);
-            alert("連線異常，請檢查網路狀態。");
-        } finally {
-            inputElement.disabled = false;
-            inputElement.placeholder = "補充回覆或訂正...";
-        }
-    }
 
+            const postContent = typeof marked !== 'undefined' ? marked.parse(post.content) : post.content;
+
+            // 3. 組合卡片
+            html += `
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-4 transition-hover hover:shadow-md">
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold mr-2"><i class="fas fa-user"></i> ${post.author || post.name || post.username}</span>
+                        <span class="text-slate-400 text-xs">${post.date || ''}</span>
+                    </div>
+                </div>
+                
+                <h3 class="font-bold text-lg text-slate-800 mb-2">${post.title}</h3>
+                <div class="text-slate-600 text-sm mb-4 whitespace-pre-wrap bg-slate-50 p-4 rounded-xl markdown-body">${postContent}</div>
+                
+                ${aiHtml}
+                ${repliesHtml}
+
+                <div class="mt-4 flex gap-2 border-t border-slate-100 pt-4">
+                    <input type="text" id="admin-input-${post.id}" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="以教師身分回覆學生...">
+                    <button onclick="adminReply('${post.id}')" class="bg-blue-600 text-white px-5 py-2 rounded-xl text-sm font-black hover:bg-blue-700 shadow-md transition active:scale-95">回覆</button>
+                </div>
+            </div>`;
+        });
+        
+        forumList.innerHTML = html;
+        
+        // 如果有載入 MathJax，幫忙渲染公式
+        if (window.MathJax) {
+            MathJax.typesetPromise().catch((err) => console.log(err));
+        }
+
+    } catch (error) {
+        console.error("載入討論區失敗:", error);
+        forumList.innerHTML = '<div class="text-red-500 text-center py-10 font-bold bg-red-50 rounded-2xl border border-red-100"><i class="fas fa-exclamation-circle text-3xl mb-3"></i><br>無法載入討論區，請檢查網路連線。</div>';
+    }
+}
+
+// ==========================================
+// 💬 教師專屬：在後台直接回覆學生
+// ==========================================
+async function adminReply(postId) {
+    const inputElement = document.getElementById(`admin-input-${postId}`);
+    if (!inputElement) return;
+    
+    const content = inputElement.value.trim();
+    if (!content) return alert("⚠️ 請先輸入回覆內容！");
+    
+    inputElement.disabled = true;
+    inputElement.placeholder = "傳送中...";
+    
+    // 取得老師的登入資料，如果沒有則用預設值
+    const user = JSON.parse(localStorage.getItem('currentUser')) || { name: '指導老師', username: 'teacher' };
+    
+    try {
+        const payload = { 
+            action: "add_forum_post", 
+            parentId: postId, 
+            id: 'R' + Date.now(),
+            username: user.username || 'teacher',
+            name: user.name || '指導老師',
+            author: user.name || '指導老師',
+            isTeacher: true, // 🌟 這裡標記為老師，前端就會顯示藍色標籤
+            role: "teacher", 
+            content: content,
+            date: new Date().toLocaleString()
+        };
+        
+        const response = await fetch(GAS_URL, { 
+            method: 'POST', 
+            body: JSON.stringify(payload) 
+        });
+        
+        const res = await response.json();
+        if (res.result === "success") { 
+            inputElement.value = ""; 
+            refreshForum(); // 傳送成功後重新載入畫面
+        } else { 
+            alert("❌ 傳送失敗：" + res.message);
+            inputElement.disabled = false;
+        }
+    } catch (e) {
+        alert("網路錯誤，請稍後再試。");
+        inputElement.disabled = false;
+        inputElement.placeholder = "以教師身分回覆學生...";
+    }
+}
     async function deleteForumPost(postId) {
         if (!confirm("⚠️ 警告：確定要強制刪除這筆貼文嗎？此動作將從資料庫完全抹除，無法復原！")) return;
         
