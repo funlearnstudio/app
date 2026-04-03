@@ -474,3 +474,12 @@ a[class*="from-blue-600"] * {
     -webkit-text-fill-color: #ffffff !important;
     text-shadow: none !important;
 }
+@keyframes resultPop {
+    0% { transform: scale(0.5); opacity: 0; }
+    70% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+#gachaResult .rounded-2xl {
+    animation: resultPop 0.5s cubic-bezier(0.17, 0.67, 0.83, 0.67) forwards;
+}
