@@ -657,11 +657,18 @@ window.onload = function() {
         });
     }
 
-    function showSetupModal() {
+   function showSetupModal() {
+        // 🌟 新增：檢查是否有未完成的暫存紀錄
+        const savedState = localStorage.getItem('activeExamState');
+        if (savedState) {
+            // 找到暫存，直接恢復作答，並提早結束函數
+            restoreExamState(savedState);
+            return; 
+        }
+
         if(timerInterval) clearInterval(timerInterval);
         document.getElementById('setupModal').classList.remove('hidden');
     }
-
     let selectedTime = 20; 
 
     function selectCount(val) {
@@ -948,6 +955,7 @@ window.onload = function() {
        if (typeof renderPagination === 'function') {
         renderPagination(); 
     }
+       saveExamState();
 };
     function updateNavButtons() {
         const nextBtn = document.getElementById('nextBtn');
@@ -1024,7 +1032,8 @@ async function finalSubmit() {
     if (submitBtn.disabled) return; 
     submitBtn.disabled = true;      
     submitBtn.textContent = "評分中..."; 
-    
+    // 👇 加入這一行：正式交卷時，清除本機暫存，代表這份考卷已終結
+    localStorage.removeItem('activeExamState');
     if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval);
     if (typeof isSubmitting !== 'undefined') isSubmitting = true; 
     
@@ -1303,6 +1312,66 @@ const detailToSave = {
             }
         });
     }
+        // ==========================================
+    // 🌟 考試狀態：自動存檔與斷線恢復機制
+    // ==========================================
+    function saveExamState() {
+        // 如果沒有題目，或已經在交卷處理中，就不存檔
+        if (typeof mockQuestions === 'undefined' || !mockQuestions || mockQuestions.length === 0) return;
+        if (typeof isSubmitting !== 'undefined' && isSubmitting) return;
+
+        const state = {
+            mockQuestions: mockQuestions,
+            userAnswers: userAnswers,
+            examInfo: examInfo,
+            timeLeft: timeLeft,
+            timeLog: timeLog,
+            tabLog: tabLog,
+            currentQIndex: currentQIndex
+        };
+        // 存入本機端
+        localStorage.setItem('activeExamState', JSON.stringify(state));
+    }
+
+    function restoreExamState(savedStateStr) {
+        try {
+            const state = JSON.parse(savedStateStr);
+            
+            // 🌟 1. 恢復所有核心變數
+            mockQuestions = state.mockQuestions;
+            userAnswers = state.userAnswers;
+            examInfo = state.examInfo;
+            timeLeft = state.timeLeft;
+            timeLog = state.timeLog || new Array(mockQuestions.length).fill(0);
+            tabLog = state.tabLog || [];
+            currentQIndex = state.currentQIndex || 0;
+
+            // 🌟 2. 更新畫面上的標題
+            document.getElementById('examTitle').textContent = examInfo.title;
+            document.getElementById('examSubjectTag').textContent = examInfo.subject.toUpperCase();
+
+            // 🌟 3. 關閉可能顯示的考試設定視窗
+            const setupModal = document.getElementById('setupModal');
+            if (setupModal) setupModal.classList.add('hidden');
+
+            // 🌟 4. 重建畫面 (注意：這裡不呼叫 initGame，避免變數被歸零)
+            renderQuestion();
+            if (typeof renderPagination === 'function') renderPagination();
+            if (typeof updatePalette === 'function') updatePalette();
+            startTimer(); // 繼續倒數
+
+            console.log("✅ 已成功恢復上次的作答進度！");
+        } catch (e) {
+            console.error("恢復作答進度失敗:", e);
+            localStorage.removeItem('activeExamState');
+            if (typeof showSetupModal === 'function') showSetupModal();
+        }
+    }
+
+    // 網頁準備卸載、重新整理、按上一頁時，自動觸發存檔
+    window.addEventListener('beforeunload', () => {
+        saveExamState();
+    });
 </script>
 </body>
 </html>
