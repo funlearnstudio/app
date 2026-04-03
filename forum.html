@@ -448,7 +448,6 @@ async function loadPosts() {
         container.innerHTML = '<div class="text-center text-red-400 p-10 bg-red-50 rounded-2xl"><i class="fas fa-exclamation-triangle text-3xl mb-2"></i><p class="font-bold">讀取貼文失敗，請檢查網路連線。</p></div>';
     }
 }
-
 function renderPostTemplate(post) {
     const id = post.id;
     const authorName = post.author || post.name || post.username || "學生";
@@ -458,8 +457,26 @@ function renderPostTemplate(post) {
     const aiContent = post.aiReply || ""; 
     const hasAI = aiContent.trim() !== "";
     let aiSection = ""; 
+
+    // ==========================================
+    // 🌟 新增：權限判斷與刪除按鈕
+    // ==========================================
+    const currentUser = Auth.getCurrentUser() || JSON.parse(localStorage.getItem('currentUser') || '{}');
+    const isTeacher = (currentUser.role === 'teacher' || currentUser.role === 'admin' || currentUser.grade === '老師');
+    // 比對帳號，確認是不是學生自己的貼文
+    const isAuthor = (currentUser.username && post.username && currentUser.username === post.username);
+
+    let deleteBtnHTML = "";
+    if (isTeacher || isAuthor) {
+        deleteBtnHTML = `
+            <button onclick="deletePost('${id}')" class="text-red-400 hover:text-red-600 hover:bg-red-50 px-2 py-1 flex items-center gap-1 rounded-lg transition-colors text-xs font-bold shrink-0" title="刪除此貼文">
+                <i class="fas fa-trash-alt"></i> 刪除
+            </button>
+        `;
+    }
+    // ==========================================
     
-  if (hasAI) {
+    if (hasAI) {
         const parsedAI = typeof marked !== 'undefined' ? marked.parse(aiContent) : aiContent;
         // 使用貼文的 id 來做為 AI 內容區塊的唯一識別碼
         const aiBodyId = `ai-content-${id}`;
@@ -520,7 +537,11 @@ function renderPostTemplate(post) {
         <div class="flex gap-4">
             <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg shrink-0">${authorName[0]}</div>
             <div class="flex-grow">
-                <h3 class="font-bold text-slate-800 text-lg">${displayTitle}</h3>
+                <div class="flex justify-between items-start gap-2">
+                    <h3 class="font-bold text-slate-800 text-lg">${displayTitle}</h3>
+                    ${deleteBtnHTML}
+                </div>
+                
                 <p class="text-sm text-slate-500 mt-1 leading-relaxed whitespace-pre-wrap">${displayContent}</p>
                 <div class="text-[10px] text-slate-400 mt-2">由 ${authorName} 發表於 ${post.timestamp || post.date || ""}</div>
             </div>
