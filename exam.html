@@ -1337,36 +1337,44 @@ const detailToSave = {
 // ==========================================
     // 🌟 中途放棄/取消測驗機制
     // ==========================================
-    function cancelExam() {
-        // 呼叫我們之前做好的內嵌確認視窗
-        showExamAlert({
-            title: '確定要退出測驗嗎？',
-            message: '退出後，目前的<span class="text-red-500 font-bold">作答進度將會全部清除</span>，且不會計算成績喔！',
-            type: 'confirm',
-            showCancel: true,
-            cancelText: '繼續作答',
-            confirmText: '確定退出',
-            onConfirm: () => {
-                // 🌟 1. 宣告正在結束狀態，防止觸發 beforeunload 的自動存檔
-                if (typeof isSubmitting === 'undefined') {
-                    window.isSubmitting = true; 
-                } else {
-                    isSubmitting = true;
-                }
+function cancelExam() {
+    showExamAlert({
+        title: '確定要退出測驗嗎？',
+        message: '退出後，目前的<span class="text-red-500 font-bold">作答進度將會全部清除</span>，且不會計算成績喔！',
+        type: 'confirm',
+        showCancel: true,
+        cancelText: '繼續作答',
+        confirmText: '確定退出',
+        onConfirm: () => {
+            // 🌟 1. 宣告正在結束狀態，防止觸發 beforeunload 自動存檔
+            if (typeof window.isSubmitting !== 'undefined') window.isSubmitting = true; 
+            if (typeof isSubmitting !== 'undefined') isSubmitting = true;
 
-                // 🌟 2. 清除本機端的考卷暫存檔
-                localStorage.removeItem('activeExamState');
+            // 🌟 2. 【關鍵修正】只精準刪除考卷相關的暫存，絕對不碰登入資料！
+            // ❌ 絕對不要寫 localStorage.clear(); 
+            localStorage.removeItem('activeExamState'); 
+            
+            // 如果你的系統還有其他跟「考卷」相關的專屬暫存，可以加在這裡精準刪除
+            // 例如：
+            // localStorage.removeItem('examStartTime');
+            // sessionStorage.removeItem('currentExamData');
 
-                // 🌟 3. 關閉計時器
-                if (typeof timerInterval !== 'undefined' && timerInterval) {
-                    clearInterval(timerInterval);
-                }
-
-                // 🌟 4. 跳轉回主畫面 (請依照你的首頁檔名修改，可能是 dashboard.html 或 index.html)
-                window.location.href = 'index.html'; 
+            // 🌟 3. 關閉計時器
+            if (typeof timerInterval !== 'undefined' && timerInterval) {
+                clearInterval(timerInterval);
             }
-        });
-    }
+
+           // 🌟 4. 智慧跳轉：抓取當前考卷的科目與年級，退回對應的章節選單
+            const urlParams = new URLSearchParams(window.location.search);
+            const subject = urlParams.get('subject') || '';
+            const grade = urlParams.get('grade') || '';
+            const title = urlParams.get('title') || '';
+
+            // 組合出專屬的跳轉網址
+            window.location.href = `course_hub.html?subject=${subject}&grade=${grade}&title=${title}`;
+        }
+    });
+}
     function restoreExamState(savedStateStr) {
         try {
             const state = JSON.parse(savedStateStr);
