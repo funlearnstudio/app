@@ -229,6 +229,58 @@
 </main>
 
 <script>
+    // =========================================
+// 🌟 自訂漂浮提示 (取代所有的 alert)
+// =========================================
+function showToast(type, message) {
+    // 1. 如果沒有容器，就動態建立一個
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        // 固定在正上方，並確保在最上層 (z-[9999])
+        container.className = 'fixed top-6 left-1/2 transform -translate-x-1/2 z-[9999] flex flex-col gap-3 pointer-events-none w-[90%] max-w-sm';
+        document.body.appendChild(container);
+    }
+
+    // 2. 設定不同類型的顏色與圖示
+    let colors = '';
+    let icon = '';
+    if (type === 'success') {
+        colors = 'bg-green-50 border-green-200 text-green-700 shadow-green-100';
+        icon = '<i class="fas fa-check-circle text-green-500 text-xl"></i>';
+    } else if (type === 'error') {
+        colors = 'bg-red-50 border-red-200 text-red-700 shadow-red-100';
+        icon = '<i class="fas fa-times-circle text-red-500 text-xl"></i>';
+    } else if (type === 'warning') {
+        colors = 'bg-yellow-50 border-yellow-200 text-yellow-800 shadow-yellow-100';
+        icon = '<i class="fas fa-exclamation-triangle text-yellow-500 text-xl"></i>';
+    }
+
+    // 3. 建立提示卡片
+    const toast = document.createElement('div');
+    toast.className = `flex items-center gap-3 p-4 border rounded-2xl shadow-lg transition-all duration-300 transform -translate-y-10 opacity-0 ${colors}`;
+    toast.innerHTML = `
+        <div class="shrink-0">${icon}</div>
+        <div class="font-bold text-sm leading-relaxed">${message}</div>
+    `;
+    
+    container.appendChild(toast);
+
+    // 4. 進場動畫 (稍微延遲以觸發 Tailwind 的 transition)
+    setTimeout(() => {
+        toast.classList.remove('-translate-y-10', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+    }, 10);
+
+    // 5. 3秒後自動消失
+    setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('-translate-y-10', 'opacity-0');
+        // 等待動畫跑完再刪除 DOM
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
     // ==========================================
 // ✏️ 個人資料與介面功能
 // ==========================================
@@ -570,19 +622,24 @@ function showReplyInput(postId) {
     if (box) box.classList.toggle('hidden');
 }
 
+// ==========================================
+// 送出回覆
+// ==========================================
 async function submitReply(postId) {
     const input = document.getElementById(`input-${postId}`);
     const content = input.value.trim();
-    if (!content) return alert("請輸入回覆內容");
+    if (!content) return showToast('warning', '⚠️ 回覆內容不能為空喔！');
 
     const user = Auth.getCurrentUser();
     
+    // 可以在送出時給個提示
+    // showToast('success', '⏳ 傳送中...');
+
     try {
         const response = await fetch(GAS_URL, {
             method: 'POST',
             body: JSON.stringify({
-                action: 'add_forum_post',
-                id: 'R' + Date.now(),
+                action: "add_forum_reply",
                 username: user.username,
                 name: user.name,
                 content: content,
@@ -592,19 +649,26 @@ async function submitReply(postId) {
         });
         const data = await response.json();
         if (data.result === 'success') {
+            showToast('success', '✅ 回覆成功！');
             input.value = '';
             showReplyInput(postId);
             loadPosts();
         }
     } catch (e) {
-        alert("回覆失敗，請檢查連線");
+        showToast('error', '❌ 回覆失敗，請檢查網路連線');
     }
 }
 
+// ==========================================
+// 新增貼文
+// ==========================================
 async function addPost() {
     const t = document.getElementById('postTitle').value;
     const c = document.getElementById('postContent').value;
-    if (!t.trim() || !c.trim()) return alert("標題與內容不能為空");
+    
+    if (!t.trim() || !c.trim()) {
+        return showToast('warning', '⚠️ 標題與內容不能為空喔！');
+    }
 
     const user = Auth.getCurrentUser();
     const postId = Date.now();
@@ -612,6 +676,8 @@ async function addPost() {
     toggleForm();
     document.getElementById('postTitle').value = '';
     document.getElementById('postContent').value = '';
+
+    showToast('success', '🚀 貼文已送出！AI 助教正在趕來為您解答...');
 
     try {
         // 1. 儲存提問
@@ -645,11 +711,13 @@ async function addPost() {
         });
 
         await loadPosts(); // 更新 AI 內容
+        showToast('success', '🤖 AI 助教已經回覆您的問題囉！');
+
     } catch (err) {
         console.error(err);
+        showToast('error', '❌ 發生錯誤，無法取得 AI 回覆');
     }
 }
-
 
 // ==========================================
 // ✨ 檢查草稿功能
@@ -688,9 +756,39 @@ function toggleAIReply(contentId, btn) {
 // 初始化執行
 window.addEventListener('DOMContentLoaded', () => {
     loadPosts();
-    fetchAnnouncement();
+    //fetchAnnouncement();
     checkForumDraft();
 });
+    // ==========================================
+// 🗑️ 刪除貼文功能 (請確保這段貼在全域範圍)
+// ==========================================
+async function deletePost(postId) {
+    if (!confirm("⚠️ 確定要刪除這篇貼文（包含所有回覆）嗎？\n刪除後將無法復原喔！")) {
+        return; 
+    }
+
+    try {
+        const response = await fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'delete_forum_post',
+                id: postId
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.result === 'success') {
+            showToast('success', '✅ 貼文與回覆已成功刪除！');
+            loadPosts(); // 重新載入畫面
+        } else {
+            showToast('error', '❌ 刪除失敗：' + (data.message || '未知錯誤'));
+        }
+    } catch (err) {
+        console.error(err);
+        showToast('error', '📡 網路異常，無法刪除貼文，請稍後再試。');
+    }
+}
 </script>
 </body>
 </html>
