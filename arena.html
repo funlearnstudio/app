@@ -681,7 +681,6 @@ async function loadLeaderboard() {
     const listContainer = document.getElementById('leaderboardList');
     const loadingMsg = document.getElementById('loadingMsg');
 
-    // 取得當前使用者資訊
     const currentUser = Auth.getCurrentUser();
     const myUsername = (currentUser && currentUser.username !== 'guest') ? currentUser.username : null;
 
@@ -697,95 +696,77 @@ async function loadLeaderboard() {
             return;
         }
 
-        // 1. 找出自己的名次索引
         const myIndex = myUsername ? topPlayers.findIndex(p => p.username === myUsername) : -1;
-
-        // 2. 決定要顯示哪些名次 (永遠顯示前 20 名)
         let indicesToRender = new Set();
-        for (let i = 0; i < Math.min(20, topPlayers.length); i++) {
-            indicesToRender.add(i);
-        }
+        for (let i = 0; i < Math.min(20, topPlayers.length); i++) indicesToRender.add(i);
 
-        // 如果自己在 20 名之外，額外加入自己與前後各 2 名
         if (myIndex > 19) {
             for (let i = myIndex - 2; i <= myIndex + 2; i++) {
-                if (i >= 20 && i < topPlayers.length) {
-                    indicesToRender.add(i);
-                }
+                if (i >= 0 && i < topPlayers.length) indicesToRender.add(i);
             }
         }
 
-        // 將名單排序
         const sortedIndices = Array.from(indicesToRender).sort((a, b) => a - b);
         let lastIndex = -1;
 
-        // 3. 開始渲染
         sortedIndices.forEach(index => {
             const player = topPlayers[index];
             const isMe = (myUsername && player.username === myUsername);
+            const rank = getRankInfo(player.xp); 
 
-            // 如果名次之間有斷層，插入分隔線
             if (lastIndex !== -1 && index > lastIndex + 1) {
                 const divider = document.createElement('li');
-                divider.className = "text-center py-2 text-slate-300 text-xl";
+                divider.className = "text-center py-2 text-slate-400 opacity-50";
                 divider.innerHTML = `<i class="fas fa-ellipsis-v"></i>`;
                 listContainer.appendChild(divider);
             }
             
-            const rank = getRankInfo(player.xp); 
+            // 🛠️ 核心修正：保留原本等級背景，但對「自己」加上超顯眼金邊與縮放
+            let liBaseClass = `flex items-center justify-between p-4 rounded-2xl transition-all duration-300 mb-3 shadow-md border-2`;
+            let highlightStyle = isMe 
+                ? `border-yellow-400 ring-4 ring-yellow-400/30 scale-[1.03] z-10 relative` 
+                : `border-transparent`;
 
-            // 👑 解決文字太淡問題：強制覆蓋樣式
-            let liClass = "";
-            let textColor = "";
-            
-            if (isMe) {
-                // 自己專屬：黃底、黑字、粗邊框，無視全域白字設定
-                liClass = `flex items-center justify-between p-4 bg-yellow-100 border-2 border-yellow-500 rounded-2xl shadow-md transform scale-[1.02] mb-3 z-10 relative`;
-                textColor = "text-slate-900"; // 強制深灰黑色
-            } else {
-                // 其他人：使用原本 rank 設定
-                liClass = `flex items-center justify-between p-4 ${rank.bg} ${rank.text} hover:scale-[1.02] border border-transparent rounded-2xl transition-all duration-300 mb-3 shadow-sm`;
-                textColor = rank.text; 
-            }
-            
-            let rankDisplay = `<span class="font-bold text-xl ${textColor}" style="text-shadow: none;">${index + 1}</span>`;
-            if (index === 0) rankDisplay = '<i class="fas fa-crown text-3xl text-yellow-400 drop-shadow-sm"></i>';
-            else if (index === 1) rankDisplay = '<i class="fas fa-medal text-3xl text-slate-300 drop-shadow-sm"></i>';
-            else if (index === 2) rankDisplay = '<i class="fas fa-award text-3xl text-amber-500 drop-shadow-sm"></i>';
+            // 🛠️ 文字對比修正：針對淺色背景強制使用深色字，深色背景使用白/亮色字
+            let isLightBg = player.xp < 1000; // 判定是否為銀色以下(淺色)背景
+            let nameTextColor = isLightBg ? "text-slate-800" : rank.text;
+            let xpTextColor = isLightBg ? "text-slate-900" : (isMe ? "text-white" : "text-white");
 
-            // 名字加密：如果是自己看全名，看別人則遮蔽
             const rawName = player.name || player.username;
-            const displayedName = isMe ? rawName : maskName(rawName);
+            const displayedName = isMe ? rawName : (typeof maskName === 'function' ? maskName(rawName) : rawName);
+
+            let rankDisplay = `<span class="font-black text-xl ${nameTextColor}">${index + 1}</span>`;
+            if (index === 0) rankDisplay = '<i class="fas fa-crown text-3xl text-yellow-400"></i>';
+            else if (index === 1) rankDisplay = '<i class="fas fa-medal text-3xl text-slate-200"></i>';
+            else if (index === 2) rankDisplay = '<i class="fas fa-award text-3xl text-amber-500"></i>';
 
             const li = document.createElement('li');
-            li.className = liClass;
-            
-            // 💡 關鍵修正：在文字標籤上加上 style="text-shadow: none;" 強制取消白字陰影效果
+            li.className = `${liBaseClass} ${rank.bg} ${highlightStyle}`;
             li.innerHTML = `
                 <div class="flex items-center gap-4">
-                    <div class="w-12 text-center">${rankDisplay}</div>
+                    <div class="w-12 text-center drop-shadow-sm">${rankDisplay}</div>
                     <div>
-                        <div class="font-extrabold text-lg flex items-center gap-2 ${textColor}" style="text-shadow: none;">
+                        <div class="font-extrabold text-lg flex items-center gap-2 ${nameTextColor}">
                             ${displayedName}
-                            ${isMe ? '<span class="text-[10px] bg-yellow-500 text-white px-2 py-0.5 rounded-md ml-1 shadow-sm" style="text-shadow: none;">我</span>' : ''}
+                            ${isMe ? '<span class="animate-pulse bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm ml-1">YOU</span>' : ''}
                         </div>
-                        <div class="text-[11px] font-black px-3 py-0.5 rounded-full inline-block mt-1 ${rank.badge}" style="text-shadow: none;">
+                        <div class="text-[10px] font-black px-2.5 py-0.5 rounded-full inline-block mt-1 ${rank.badge} shadow-sm">
                             ${rank.title}
                         </div>
                     </div>
                 </div>
                 <div class="text-right">
-                    <div class="font-black text-2xl ${textColor}" style="text-shadow: none;">
-                        ${player.xp.toLocaleString()} <span class="text-[10px] opacity-70">XP</span>
+                    <div class="font-black text-2xl ${xpTextColor} tracking-tight">
+                        ${player.xp.toLocaleString()} <span class="text-[10px] opacity-80">XP</span>
                     </div>
                 </div>
             `;
             listContainer.appendChild(li);
-            
             lastIndex = index;
         });
     } catch (error) {
-        loadingMsg.innerHTML = "<span class='text-red-500 font-bold'>伺服器連線失敗</span>";
+        console.error(error);
+        loadingMsg.innerHTML = "<span class='text-red-500'>排行榜讀取失敗</span>";
     }
 }
 document.addEventListener('DOMContentLoaded', () => {
