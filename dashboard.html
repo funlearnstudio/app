@@ -465,9 +465,6 @@ function setStage(stage) {
     // 4. 重新渲染課程卡片
     renderCourses();
 }
-      // ==========================================
-// ✨ 產生課程卡片 HTML (修正版：對齊資料庫 ID)
-// ==========================================
 function renderCourses() {
     const stage = document.getElementById('currentStage').value;
     const container = document.getElementById('courseContainer');
@@ -475,43 +472,30 @@ function renderCourses() {
     
     container.innerHTML = '';
 
-    // 1. 抓取使用者目前的具體年級
     const user = (typeof Auth !== 'undefined') ? Auth.getCurrentUser() : null;
     let targetGrade = stage;
     
+    // 1. 確定目標年級
     if (user && user.grade) {
         if (stage === 'elementary' && (user.grade.includes('小') || user.grade.includes('四') || user.grade.includes('五') || user.grade.includes('六'))) targetGrade = user.grade;
         if (stage === 'junior_high' && user.grade.includes('國')) targetGrade = user.grade;
         if (stage === 'high_school' && user.grade.includes('高')) targetGrade = user.grade;
     }
 
-    // 2. 定義基礎科目 (三部別都有的)
+    // 2. 定義科目 (保持不變)
     let subjects = [
         { id: 'chinese', name: '國文', icon: 'fa-book-open', color: 'red' },
         { id: 'math', name: '數學', icon: 'fa-calculator', color: 'blue' },
         { id: 'english', name: '英文', icon: 'fa-language', color: 'purple' },
     ];
 
-    // 3. 依據階段加入不同科目
     if (stage === 'elementary') {
-        // 國小部專屬科目
         subjects.push(
             { id: 'science', name: '自然', icon: 'fa-leaf', color: 'green' },
-            // 🐛 關鍵修正：這裡的 ID 必須是 'social'，才能對應 curriculum_integrated.js 的設定
             { id: 'social', name: '社會', icon: 'fa-globe-americas', color: 'amber' }
         );
-    } else if (stage === 'junior_high') {
-        // 國中部專屬科目
-        subjects.push(
-            { id: 'biology', name: '生物', icon: 'fa-leaf', color: 'green' }, 
-            { id: 'science', name: '理化', icon: 'fa-flask', color: 'indigo' }, 
-            { id: 'earth', name: '地科', icon: 'fa-globe', color: 'orange' },
-            { id: 'geography', name: '地理', icon: 'fa-globe-americas', color: 'cyan' },
-            { id: 'history', name: '歷史', icon: 'fa-landmark', color: 'amber' },
-            { id: 'civics', name: '公民', icon: 'fa-balance-scale', color: 'teal' }
-        );
     } else {
-        // 高中部專屬科目
+        // 國高中科目
         subjects.push(
             { id: 'physics', name: '物理', icon: 'fa-atom', color: 'indigo' },
             { id: 'chemistry', name: '化學', icon: 'fa-vial', color: 'pink' },
@@ -521,18 +505,28 @@ function renderCourses() {
             { id: 'history', name: '歷史', icon: 'fa-landmark', color: 'amber' },
             { id: 'civics', name: '公民', icon: 'fa-balance-scale', color: 'teal' }
         );
+        // 如果是國中，把物理化學過濾掉，改用理化 (這是原本邏輯的優化)
+        if (stage === 'junior_high') {
+            subjects = subjects.filter(s => s.id !== 'physics' && s.id !== 'chemistry');
+            if(!subjects.find(s => s.id === 'science')) subjects.push({ id: 'science', name: '理化', icon: 'fa-flask', color: 'indigo' });
+        }
     }
 
-    // 4. 判斷卡片下方的年級標籤文字
-    let badgeText = targetGrade;
-    if (targetGrade === 'elementary' || targetGrade === 'junior_high' || targetGrade === 'high_school') {
-         if (stage === 'elementary') badgeText = '國小素養';
-         else if (stage === 'junior_high') badgeText = '國中全冊';
-         else badgeText = '高中全冊';
+    // ✨ 3. 關鍵修正：修正年級標籤文字 (Badge Text)
+    let badgeText = "";
+    if (targetGrade.includes('小') || targetGrade === 'elementary') {
+        badgeText = user && user.grade.includes('小') ? user.grade : "國小素養";
+    } else if (targetGrade.includes('國') || targetGrade === 'junior_high') {
+        badgeText = user && user.grade.includes('國') ? user.grade : "國中全冊";
+    } else if (targetGrade.includes('高') || targetGrade === 'high_school') {
+        badgeText = user && user.grade.includes('高') ? user.grade : "高中全冊";
+    } else {
+        badgeText = "全冊教材"; 
     }
 
-    // 5. 生成卡片
+    // 4. 生成卡片
     subjects.forEach((sub, idx) => {
+        // 這裡確保傳遞給 course_hub.html 的 grade 是正確的 targetGrade
         const linkHref = `course_hub.html?subject=${sub.id}&grade=${encodeURIComponent(targetGrade)}&title=${encodeURIComponent(sub.name)}`;
         
         const html = `
