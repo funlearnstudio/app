@@ -338,7 +338,24 @@
                 </button>
             </div>
         </div>
-    </div><script>
+    </div>
+    <div id="examAlertModal" class="hidden fixed inset-0 z-[200] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white p-8 w-full max-w-sm rounded-[2rem] shadow-2xl flex flex-col items-center transform scale-95 transition-transform duration-300" id="examAlertContent">
+            
+            <div id="examAlertIconBg" class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
+                <i id="examAlertIcon" class="fas fa-exclamation-triangle text-4xl text-red-500"></i>
+            </div>
+            
+            <h3 class="text-2xl font-black text-slate-800 mb-2" id="examAlertTitle">系統警告</h3>
+            <p class="text-slate-500 font-bold mb-6 text-center leading-relaxed" id="examAlertMessage">
+                考試期間請勿切換分頁！
+            </p>
+            
+            <div class="flex gap-3 w-full" id="examAlertButtons">
+                </div>
+        </div>
+    </div>
+    <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
 
     let mockQuestions = [], currentQIndex = 0, userAnswers = [], timeLeft = 0, timerInterval, examInfo = {};
@@ -631,7 +648,11 @@ window.onload = function() {
             if ((e.which || e.keyCode) === 116 || 
                 ((e.ctrlKey || e.metaKey) && (e.which || e.keyCode) === 82)) {
                 e.preventDefault();
-                alert("⚠️ 測驗進行中，禁止重新整理頁面！\n這會導致您的作答進度全部遺失。");
+               showExamAlert({
+                    title: '動作禁止',
+                    message: '測驗進行中，禁止重新整理頁面！<br><span class="text-sm text-red-500">這會導致您的作答進度全部遺失。</span>',
+                    type: 'warning'
+                });
             }
         });
     }
@@ -1189,6 +1210,99 @@ const detailToSave = {
         body: JSON.stringify(payload)
     }).catch(err => console.error("上傳失敗:", err));
 }
+        // =========================================
+    // 🌟 內嵌警告/確認視窗控制器
+    // =========================================
+    function showExamAlert({ title, message, type = 'warning', confirmText = '我知道了', onConfirm = null, showCancel = false, cancelText = '取消' }) {
+        const modal = document.getElementById('examAlertModal');
+        const content = document.getElementById('examAlertContent');
+        const iconBg = document.getElementById('examAlertIconBg');
+        const icon = document.getElementById('examAlertIcon');
+        const btnContainer = document.getElementById('examAlertButtons');
+
+        // 設定文字
+        document.getElementById('examAlertTitle').innerText = title;
+        document.getElementById('examAlertMessage').innerHTML = message;
+
+        // 設定樣式 (警告 紅色 / 確認 橘黃色)
+        if (type === 'warning') {
+            iconBg.className = 'w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4 shadow-inner';
+            icon.className = 'fas fa-exclamation-triangle text-4xl text-red-500';
+        } else {
+            iconBg.className = 'w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mb-4 shadow-inner';
+            icon.className = 'fas fa-question-circle text-4xl text-amber-500';
+        }
+
+        // 動態生成按鈕
+        btnContainer.innerHTML = '';
+        if (showCancel) {
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-xl hover:bg-slate-200 transition';
+            cancelBtn.innerText = cancelText;
+            cancelBtn.onclick = closeExamAlert;
+            btnContainer.appendChild(cancelBtn);
+        }
+
+        const confirmBtn = document.createElement('button');
+        // 依照類型給按鈕顏色
+        confirmBtn.className = type === 'warning' 
+            ? 'flex-1 bg-red-500 text-white font-bold py-3.5 rounded-xl hover:bg-red-600 shadow-lg shadow-red-200 transition active:scale-95'
+            : 'flex-1 bg-amber-500 text-white font-bold py-3.5 rounded-xl hover:bg-amber-600 shadow-lg shadow-amber-200 transition active:scale-95';
+        confirmBtn.innerText = confirmText;
+        confirmBtn.onclick = () => {
+            closeExamAlert();
+            if (onConfirm) onConfirm();
+        };
+        btnContainer.appendChild(confirmBtn);
+
+        // 顯示動畫
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            content.classList.remove('scale-95');
+        }, 10);
+    }
+
+    function closeExamAlert() {
+        const modal = document.getElementById('examAlertModal');
+        const content = document.getElementById('examAlertContent');
+        modal.classList.add('opacity-0');
+        content.classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+
+    // =========================================
+    // 實際應用情境範例
+    // =========================================
+
+    // 情境 1：防止切換分頁 (防作弊)
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+            // 取代原本的 alert()
+            showExamAlert({
+                title: '系統警告',
+                message: '考試期間請勿切換分頁或視窗！<br><span class="text-sm text-red-500">此行為已被系統記錄。</span>',
+                type: 'warning'
+            });
+        }
+    });
+
+    // 情境 2：點擊「離開考試」按鈕時的防護
+    function handleLeaveExam() {
+        // 取代原本的 confirm()
+        showExamAlert({
+            title: '確定要離開嗎？',
+            message: '您目前的作答進度將不會被儲存，確定要放棄本次考試嗎？',
+            type: 'confirm',
+            showCancel: true,
+            confirmText: '確定離開',
+            onConfirm: () => {
+                window.location.href = 'dashboard.html'; // 跳轉回主畫面
+            }
+        });
+    }
 </script>
 </body>
 </html>
