@@ -438,94 +438,163 @@ async function saveProfile() {
         alert("連線異常，請稍後再試");
     }
 }
-
-function updateTicketUI() {
+async function updateTicketUI() {
     let user = Auth.getCurrentUser();
-    if (user) {
-        const ticketEl = document.getElementById('ticketCount');
-        if (ticketEl) ticketEl.textContent = user.gachaTickets || 0;
+    if (!user || user.username === 'guest') return;
+
+    const ticketEl = document.getElementById('ticketCount');
+    const btn = document.getElementById('drawGachaBtn');
+    
+    if (ticketEl) ticketEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    try {
+        const response = await fetch(`${GAS_URL}?username=${encodeURIComponent(user.username)}&t=${Date.now()}`);
+        const history = await response.json();
+        
+        if (!Array.isArray(history)) return;
+
+        // 🌟 【關鍵修改】嚴格篩選考卷紀錄
+        const examRecords = history.filter(item => {
+            const t = String(item.title || item.activity || "").toLowerCase();
+            
+            // 1. 必須包含這些關鍵字之一
+            const isExam = t.includes("測驗") || t.includes("單元") || t.includes("考卷") || t.includes("exam") || t.includes("test");
+            
+            // 2. 同時必須排除所有「非考卷」的活動
+            const isNotGame = !t.includes("遊戲") && !t.includes("抽獎") && !t.includes("gacha") && !t.includes("game");
+
+            return isExam && isNotGame;
+        });
+
+        // 3. 找出所有「幸運抽獎」的消耗紀錄 (這部分維持不變，用來扣除次數)
+        const usedCount = history.filter(item => {
+            const t = String(item.title || item.activity || "");
+            return t.includes("幸運抽獎");
+        }).length;
+
+        // 4. 計算：每兩張考卷換一次
+        const totalTicketsEarned = Math.floor(examRecords.length / 2);
+        const remaining = Math.max(0, totalTicketsEarned - usedCount);
+
+        // 5. 更新介面
+        if (ticketEl) ticketEl.textContent = remaining;
+        
+        if (btn) {
+            if (remaining > 0) {
+                btn.disabled = false;
+                btn.innerText = `消耗 1 次機會 (剩 ${remaining} 次)`;
+                btn.classList.remove('opacity-50', 'grayscale');
+            } else {
+                btn.disabled = true;
+                btn.innerText = "機會已用完或考卷不足";
+                btn.classList.add('opacity-50', 'grayscale');
+            }
+        }
+        
+        console.log(`✅ 篩選完成！純考卷數：${examRecords.length}，已抽次數：${usedCount}`);
+
+    } catch (e) {
+        console.error("同步失敗:", e);
     }
 }
-
-function playGacha() {
+   async function playGacha() {
     let user = Auth.getCurrentUser();
-    let tickets = user.gachaTickets || 0;
+    const ticketEl = document.getElementById('ticketCount');
+    const resultDiv = document.getElementById('gachaResult');
+    const btn = document.getElementById('drawGachaBtn');
+    
+    let currentTickets = parseInt(ticketEl.textContent) || 0;
 
-    if (tickets <= 0) {
-        alert("😢 抽獎券不足！再去多寫幾份考卷吧！");
+    if (currentTickets <= 0) {
+        // 這裡改用比較溫和的提示，或者直接顯示在結果區
+        resultDiv.innerHTML = "❌ 機會不足，快去寫考卷吧！";
+        resultDiv.className = "mt-4 text-red-400 font-bold";
+        resultDiv.classList.remove('hidden');
         return;
     }
 
-    Auth.updateUser('gachaTickets', tickets - 1);
-    updateTicketUI();
-
+    // --- 動畫開始 ---
     SoundEngine.playSound('gachaPull');
-    const btn = document.getElementById('drawGachaBtn');
-    const resultDiv = document.getElementById('gachaResult');
-    
     btn.disabled = true;
-    btn.innerText = "✨ 轉動中...";
-    btn.classList.add('opacity-70');
-    resultDiv.classList.add('hidden');
-setTimeout(() => {
-        btn.disabled = false;
-        btn.innerText = "消耗 1 張抽獎券";
-        btn.classList.remove('opacity-70');
-        resultDiv.classList.remove('hidden');
+    btn.innerText = "✨ 正在抽取獎勵...";
+    btn.classList.add('opacity-70', 'animate-pulse');
+    
+    // 清空上次結果並顯示轉動動畫
+    resultDiv.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-8">
+            <div class="w-16 h-16 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+            <p class="mt-4 text-yellow-200">命運轉動中...</p>
+        </div>
+    `;
+    resultDiv.classList.remove('hidden');
 
+    setTimeout(async () => {
         const rand = Math.random() * 100;
         let gainedXP = 0;
-        let message = "";
-        let msgClass = "";
+        let title = "";
+        let colorClass = "";
+        let icon = "";
 
+        // 決定獎勵
         if (rand < 8) {
             SoundEngine.playSound('gachaWin');
-            message = "✨ 神話級獎勵：獲得 1000 XP！✨";
-            msgClass = "mt-4 text-xl font-bold text-yellow-300 animate-bounce";
+            title = "神話級獎勵";
+            icon = "👑";
+            colorClass = "from-yellow-400 to-orange-600 text-white shadow-[0_0_20px_rgba(250,204,21,0.5)]";
             gainedXP = 1000;
         } else if (rand < 45) {
             SoundEngine.playSound('gachaWin');
-            message = "🎉 稀有獎勵：獲得 200 XP！";
-            msgClass = "mt-4 text-lg font-bold text-white animate-pulse";
+            title = "稀有獎勵";
+            icon = "💎";
+            colorClass = "from-blue-400 to-indigo-600 text-white";
             gainedXP = 200;
         } else {
             SoundEngine.playSound('gachaFail');
-            message = "💨 銘謝惠顧！獲得 50 XP 安慰獎。";
-            msgClass = "mt-4 text-lg text-slate-300";
+            title = "普通獎勵";
+            icon = "🎁";
+            colorClass = "from-slate-500 to-slate-700 text-slate-100";
             gainedXP = 50;
         }
 
-        resultDiv.innerHTML = message;
-        resultDiv.className = msgClass;
+        // --- 🌟 關鍵：用卡片式 UI 代替彈窗 ---
+        resultDiv.innerHTML = `
+            <div class="mt-6 p-1 rounded-2xl bg-gradient-to-br ${colorClass} transform scale-110 transition-all duration-500">
+                <div class="bg-slate-900/40 backdrop-blur-sm rounded-xl p-6 flex flex-col items-center">
+                    <span class="text-5xl mb-2">${icon}</span>
+                    <h3 class="text-2xl font-black mb-1">${title}</h3>
+                    <div class="text-3xl font-bold text-yellow-300">+${gainedXP} <span class="text-sm">XP</span></div>
+                </div>
+            </div>
+        `;
 
-        // 1. 更新本機端 XP
+        // 1. 更新本機端
         Auth.updateUser('xp', (user.xp || 0) + gainedXP);
-        
-        // 2. 重新判定畫面主題
         ThemeEngine.apply(Auth.getCurrentUser().xp);
 
-        // 👇👇👇 🌟 關鍵修復：將抽獎獲得的 XP 傳送給雲端 (Google Sheets) 👇👇👇
+        // 2. 同步雲端
+        try {
+            await fetch(GAS_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({
+                    action: "save_record",
+                    username: user.username,
+                    activity: "幸運抽獎",
+                    score: gainedXP,
+                    xp: gainedXP,
+                    detail: JSON.stringify({ prize: title, amount: gainedXP })
+                })
+            });
+            console.log("✅ 雲端紀錄成功");
+            await updateTicketUI(); // 更新剩餘次數
+        } catch (e) {
+            console.error("❌ 同步失敗", e);
+        }
 
-       // 👇👇👇 🌟 關鍵修復：將抽獎獲得的 XP 傳送給雲端 (Google Sheets) 👇👇👇
-
-        fetch(GAS_URL, {
-            method: 'POST',
-            body: JSON.stringify({
-                action: "save_record",
-                username: user.username,
-                activity: "幸運抽獎", 
-                score: gainedXP,    // ✅ 改成這樣！讓 score 等於抽到的分數
-                xp: gainedXP,       
-                detail: JSON.stringify({ note: "抽獎機獲得" })
-            })
-        }).then(() => {
-            console.log(`✅ 抽獎獲得的 ${gainedXP} 分已成功同步至雲端！`);
-        }).catch(e => {
-            console.error("❌ 抽獎分數雲端同步失敗", e);
-        });
+        // 恢復按鈕
+        btn.classList.remove('opacity-70', 'animate-pulse');
     }, 2000);
 }
-
 function renderUnlockedFeatures(userXp) {
     const listContainer = document.getElementById('unlockedFeaturesList');
     if (!listContainer) return;
