@@ -181,7 +181,9 @@
             <i class="far fa-clock mr-1.5 md:mr-2 text-slate-400 hidden sm:inline-block"></i>
             <span id="timer">00:00</span>
         </div>
-        
+        <button onclick="cancelExam()" class="text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all flex items-center gap-2 font-bold px-4 py-2 rounded-xl text-sm border border-transparent hover:border-red-100">
+            <i class="fas fa-sign-out-alt"></i> 退出測驗
+        </button>
         <button onclick="trySubmit()" id="headerSubmitBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 md:px-6 md:py-2 rounded-lg font-black text-sm md:text-base shadow-md transition active:scale-95 whitespace-nowrap flex items-center gap-2">
             <i class="fas fa-paper-plane hidden sm:inline-block"></i>
             交卷
@@ -1332,7 +1334,39 @@ const detailToSave = {
         // 存入本機端
         localStorage.setItem('activeExamState', JSON.stringify(state));
     }
+// ==========================================
+    // 🌟 中途放棄/取消測驗機制
+    // ==========================================
+    function cancelExam() {
+        // 呼叫我們之前做好的內嵌確認視窗
+        showExamAlert({
+            title: '確定要退出測驗嗎？',
+            message: '退出後，目前的<span class="text-red-500 font-bold">作答進度將會全部清除</span>，且不會計算成績喔！',
+            type: 'confirm',
+            showCancel: true,
+            cancelText: '繼續作答',
+            confirmText: '確定退出',
+            onConfirm: () => {
+                // 🌟 1. 宣告正在結束狀態，防止觸發 beforeunload 的自動存檔
+                if (typeof isSubmitting === 'undefined') {
+                    window.isSubmitting = true; 
+                } else {
+                    isSubmitting = true;
+                }
 
+                // 🌟 2. 清除本機端的考卷暫存檔
+                localStorage.removeItem('activeExamState');
+
+                // 🌟 3. 關閉計時器
+                if (typeof timerInterval !== 'undefined' && timerInterval) {
+                    clearInterval(timerInterval);
+                }
+
+                // 🌟 4. 跳轉回主畫面 (請依照你的首頁檔名修改，可能是 dashboard.html 或 index.html)
+                window.location.href = 'index.html'; 
+            }
+        });
+    }
     function restoreExamState(savedStateStr) {
         try {
             const state = JSON.parse(savedStateStr);
