@@ -777,9 +777,14 @@ async function refreshForum() {
                     if (isAI) {
                         badge = `<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold ml-2">AI 助教</span>`;
                         bgClass = "bg-purple-50/50 border-purple-100";
-                    } else if (isTeacher) {
-                        badge = `<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold ml-2">教師回覆</span>`;
-                        bgClass = "bg-indigo-50/50 border-indigo-100";
+                    else if (isTeacher) {
+                        badge = `
+                            <span class="ml-2 inline-flex items-center gap-1 px-2 py-0.5 
+                            bg-blue-600 text-white text-[10px] font-black rounded-full shadow-sm">
+                                ✔ 官方教師
+                            </span>
+                        `;
+                        bgClass = "bg-blue-50/60 border-blue-200";
                     }
 
                     // 支援 Markdown (如果有的話)
