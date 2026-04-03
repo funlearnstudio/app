@@ -382,3 +382,50 @@ body[class*="theme-"] .bg-slate-800 *,
 body[class*="theme-"] .text-\\[11px\\] {
     color: inherit !important; /* 放過按鈕裡的字體與徽章 */
 }
+/* ==========================================================================
+   🏆 終極救援：榮譽榜（排行榜）純白模式文字顯示補丁
+   ========================================================================== */
+
+/* 1. 確保排行榜外框跟標題是清楚的深色 */
+body[class*="theme-"] #leaderboardContainer {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+}
+body[class*="theme-"] #leaderboardContainer h2,
+body[class*="theme-"] #leaderboardContainer h3 {
+    color: #0f172a !important; 
+    text-shadow: none !important;
+}
+
+/* 2. 排行榜裡面的卡片底色為白，加上細緻邊框 */
+body[class*="theme-"] #leaderboardList li {
+    background-color: #ffffff !important; 
+    border: 1px solid #e2e8f0 !important; 
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
+    display: flex !important; /* 確保排版結構不會崩壞 */
+}
+
+/* 3. 🔍 破解隱形墨水：強制將一般名字、名次、分數轉回深色！ */
+body[class*="theme-"] #leaderboardList li div,
+body[class*="theme-"] #leaderboardList li span,
+body[class*="theme-"] #leaderboardList li p,
+body[class*="theme-"] #leaderboardList li b {
+    color: #1e293b !important; 
+    text-shadow: none !important;
+}
+
+/* 4. 🛡️ 徽章防護：放過帶有顏色設定的文字 (讓徽章維持原本的藍/黃/綠色) */
+body[class*="theme-"] #leaderboardList li [class*="text-blue-"],
+body[class*="theme-"] #leaderboardList li [class*="text-amber-"],
+body[class*="theme-"] #leaderboardList li [class*="text-green-"],
+body[class*="theme-"] #leaderboardList li [class*="text-red-"],
+body[class*="theme-"] #leaderboardList li [class*="text-slate-500"] {
+    color: inherit !important; 
+}
+
+/* 5. 確保大頭貼可以顯示：給它一個淡灰底色，免得 SVG 臉部線條看不見 */
+body[class*="theme-"] #leaderboardList li .w-12.h-12,
+body[class*="theme-"] #leaderboardList li .rounded-full {
+    background-color: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+}
