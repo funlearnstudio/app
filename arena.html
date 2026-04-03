@@ -675,7 +675,7 @@ function maskName(name) {
 }
 
 // =========================================
-// 排行榜讀取與渲染函數 (已整合所有功能)
+// 排行榜讀取與渲染函數 (防覆蓋強化版)
 // =========================================
 async function loadLeaderboard() {
     const listContainer = document.getElementById('leaderboardList');
@@ -692,7 +692,7 @@ async function loadLeaderboard() {
         listContainer.innerHTML = ""; 
 
         if (!topPlayers || topPlayers.length === 0 || topPlayers.error) {
-            listContainer.innerHTML = "<li class='text-center py-10 text-slate-400 font-medium bg-slate-50 rounded-2xl'>目前尚無排名紀錄</li>";
+            listContainer.innerHTML = "<li class='text-center py-10 !text-slate-400 font-medium !bg-slate-50 rounded-2xl'>目前尚無排名紀錄</li>";
             return;
         }
 
@@ -716,47 +716,51 @@ async function loadLeaderboard() {
 
             if (lastIndex !== -1 && index > lastIndex + 1) {
                 const divider = document.createElement('li');
-                divider.className = "text-center py-2 text-slate-400 opacity-50";
+                // 加上 ! 防止顏色被蓋掉
+                divider.className = "text-center py-2 !text-slate-400 opacity-50";
                 divider.innerHTML = `<i class="fas fa-ellipsis-v"></i>`;
                 listContainer.appendChild(divider);
             }
             
-            // 🛠️ 核心修正：保留原本等級背景，但對「自己」加上超顯眼金邊與縮放
+            // 🛡️ 核心修正：使用 !important 強制防護邊框與背景
             let liBaseClass = `flex items-center justify-between p-4 rounded-2xl transition-all duration-300 mb-3 shadow-md border-2`;
+            
+            let rowBgClass = isMe ? "!bg-yellow-100" : rank.bg;
             let highlightStyle = isMe 
-                ? `border-yellow-400 ring-4 ring-yellow-400/30 scale-[1.03] z-10 relative` 
-                : `border-transparent`;
+                ? `!border-yellow-500 ring-4 ring-yellow-400/50 scale-[1.03] z-10 relative` 
+                : `!border-transparent`;
 
-            // 🛠️ 文字對比修正：針對淺色背景強制使用深色字，深色背景使用白/亮色字
-            let isLightBg = player.xp < 1000; // 判定是否為銀色以下(淺色)背景
-            let nameTextColor = isLightBg ? "text-slate-800" : rank.text;
-            let xpTextColor = isLightBg ? "text-slate-900" : (isMe ? "text-white" : "text-white");
+            // 🛡️ 文字對比修正：全部加上 ! 防止被全域白字蓋掉
+            let isLightBg = player.xp < 1000; 
+            let nameTextColor = isMe ? "!text-slate-900" : (isLightBg ? "!text-slate-900" : rank.text);
+            let xpTextColor = isMe ? "!text-slate-900" : (isLightBg ? "!text-slate-900" : "!text-white");
 
             const rawName = player.name || player.username;
             const displayedName = isMe ? rawName : (typeof maskName === 'function' ? maskName(rawName) : rawName);
 
-            let rankDisplay = `<span class="font-black text-xl ${nameTextColor}">${index + 1}</span>`;
-            if (index === 0) rankDisplay = '<i class="fas fa-crown text-3xl text-yellow-400"></i>';
-            else if (index === 1) rankDisplay = '<i class="fas fa-medal text-3xl text-slate-200"></i>';
-            else if (index === 2) rankDisplay = '<i class="fas fa-award text-3xl text-amber-500"></i>';
+            // 移除文字陰影
+            let rankDisplay = `<span class="font-black text-xl ${nameTextColor}" style="text-shadow: none;">${index + 1}</span>`;
+            if (index === 0) rankDisplay = '<i class="fas fa-crown text-3xl !text-yellow-400 drop-shadow-sm"></i>';
+            else if (index === 1) rankDisplay = '<i class="fas fa-medal text-3xl !text-slate-300 drop-shadow-sm"></i>';
+            else if (index === 2) rankDisplay = '<i class="fas fa-award text-3xl !text-amber-500 drop-shadow-sm"></i>';
 
             const li = document.createElement('li');
-            li.className = `${liBaseClass} ${rank.bg} ${highlightStyle}`;
+            li.className = `${liBaseClass} ${rowBgClass} ${highlightStyle}`;
             li.innerHTML = `
                 <div class="flex items-center gap-4">
                     <div class="w-12 text-center drop-shadow-sm">${rankDisplay}</div>
                     <div>
-                        <div class="font-extrabold text-lg flex items-center gap-2 ${nameTextColor}">
+                        <div class="font-extrabold text-lg flex items-center gap-2 ${nameTextColor}" style="text-shadow: none;">
                             ${displayedName}
-                            ${isMe ? '<span class="animate-pulse bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm ml-1">YOU</span>' : ''}
+                            ${isMe ? '<span class="animate-pulse !bg-red-500 !text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm ml-1" style="text-shadow: none;">YOU</span>' : ''}
                         </div>
-                        <div class="text-[10px] font-black px-2.5 py-0.5 rounded-full inline-block mt-1 ${rank.badge} shadow-sm">
+                        <div class="text-[10px] font-black px-2.5 py-0.5 rounded-full inline-block mt-1 ${rank.badge} shadow-sm" style="text-shadow: none;">
                             ${rank.title}
                         </div>
                     </div>
                 </div>
                 <div class="text-right">
-                    <div class="font-black text-2xl ${xpTextColor} tracking-tight">
+                    <div class="font-black text-2xl ${xpTextColor} tracking-tight" style="text-shadow: none;">
                         ${player.xp.toLocaleString()} <span class="text-[10px] opacity-80">XP</span>
                     </div>
                 </div>
@@ -766,7 +770,7 @@ async function loadLeaderboard() {
         });
     } catch (error) {
         console.error(error);
-        loadingMsg.innerHTML = "<span class='text-red-500'>排行榜讀取失敗</span>";
+        loadingMsg.innerHTML = "<span class='!text-red-500'>排行榜讀取失敗</span>";
     }
 }
 document.addEventListener('DOMContentLoaded', () => {
