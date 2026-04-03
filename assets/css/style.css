@@ -448,3 +448,29 @@ button.bg-gradient-to-r.from-blue-600.to-indigo-600 *,
 a.bg-gradient-to-r.from-blue-600.to-indigo-600 * {
     color: #ffffff !important; 
 }
+/* ==========================================================================
+   🚀 終極核彈級救援：強制所有「開始測驗」與藍紫漸層按鈕顯色
+   ========================================================================== */
+
+/* 1. 直接鎖定 onclick="confirmSetup()" 這個按鈕，以及所有包含 from-blue-600 的按鈕 */
+button[onclick="confirmSetup()"],
+button[class*="from-blue-600"],
+a[class*="from-blue-600"] {
+    background: #2563eb !important; /* 強制給予實心藍底 */
+    background-image: linear-gradient(to right, #2563eb, #4f46e5) !important; /* 強制覆蓋漸層 */
+    color: #ffffff !important; /* 強制文字純白 */
+    -webkit-text-fill-color: #ffffff !important; /* 破解某些瀏覽器的文字透明隱藏大法 */
+    border: none !important;
+    opacity: 1 !important; /* 確保沒有被設定成半透明 */
+    visibility: visible !important;
+    box-shadow: 0 4px 10px -2px rgba(79, 70, 229, 0.5) !important; 
+}
+
+/* 2. 確保按鈕裡面的字跟箭頭圖示 (Icon) 絕對是白色的 */
+button[onclick="confirmSetup()"] *,
+button[class*="from-blue-600"] *,
+a[class*="from-blue-600"] * {
+    color: #ffffff !important; 
+    -webkit-text-fill-color: #ffffff !important;
+    text-shadow: none !important;
+}
