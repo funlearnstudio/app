@@ -642,13 +642,13 @@
                 localStorage.setItem('name', user.name);
                 localStorage.setItem('role', safeRole);
 
-                // 🌟 3. 處理家長專屬邏輯：把存在 grade 裡的綁定帳號抽出來存
+               // 🌟 3. 處理家長專屬邏輯：把存在 grade 裡的綁定帳號抽出來存
                 if (safeRole === 'parent') {
                     localStorage.setItem('childUsername', user.grade);
                 }
 
-                alert(`歡迎回來，${user.name}！`);
-                redirectUser(safeRole);
+                // 移除原本的 alert，改呼叫我們新建的歡迎視窗函數
+                showWelcomeAndRedirect(user.name, safeRole);
             } else {
                 alert("登入失敗：" + data.message);
                 resetButton();
@@ -746,129 +746,45 @@
             btn.innerHTML = '確認重設';
         }
     }
-    </script>
-    <div id="announcementModal" class="hidden fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
-        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300" id="announcementContent">
-            
-            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-center relative">
-                <button onclick="closeAnnouncement()" class="absolute top-4 right-4 text-white/70 hover:text-white transition-colors">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-                <div class="w-16 h-16 bg-white/20 rounded-2xl backdrop-blur-md mx-auto flex items-center justify-center mb-4 shadow-inner">
-                    <i class="fas fa-bullhorn text-3xl text-white"></i>
-                </div>
-                <h3 class="text-2xl font-black text-white tracking-widest">系統最新公告</h3>
-            </div>
-
-            <div class="p-8">
-                <div class="mb-8">
-                    <span id="annDateDisplay" class="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-lg tracking-widest mb-3 border border-blue-100">
-                        </span>
-                    <h4 id="annTitleDisplay" class="text-xl font-black text-slate-800 mb-3 leading-snug">
-                        </h4>
-                    <div id="annContentDisplay" class="text-sm text-slate-500 leading-relaxed space-y-2 font-medium">
-                        </div>
-                </div>
-
-                <button onclick="closeAnnouncement()" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-blue-600 transition-colors shadow-lg shadow-slate-200 flex items-center justify-center gap-2">
-                    <span>我知道了，開始使用</span>
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-<script>
-    // 🌟 全站公告邏輯：確保每個帳號在每則新公告發布時都只顯示一次
-    let currentAnnVersion = null; 
-
-    // 1. 學生端/用戶端檢查邏輯
-    async function fetchAnnouncement() {
-        // 注意：請確保 GAS_URL 已經在外部定義，或直接寫入網址
-        const url = typeof GAS_URL !== 'undefined' ? GAS_URL : "你的_GAS_網址";
-
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                body: JSON.stringify({ action: "get_announcement" })
-            });
-            const resData = await response.json();
-
-            // 如果後端回傳成功，且公告是啟用狀態 (isActive)
-            if (resData.result === "success" && resData.data && resData.data.isActive) {
-                const ann = resData.data;
-                currentAnnVersion = ann.version; // 取得 GAS 產生的 v_xxxx 版本號
-                
-                // 🌟 關鍵：取得當前帳號名稱 (請確認 HTML 中有這個 ID，或改用你的變數)
-                // 這裡嘗試抓 userName 或 teacherName，如果都沒有就用 guest
-                const currentUser = (document.getElementById('userName') || document.getElementById('teacherName'))?.innerText.trim() || "guest";
-                
-                // 檢查本地瀏覽器紀錄
-                const readVersion = localStorage.getItem(`read_ann_${currentUser}`);
-
-                // 如果本地紀錄的版本號與雲端不同，就顯示公告
-                if (readVersion !== currentAnnVersion) {
-                    renderAnnouncement(ann);
-                }
-            }
-        } catch (error) {
-            console.error("抓取公告時發生錯誤:", error);
-        }
-    }
-
-    // 2. 將資料塞入 HTML 並準備顯示
-    function renderAnnouncement(ann) {
-        const dateEl = document.getElementById('annDateDisplay');
-        const titleEl = document.getElementById('annTitleDisplay');
-        const contentEl = document.getElementById('annContentDisplay');
-
-        if (dateEl) dateEl.innerText = ann.date || "最新消息";
-        if (titleEl) titleEl.innerText = ann.title;
-        if (contentEl) {
-            // 將換行符 \n 轉為 <br> 標籤
-            contentEl.innerHTML = ann.content.replace(/\n/g, '<br>');
-        }
+       // =========================================
+    // 🌟 顯示歡迎視窗並自動跳轉
+    // =========================================
+    function showWelcomeAndRedirect(name, role) {
+        const modal = document.getElementById('welcomeModal');
+        const content = document.getElementById('welcomeModalContent');
+        const nameSpan = document.getElementById('welcomeUserName');
         
-        // 延遲 0.5 秒彈出，視覺效果更平滑
-        setTimeout(showAnnouncement, 500);
-    }
-
-    // 3. 執行彈窗顯示動畫
-    function showAnnouncement() {
-        const modal = document.getElementById('announcementModal');
-        const content = document.getElementById('announcementContent');
-        if (!modal || !content) return;
-
+        // 填入使用者名稱
+        nameSpan.innerText = name;
+        
+        // 顯示 Modal
         modal.classList.remove('hidden');
-        // 透過觸發重繪來啟動 Tailwind 動畫
+        
+        // 觸發動畫
         setTimeout(() => {
             modal.classList.remove('opacity-0');
             content.classList.remove('scale-95');
         }, 10);
+
+        // 停留 1.5 秒後自動跳轉
+        setTimeout(() => {
+            redirectUser(role);
+        }, 1500);
     }
-
-    // 4. 關閉公告並標記為「已讀」
-    function closeAnnouncement() {
-        const modal = document.getElementById('announcementModal');
-        const content = document.getElementById('announcementContent');
-        if (!modal || !content) return;
-
-        // 縮小與淡出動畫
-        modal.classList.add('opacity-0');
-        content.classList.add('scale-95');
-        
-        setTimeout(() => { 
-            modal.classList.add('hidden'); 
-        }, 300);
-        
-        // 🌟 核心：紀錄此帳號已看過這個版本
-        if (currentAnnVersion) {
-            const currentUser = (document.getElementById('userName') || document.getElementById('teacherName'))?.innerText.trim() || "guest";
-            localStorage.setItem(`read_ann_${currentUser}`, currentAnnVersion);
-        }
-    }
-
-    // 初始化：網頁載入完成後執行
-    window.addEventListener('DOMContentLoaded', fetchAnnouncement);
+    </script>
+   <div id="welcomeModal" class="hidden fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white p-8 w-full max-w-sm rounded-[2rem] shadow-2xl flex flex-col items-center transform scale-95 transition-transform duration-300" id="welcomeModalContent">
+            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
+                <i class="fas fa-check text-4xl text-green-500"></i>
+            </div>
+            <h3 class="text-2xl font-black text-slate-800 mb-2">登入成功</h3>
+            <p class="text-slate-500 font-bold mb-6 text-center leading-relaxed">
+                歡迎回來，<span id="welcomeUserName" class="text-blue-600"></span>！<br>
+                <span class="text-sm">正在為您導向專屬主頁...</span>
+            </p>
+            <i class="fas fa-circle-notch fa-spin text-blue-500 text-3xl"></i>
+        </div>
+    </div>
 </script>
 </body>
 </html>
