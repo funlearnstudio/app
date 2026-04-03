@@ -325,3 +325,60 @@ body.theme-celestial aside .bg-gradient-to-r, body.theme-celestial aside [class*
     color: white;
     border-color: #45a049;
 }
+
+/* ==========================================================================
+   🌟 終極覆蓋：全站強制純白模式 (放在 style.css 最底部)
+   ========================================================================== */
+
+/* 1. 強制整個網頁背景變成純白 */
+body, body[class*="theme-"] {
+    background: #ffffff !important;
+    color: #1e293b !important; /* 確保全域預設文字是深灰色，不會跟白底糊在一起 */
+}
+
+/* 2. 把側邊欄、上方導覽列、所有卡片區塊也都變成純白實心 */
+body[class*="theme-"] aside,
+body[class*="theme-"] #sidebar,
+body[class*="theme-"] nav,
+body[class*="theme-"] .bg-white,
+body[class*="theme-"] .bg-slate-50,
+body[class*="theme-"] .bg-gray-50,
+body[class*="theme-"] #leaderboardContainer {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important; /* 加上淡淡的細灰線，讓版面有立體層次 */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02) !important; /* 極微弱的陰影 */
+    backdrop-filter: none !important; /* 關閉毛玻璃特效，回歸簡約效能也更好 */
+    -webkit-backdrop-filter: none !important;
+}
+
+/* 3. 救回深色主題 (神話/傳奇等) 原本被強制變白的文字，強迫轉回深色 */
+body.theme-epic *, body.theme-legend *, body.theme-mythic *, body.theme-celestial * { 
+    color: inherit; 
+}
+body[class*="theme-"] .text-slate-800, 
+body[class*="theme-"] .text-gray-700,
+body[class*="theme-"] h1, body[class*="theme-"] h2, body[class*="theme-"] h3 {
+    color: #0f172a !important; /* 確保所有大標題和內文都是清楚的深藍黑字 */
+    text-shadow: none !important; /* 移除可能殘留的發光特效 */
+}
+
+/* 4. 排行榜清單也改回純白卡片 */
+body[class*="theme-"] #leaderboardList li {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+}
+body[class*="theme-"] #leaderboardList li .text-slate-800,
+body[class*="theme-"] #leaderboardList li .text-slate-700,
+body[class*="theme-"] #leaderboardList li .text-slate-300 {
+    color: #1e293b !important; /* 確保名字跟分數是深色 */
+    text-shadow: none !important;
+}
+
+/* 5. 確保特定顏色的按鈕與等級徽章不受影響 (保留原本的白字或徽章色) */
+body[class*="theme-"] .bg-blue-600 *, 
+body[class*="theme-"] .bg-blue-500 *, 
+body[class*="theme-"] .bg-red-500 *, 
+body[class*="theme-"] .bg-slate-800 *,
+body[class*="theme-"] .text-\\[11px\\] {
+    color: inherit !important; /* 放過按鈕裡的字體與徽章 */
+}
