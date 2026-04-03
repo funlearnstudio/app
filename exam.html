@@ -1365,14 +1365,17 @@ function cancelExam() {
                 clearInterval(timerInterval);
             }
 
-           // 🌟 4. 智慧跳轉：抓取當前考卷的科目與年級，退回對應的章節選單
+            // 🌟 4. 智慧跳轉：抓取當前考卷的科目與年級，退回對應的章節選單
             const urlParams = new URLSearchParams(window.location.search);
             const subject = urlParams.get('subject') || '';
             const grade = urlParams.get('grade') || '';
-            const title = urlParams.get('title') || '';
-
+            
+            // ✨ 重點修改：將 title 設定為 grade 的前兩個字 (例如 "國文,成語..." 會變成 "國文")
+            const title = grade.substring(0, 2); 
+            
             // 組合出專屬的跳轉網址
-            window.location.href = `course_hub.html?subject=${subject}&grade=${grade}&title=${title}`;
+            // 使用 encodeURIComponent 確保中文在網址中能正確傳遞
+            window.location.href = `course_hub.html?subject=${subject}&grade=${grade}&title=${encodeURIComponent(title)}`;
         }
     });
 }
