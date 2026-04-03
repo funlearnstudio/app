@@ -477,6 +477,58 @@
     </div>
     
    <script>
+       // =========================================
+// 🌟 自訂漂浮提示 (取代所有的 alert)
+// =========================================
+function showToast(type, message) {
+    // 1. 如果沒有容器，就動態建立一個
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        // 固定在正上方，並確保在最上層 (z-[9999])
+        container.className = 'fixed top-6 left-1/2 transform -translate-x-1/2 z-[9999] flex flex-col gap-3 pointer-events-none w-[90%] max-w-sm';
+        document.body.appendChild(container);
+    }
+
+    // 2. 設定不同類型的顏色與圖示
+    let colors = '';
+    let icon = '';
+    if (type === 'success') {
+        colors = 'bg-green-50 border-green-200 text-green-700 shadow-green-100';
+        icon = '<i class="fas fa-check-circle text-green-500 text-xl"></i>';
+    } else if (type === 'error') {
+        colors = 'bg-red-50 border-red-200 text-red-700 shadow-red-100';
+        icon = '<i class="fas fa-times-circle text-red-500 text-xl"></i>';
+    } else if (type === 'warning') {
+        colors = 'bg-yellow-50 border-yellow-200 text-yellow-800 shadow-yellow-100';
+        icon = '<i class="fas fa-exclamation-triangle text-yellow-500 text-xl"></i>';
+    }
+
+    // 3. 建立提示卡片
+    const toast = document.createElement('div');
+    toast.className = `flex items-center gap-3 p-4 border rounded-2xl shadow-lg transition-all duration-300 transform -translate-y-10 opacity-0 ${colors}`;
+    toast.innerHTML = `
+        <div class="shrink-0">${icon}</div>
+        <div class="font-bold text-sm leading-relaxed">${message}</div>
+    `;
+    
+    container.appendChild(toast);
+
+    // 4. 進場動畫 (稍微延遲以觸發 Tailwind 的 transition)
+    setTimeout(() => {
+        toast.classList.remove('-translate-y-10', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+    }, 10);
+
+    // 5. 3秒後自動消失
+    setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('-translate-y-10', 'opacity-0');
+        // 等待動畫跑完再刪除 DOM
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
     // ⚠️ 請確認這裡是你最新的 GAS 部署網址
     const GAS_URL = "https://script.google.com/macros/s/AKfycbzQlG5LVquExr4qDerEGX_OaeOPYqp9Nk2Xk7WuJRq55XOPzIQx977KjCCteiWuhGfY2Q/exec"; 
 
@@ -493,8 +545,7 @@
             localStorage.removeItem('currentUser');
         }
     }
-
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
+document.getElementById('loginForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
         const u = document.getElementById('username').value.trim();
@@ -503,7 +554,10 @@
         const originalBtnText = btn.innerHTML;
 
         if(!u || !p) {
-            alert("請輸入帳號與密碼");
+            // ❌ 移除 alert，改用 showToast
+            showToast('warning', '請輸入帳號與密碼！');
+            if(!u) document.getElementById('username').focus();
+            else document.getElementById('password').focus();
             return;
         }
 
@@ -521,31 +575,28 @@
         .then(data => {
             if (data.result === "success") {
                 const user = data.user;
-                const safeRole = String(user.role).trim().toLowerCase(); // 防呆處理
+                const safeRole = String(user.role).trim().toLowerCase();
 
-                // 🌟 1. 存入整包資訊
                 localStorage.setItem('currentUser', JSON.stringify(user));
-                
-                // 🌟 2. 存入散裝資訊 (雙重保險)
                 localStorage.setItem('username', user.username);
                 localStorage.setItem('name', user.name);
                 localStorage.setItem('role', safeRole);
-
-               // 🌟 3. 處理家長專屬邏輯：把存在 grade 裡的綁定帳號抽出來存
                 if (safeRole === 'parent') {
                     localStorage.setItem('childUsername', user.grade);
                 }
 
-                // 移除原本的 alert，改呼叫我們新建的歡迎視窗函數
                 showWelcomeAndRedirect(user.name, safeRole);
             } else {
-                alert("登入失敗：" + data.message);
+                // ❌ 移除 alert，改用 showToast
+                showToast('error', '登入失敗：' + data.message);
+                document.getElementById('password').value = ''; // 清空密碼框讓學生重打
                 resetButton();
             }
         })
         .catch(err => {
             console.error('詳細錯誤:', err);
-            alert("連線發生錯誤，請檢查網路或稍後再試。"); 
+            // ❌ 移除 alert，改用 showToast
+            showToast('error', '連線發生錯誤，請檢查網路或稍後再試。'); 
             resetButton();
         });
 
@@ -554,7 +605,6 @@
             btn.innerHTML = originalBtnText;
         }
     });
-
     function redirectUser(role) {
         if (role === 'student') window.location.href = 'dashboard.html';
         else if (role === 'teacher') window.location.href = 'teacher_dashboard.html';
@@ -589,21 +639,23 @@
         }, 300);
     }
 
-    async function submitForgotPassword() {
+async function submitForgotPassword() {
         const username = document.getElementById('fp-username').value.trim();
         const name = document.getElementById('fp-name').value.trim();
         const newPassword = document.getElementById('fp-newpassword').value.trim();
         const btn = document.getElementById('fp-btn');
 
         if (!username || !name || !newPassword) {
-            return alert("請完整填寫帳號、姓名與新密碼！");
+            // ❌ 移除 alert，改用 showToast
+            showToast('warning', '請完整填寫帳號、姓名與新密碼！');
+            return; // 記得加上 return 終止執行
         }
 
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 處理中...';
 
         const payload = {
-            action: "reset_password", // 對接你 GAS 寫好的 API
+            action: "reset_password",
             username: username,
             name: name,
             newPassword: newPassword
@@ -620,22 +672,23 @@
             const data = await response.json();
             
             if (data.status === "success") {
-                alert("✅ 密碼已成功重設！請使用新密碼登入。");
+                // ❌ 移除 alert，改用 showToast
+                showToast('success', '密碼已成功重設！請使用新密碼登入。');
                 closeForgotModal();
-                // 自動幫他填入剛重設好的帳號和密碼到登入框，體驗更好！
                 document.getElementById('username').value = username;
                 document.getElementById('password').value = newPassword;
             } else {
-                alert("❌ 驗證失敗：" + data.message);
+                // ❌ 移除 alert，改用 showToast
+                showToast('error', '驗證失敗：' + data.message);
             }
         } catch (err) {
-            alert("網路異常，請稍後再試。");
+            // ❌ 移除 alert，改用 showToast
+            showToast('error', '網路異常，請稍後再試。');
         } finally {
             btn.disabled = false;
             btn.innerHTML = '確認重設';
         }
     }
-       // =========================================
     // 🌟 顯示歡迎視窗並自動跳轉
     // =========================================
     function showWelcomeAndRedirect(name, role) {
