@@ -149,8 +149,16 @@
         </div>
         
         <div class="bg-gray-100 p-1 rounded-lg flex text-sm font-bold w-full sm:w-auto justify-center">
-            <button onclick="setStage('high_school')" id="btnHigh" class="flex-1 sm:flex-none px-4 py-1.5 rounded-md transition bg-white text-gray-800 shadow-sm">高中</button>
-            <button onclick="setStage('junior_high')" id="btnJunior" class="flex-1 sm:flex-none px-4 py-1.5 rounded-md transition text-gray-500 hover:text-gray-700">國中</button>
+          <div id="stage-toggle-container" class="hidden flex justify-center gap-3 mb-8">
+            <button onclick="switchStage('elementary')" id="btn-elementary" class="px-6 py-2 rounded-full font-bold text-sm transition-all border border-slate-200 text-slate-500 hover:bg-slate-100">
+                國小部
+            </button>
+            <button onclick="switchStage('junior_high')" id="btn-junior_high" class="px-6 py-2 rounded-full font-bold text-sm transition-all border border-slate-200 text-slate-500 hover:bg-slate-100">
+                國中部
+            </button>
+            <button onclick="switchStage('high_school')" id="btn-high_school" class="px-6 py-2 rounded-full font-bold text-sm transition-all border border-slate-200 text-slate-500 hover:bg-slate-100">
+                高中部
+            </button>       
         </div>
     </div>
 </div>
@@ -201,15 +209,22 @@
     <input type="hidden" id="currentStage" value="high_school">
 
    <script>
-        window.onload = function() {
-            // 確保 Auth 物件存在，避免報錯 (如果只測試前端 UI，可以註解掉這塊)
+      window.onload = function() {
+            // 確保 Auth 物件存在，避免報錯
             if (typeof Auth !== 'undefined') {
                 const user = Auth.getCurrentUser();
                 if(user) {
                     document.getElementById('sideUserName').textContent = user.name;
                     document.getElementById('sideUserRole').textContent = user.grade;
-                    if(user.grade && user.grade.includes('國')) setStage('junior_high');
-                    else setStage('high_school');
+                    
+                    // ✨ 新增國小判斷：只要年級包含「小、四、五、六」就自動切到國小部
+                    if(user.grade && (user.grade.includes('小') || user.grade.includes('四') || user.grade.includes('五') || user.grade.includes('六'))) {
+                        setStage('elementary');
+                    } else if(user.grade && user.grade.includes('國')) {
+                        setStage('junior_high');
+                    } else {
+                        setStage('high_school');
+                    }
                 } else {
                     setStage('high_school');
                 }
@@ -418,22 +433,31 @@ async function saveProfile() {
         saveBtn.innerText = originalBtnText;
     }
 }
-        function setStage(stage) {
+       function setStage(stage) {
             document.getElementById('currentStage').value = stage;
             const btnHigh = document.getElementById('btnHigh');
             const btnJunior = document.getElementById('btnJunior');
+            const btnElem = document.getElementById('btnElem'); // ✨ 新增國小按鈕
             
-            if (stage === 'high_school') {
-                btnHigh.className = "px-4 py-1.5 rounded-md transition shadow-sm bg-white text-gray-800 font-bold";
-                btnJunior.className = "px-4 py-1.5 rounded-md transition text-gray-500 hover:text-gray-700 font-bold";
-            } else {
-                btnHigh.className = "px-4 py-1.5 rounded-md transition text-gray-500 hover:text-gray-700 font-bold";
-                btnJunior.className = "px-4 py-1.5 rounded-md transition shadow-sm bg-white text-gray-800 font-bold";
+            // 1. 先把所有按鈕都變成灰色未選取狀態 (防呆檢查，確保按鈕存在才改)
+            const inactiveClass = "px-4 py-1.5 rounded-md transition text-gray-500 hover:text-gray-700 font-bold";
+            if (btnHigh) btnHigh.className = inactiveClass;
+            if (btnJunior) btnJunior.className = inactiveClass;
+            if (btnElem) btnElem.className = inactiveClass;
+
+            // 2. 根據當前 stage，把對應的按鈕亮起來
+            const activeClass = "px-4 py-1.5 rounded-md transition shadow-sm bg-white text-gray-800 font-bold";
+            if (stage === 'high_school' && btnHigh) {
+                btnHigh.className = activeClass;
+            } else if (stage === 'junior_high' && btnJunior) {
+                btnJunior.className = activeClass;
+            } else if (stage === 'elementary' && btnElem) {
+                btnElem.className = activeClass;
             }
+
             renderCourses();
         }
-
-       // 產生課程卡片 HTML (修正版：鎖定年級)
+       // 產生課程卡片 HTML (修正版：支援國小部)
         function renderCourses() {
             const stage = document.getElementById('currentStage').value;
             const container = document.getElementById('courseContainer');
@@ -441,49 +465,63 @@ async function saveProfile() {
             
             container.innerHTML = '';
 
-            // ✨ 1. 抓取使用者目前的具體年級 (例如：國七)
+            // 1. 抓取使用者目前的具體年級
             const user = (typeof Auth !== 'undefined') ? Auth.getCurrentUser() : null;
-            // 如果使用者的年級符合當前階段 (例如他是國七，現在在看國中區)，就用他的年級
-            // 否則 (例如他是高一，但切換去看國中區)，就用該階段的統稱 (junior_high)
             let targetGrade = stage;
+            
             if (user && user.grade) {
+                if (stage === 'elementary' && (user.grade.includes('小') || user.grade.includes('四') || user.grade.includes('五') || user.grade.includes('六'))) targetGrade = user.grade;
                 if (stage === 'junior_high' && user.grade.includes('國')) targetGrade = user.grade;
                 if (stage === 'high_school' && user.grade.includes('高')) targetGrade = user.grade;
             }
 
-            // 定義基礎科目
+            // 2. 定義基礎科目 (三部別都有的)
             let subjects = [
                 { id: 'chinese', name: '國文', icon: 'fa-book-open', color: 'red' },
                 { id: 'math', name: '數學', icon: 'fa-calculator', color: 'blue' },
                 { id: 'english', name: '英文', icon: 'fa-language', color: 'purple' },
             ];
 
-            // 依據階段加入不同自然科
-            if (stage === 'junior_high') {
+            // ✨ 3. 依據階段加入不同科目
+            if (stage === 'elementary') {
+                // 國小部專屬科目
+                subjects.push(
+                    { id: 'science', name: '自然', icon: 'fa-leaf', color: 'green' },
+                    { id: 'social_studies', name: '社會', icon: 'fa-globe-americas', color: 'amber' }
+                );
+            } else if (stage === 'junior_high') {
+                // 國中部專屬科目
                 subjects.push(
                     { id: 'biology', name: '生物', icon: 'fa-leaf', color: 'green' }, 
                     { id: 'science', name: '理化', icon: 'fa-flask', color: 'indigo' }, 
-                    { id: 'earth', name: '地科', icon: 'fa-globe', color: 'orange' } 
+                    { id: 'earth', name: '地科', icon: 'fa-globe', color: 'orange' },
+                    { id: 'geography', name: '地理', icon: 'fa-globe-americas', color: 'cyan' },
+                    { id: 'history', name: '歷史', icon: 'fa-landmark', color: 'amber' },
+                    { id: 'civics', name: '公民', icon: 'fa-balance-scale', color: 'teal' }
                 );
             } else {
+                // 高中部專屬科目
                 subjects.push(
                     { id: 'physics', name: '物理', icon: 'fa-atom', color: 'indigo' },
                     { id: 'chemistry', name: '化學', icon: 'fa-vial', color: 'pink' },
                     { id: 'biology', name: '生物', icon: 'fa-leaf', color: 'green' },
-                    { id: 'earth', name: '地科', icon: 'fa-globe', color: 'orange' }
+                    { id: 'earth', name: '地科', icon: 'fa-globe', color: 'orange' },
+                    { id: 'geography', name: '地理', icon: 'fa-globe-americas', color: 'cyan' },
+                    { id: 'history', name: '歷史', icon: 'fa-landmark', color: 'amber' },
+                    { id: 'civics', name: '公民', icon: 'fa-balance-scale', color: 'teal' }
                 );
             }
 
-            // 加入社會科
-            subjects.push(
-                { id: 'geography', name: '地理', icon: 'fa-globe-americas', color: 'cyan' },
-                { id: 'history', name: '歷史', icon: 'fa-landmark', color: 'amber' },
-                { id: 'civics', name: '公民', icon: 'fa-balance-scale', color: 'teal' }
-            );
+            // 4. 判斷卡片下方的年級標籤文字
+            let badgeText = targetGrade;
+            if (targetGrade === 'elementary' || targetGrade === 'junior_high' || targetGrade === 'high_school') {
+                 if (stage === 'elementary') badgeText = '國小素養';
+                 else if (stage === 'junior_high') badgeText = '國中全冊';
+                 else badgeText = '高中全冊';
+            }
 
-            // 生成卡片
+            // 5. 生成卡片
             subjects.forEach((sub, idx) => {
-                // ✨ 2. 在連結中傳遞具體的 targetGrade
                 const linkHref = `course_hub.html?subject=${sub.id}&grade=${encodeURIComponent(targetGrade)}&title=${encodeURIComponent(sub.name)}`;
                 
                 const html = `
@@ -493,7 +531,7 @@ async function saveProfile() {
                         </div>
                         <h3 class="text-xl font-bold text-gray-800 mb-2">${sub.name}</h3>
                         <p class="text-xs text-gray-400 font-bold bg-gray-50 px-3 py-1 rounded-full border">
-                            ${targetGrade.includes('high') ? (stage === 'high_school' ? '高中全冊' : '國中全冊') : targetGrade}
+                            ${badgeText}
                         </p>
                         <div class="mt-4 w-full pt-4 border-t border-gray-100 flex justify-center text-${sub.color}-600 font-bold text-sm">
                             進入課程 <i class="fas fa-arrow-right ml-2 mt-1"></i>
