@@ -382,7 +382,6 @@ function initUserInterface(user) {
         if (editBtn) editBtn.style.display = 'none';
     }
 }
-
 async function loadExamResult(user) {
     const reportContent = document.getElementById('reportContent');
     const noDataMessage = document.getElementById('noDataMessage');
@@ -415,13 +414,20 @@ async function loadExamResult(user) {
 
         allQuestionsData = targetData.questions && targetData.questions.length > 0 ? targetData.questions : (targetData.wrongList || []);
 
-        // 🌟 預處理絕對題號 (確保題組內的子題題號也是連續的)
+        // 🌟 【雲端區塊】預處理絕對題號與答案分發
         let globalIndex = 1;
         allQuestionsData.forEach(item => {
             const subQs = item.subQuestions || item.questions;
             const isGroup = !!item.article || item.type === 'group' || (Array.isArray(subQs) && subQs.length > 0);
             if (isGroup) {
-                subQs.forEach(sq => { sq.originalIndex = globalIndex++; });
+                // 🌟 加入 sIdx 參數來抓取陣列索引
+                subQs.forEach((sq, sIdx) => { 
+                    sq.originalIndex = globalIndex++; 
+                    // 👇 關鍵修復：把外層的陣列答案，精準分發給每一個子題目
+                    if (Array.isArray(item.yourAns)) {
+                        sq.yourAns = item.yourAns[sIdx];
+                    }
+                });
             } else {
                 item.originalIndex = globalIndex++;
             }
@@ -447,15 +453,26 @@ async function loadExamResult(user) {
         console.warn("雲端載入失敗，使用本地備援:", e);
         if (localData) {
             allQuestionsData = localData.questions || localData.wrongList || [];
+            
+            // 🌟 【本地備援區塊】預處理絕對題號與答案分發
             let globalIndex = 1;
             allQuestionsData.forEach(item => {
                 const subQs = item.subQuestions || item.questions;
-                if ((!!item.article || item.type === 'group') && Array.isArray(subQs)) {
-                    subQs.forEach(sq => { sq.originalIndex = globalIndex++; });
+                const isGroup = !!item.article || item.type === 'group' || (Array.isArray(subQs) && subQs.length > 0);
+                if (isGroup) {
+                    // 🌟 加入 sIdx 參數來抓取陣列索引
+                    subQs.forEach((sq, sIdx) => { 
+                        sq.originalIndex = globalIndex++; 
+                        // 👇 關鍵修復：把外層的陣列答案，精準分發給每一個子題目
+                        if (Array.isArray(item.yourAns)) {
+                            sq.yourAns = item.yourAns[sIdx];
+                        }
+                    });
                 } else {
                     item.originalIndex = globalIndex++;
                 }
             });
+            
             updateScoreBoard(localData);
             updateCheatAnalysis(localData);
             renderQuestionList(allQuestionsData);
@@ -467,7 +484,6 @@ async function loadExamResult(user) {
         }
     }
 }
-
 // ==========================================
 // 3. UI 數據分析與畫面渲染核心
 // ==========================================
