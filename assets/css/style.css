@@ -42,27 +42,44 @@ body.theme-epic { background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%) 
 body.theme-mythic { background: radial-gradient(circle, #1e1b4b, #020617) !important; color: white !important; }
 body.theme-celestial { background: radial-gradient(circle at center, #000000 0%, #170529 50%, #000000 100%) !important; color: #fde047 !important; }
 /* ==========================================================================
-   3. 🔮 終極玻璃擬真去背大絕招 (精準版)
+   3. 🔮 質感半透明與原色保留 (改良版：不全透明，救回原本顏色)
    ========================================================================== */
-/* 只針對「外層大區塊 (bg-white, bg-slate-50)」做透明，移除暴力的 *= 選擇器避免誤殺 */
-body[class*="theme-"] .bg-white,
-body[class*="theme-"] .bg-slate-50,
-body[class*="theme-"] .bg-gray-50,
+/* 1. 只針對側邊欄、導覽列、排行榜外框做適度的玻璃感 (75% 不透明度) */
 body[class*="theme-"] aside,
 body[class*="theme-"] #sidebar,
 body[class*="theme-"] .sidebar-content,
 body[class*="theme-"] nav,
-body[class*="theme-"] main,
-body[class*="theme-"] section,
-body[class*="theme-"] ul,
-body[class*="theme-"] li,
-body[class*="theme-"] #leaderboardContainer,
-body[class*="theme-"] .ai-assistant-card {
-    background-color: rgba(255, 255, 255, 0.1) !important; 
-    backdrop-filter: blur(10px) !important; 
-    -webkit-backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important; 
-    box-shadow: none !important;
+body[class*="theme-"] #leaderboardContainer {
+    background-color: rgba(255, 255, 255, 0.75) !important; 
+    backdrop-filter: blur(12px) !important; 
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important; 
+}
+
+/* 針對深色主題 (史詩、傳奇、神話、天界) 側邊欄改用深色玻璃 */
+body.theme-epic aside, body.theme-legend aside, body.theme-mythic aside, body.theme-celestial aside,
+body.theme-epic #sidebar, body.theme-legend #sidebar, body.theme-mythic #sidebar, body.theme-celestial #sidebar,
+body.theme-epic nav, body.theme-legend nav, body.theme-mythic nav, body.theme-celestial nav,
+body.theme-epic #leaderboardContainer, body.theme-legend #leaderboardContainer, body.theme-mythic #leaderboardContainer, body.theme-celestial #leaderboardContainer {
+    background-color: rgba(15, 23, 42, 0.75) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* 2. 🌟 關鍵解藥：讓白色卡片、內容區恢復「原本的白色/淺灰色」，不再強迫透明！ */
+body[class*="theme-"] .bg-white {
+    background-color: #ffffff !important; /* 恢復純白實心 */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05) !important; /* 救回陰影立體感 */
+}
+body[class*="theme-"] .bg-slate-50, 
+body[class*="theme-"] .bg-gray-50 {
+    background-color: #f8fafc !important; /* 恢復原本的 Tailwind 淺灰色 */
+}
+
+/* 3. 深色主題下的卡片自動轉為深色 (保護眼睛且不破壞排版) */
+body.theme-epic .bg-white, body.theme-legend .bg-white, body.theme-mythic .bg-white, body.theme-celestial .bg-white,
+body.theme-epic .bg-slate-50, body.theme-legend .bg-slate-50, body.theme-mythic .bg-slate-50, body.theme-celestial .bg-slate-50 {
+    background-color: #1e293b !important; /* 深藍灰色 */
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 /* 拔掉礙眼的漸層藍色塊與大頭貼白底 (避開 XP 進度條與幸運大抽獎) */
@@ -71,8 +88,7 @@ body[class*="theme-"] .relative.w-24.h-24 { background-color: transparent !impor
 
 /* 手機版側邊欄遮罩 */
 body[class*="theme-"] .sidebar-transition { background-color: rgba(15, 23, 42, 0.8) !important; }
-body[class*="theme-"] footer { background-color: rgba(255, 255, 255, 0.2) !important; }
-
+body[class*="theme-"] footer { background-color: rgba(255, 255, 255, 0.5) !important; }
 /* ==========================================================================
    4. 🎨 特殊內部區塊救回 (AI解答區、進度條底層)
    ========================================================================== */
@@ -107,16 +123,16 @@ body.theme-legend aside a:hover, body.theme-mythic aside a:hover { background-co
 /* ==========================================================================
    5. ✏️ 字體顏色智慧適應 (Dark / Light Mode)
    ========================================================================== */
-/* 傳奇與神話 (深色模式) 強制轉白 */
-body.theme-legend *, body.theme-mythic * { color: inherit; }
-body.theme-legend .bg-white *, body.theme-mythic .bg-white *,
-body.theme-legend #leaderboardContainer *, body.theme-mythic #leaderboardContainer *,
-body.theme-legend aside *, body.theme-mythic aside *,
-body.theme-legend .text-slate-800, body.theme-mythic .text-slate-800,
-body.theme-legend .text-gray-700, body.theme-mythic .text-gray-700,
-body.theme-legend .text-gray-600, body.theme-mythic .text-gray-600 {
-    color: #f8fafc !important; 
+/* 深色模式下的文字轉亮色 */
+body.theme-epic *, body.theme-legend *, body.theme-mythic *, body.theme-celestial * { color: inherit; }
+
+/* 確保深色卡片內的文字是清楚的白色/亮灰色 */
+body.theme-epic .bg-white *, body.theme-legend .bg-white *, body.theme-mythic .bg-white *, body.theme-celestial .bg-white *,
+body.theme-epic .text-slate-800, body.theme-legend .text-slate-800, body.theme-mythic .text-slate-800, body.theme-celestial .text-slate-800,
+body.theme-epic .text-gray-700, body.theme-legend .text-gray-700, body.theme-mythic .text-gray-700, body.theme-celestial .text-gray-700 {
+    color: #f1f5f9 !important; 
 }
+
 body.theme-legend aside a, body.theme-mythic aside a,
 body.theme-legend aside i, body.theme-mythic aside i { color: rgba(255, 255, 255, 0.9) !important; }
 
@@ -126,7 +142,6 @@ body.theme-bronze #playerName, body.theme-bronze .text-slate-800,
 body.theme-bronze span:not(.text-\\[11px\\]) {
     color: #7c2d12 !important;
 }
-
 /* ==========================================================================
    6. 🛡️ 絕對防護機制 (保護徽章、圖示、XP條不被透明化破壞)
    ========================================================================== */
