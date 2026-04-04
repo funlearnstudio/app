@@ -963,6 +963,9 @@
     --tw-scale-z: 110%;
     scale: var(--tw-scale-x) var(--tw-scale-y);
   }
+  .scale-\[1\.03\] {
+    scale: 1.03;
+  }
   .transform {
     transform: var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,);
   }
@@ -1299,6 +1302,12 @@
     --tw-border-style: dashed;
     border-style: dashed;
   }
+  .\!border-transparent {
+    border-color: transparent !important;
+  }
+  .\!border-yellow-500 {
+    border-color: var(--color-yellow-500) !important;
+  }
   .border-amber-100 {
     border-color: var(--color-amber-100);
   }
@@ -1469,6 +1478,15 @@
   }
   .border-l-orange-500 {
     border-left-color: var(--color-orange-500);
+  }
+  .\!bg-red-500 {
+    background-color: var(--color-red-500) !important;
+  }
+  .\!bg-slate-50 {
+    background-color: var(--color-slate-50) !important;
+  }
+  .\!bg-yellow-100 {
+    background-color: var(--color-yellow-100) !important;
   }
   .bg-\[\#f8fafc\] {
     background-color: #f8fafc;
@@ -2275,6 +2293,27 @@
   .whitespace-pre-wrap {
     white-space: pre-wrap;
   }
+  .\!text-amber-500 {
+    color: var(--color-amber-500) !important;
+  }
+  .\!text-red-500 {
+    color: var(--color-red-500) !important;
+  }
+  .\!text-slate-300 {
+    color: var(--color-slate-300) !important;
+  }
+  .\!text-slate-400 {
+    color: var(--color-slate-400) !important;
+  }
+  .\!text-slate-900 {
+    color: var(--color-slate-900) !important;
+  }
+  .\!text-white {
+    color: var(--color-white) !important;
+  }
+  .\!text-yellow-400 {
+    color: var(--color-yellow-400) !important;
+  }
   .text-amber-50 {
     color: var(--color-amber-50);
   }
@@ -2580,6 +2619,9 @@
   .opacity-75 {
     opacity: 75%;
   }
+  .opacity-80 {
+    opacity: 80%;
+  }
   .opacity-100 {
     opacity: 100%;
   }
@@ -2706,6 +2748,12 @@
   }
   .ring-white {
     --tw-ring-color: var(--color-white);
+  }
+  .ring-yellow-400\/50 {
+    --tw-ring-color: color-mix(in srgb, oklch(85.2% 0.199 91.936) 50%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      --tw-ring-color: color-mix(in oklab, var(--color-yellow-400) 50%, transparent);
+    }
   }
   .outline {
     outline-style: var(--tw-outline-style);
