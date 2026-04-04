@@ -123,7 +123,7 @@
 
         // 3. 如果沒人登入，或者是 Guest (如果你不想讓 Guest 用)，就踢走
         if (!currentUser) {
-            showToast("⚠️ 您尚未登入，請先進行登入！");
+            alert("⚠️ 您尚未登入，請先進行登入！");
             window.location.href = 'index.html'; // 假設你的登入頁是 index.html
         }
     });
@@ -622,7 +622,7 @@
 // ==========================================
 // 遊戲成就解鎖風 Toast (帶有時間能量條)
 // ==========================================
-window.showToast = function(message, duration = 2500) {
+window.alert = function(message, duration = 2500) {
     const existingToast = document.getElementById('game-toast');
     if (existingToast) existingToast.remove();
 
@@ -802,13 +802,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.onload = function() {
         if (typeof Auth === 'undefined') {
-            showToast("系統錯誤：無法載入驗證模組");
+            alert("系統錯誤：無法載入驗證模組");
             return;
         }
 
         const user = Auth.getCurrentUser();
         if (!user) {
-            showToast("請先登入！");
+            alert("請先登入！");
             window.location.href = "index.html";
             return;
         }
@@ -919,7 +919,7 @@ function toggleSidebar() {
 }
     function openProfileModal() {
         const user = Auth.getCurrentUser();
-        if (!user) return showToast("請先登入！");
+        if (!user) return alert("請先登入！");
         const select = document.getElementById('editGradeSelect');
         if (user.grade) select.value = user.grade;
         document.getElementById('profileModal').classList.remove('hidden');
@@ -930,7 +930,7 @@ function toggleSidebar() {
     async function saveProfile() {
         const newGrade = document.getElementById('editGradeSelect').value;
         const user = Auth.getCurrentUser();
-        if (!user) return showToast("請先登入！");
+        if (!user) return alert("請先登入！");
 
         const saveBtn = document.querySelector('#profileModal button[onclick="saveProfile()"]');
         const originalBtnText = saveBtn.innerText;
@@ -949,11 +949,11 @@ function toggleSidebar() {
                 if (Auth.updateUser) Auth.updateUser('grade', newGrade);
                 const roleEl = document.getElementById('sideUserRole');
                 if (roleEl) roleEl.innerText = newGrade;
-                showToast(`✅ 修改成功！目前年級已更新為：${newGrade}`);
+                alert(`✅ 修改成功！目前年級已更新為：${newGrade}`);
                 closeProfileModal();
-            } else { showToast("❌ 修改失敗：" + (result.message || "未知錯誤")); }
+            } else { alert("❌ 修改失敗：" + (result.message || "未知錯誤")); }
         } catch (error) {
-            showToast("網路連線異常，請稍後再試。");
+            alert("網路連線異常，請稍後再試。");
         } finally {
             saveBtn.disabled = false; saveBtn.innerText = originalBtnText;
         }
@@ -1073,7 +1073,7 @@ function generateGameQuestions(subj, count) {
     // ==========================================
     function initFlashcard() {
         gameQuestions = generateGameQuestions(currentSubject, 10);
-        if(!gameQuestions.length) { showToast("⚠️ 無題目，請檢查題庫設定"); backToMenu(); return; }
+        if(!gameQuestions.length) { alert("⚠️ 無題目，請檢查題庫設定"); backToMenu(); return; }
         currentQIdx = 0; renderFlashcard();
     }
    function renderFlashcard() {
@@ -1106,7 +1106,7 @@ function generateGameQuestions(subj, count) {
     function startSpeedGame(selectedTime) {
         SoundEffect.play('click');
         gameQuestions = generateGameQuestions(currentSubject, 50);
-        if(!gameQuestions.length) { showToast("無題目"); backToMenu(); return; }
+        if(!gameQuestions.length) { alert("無題目"); backToMenu(); return; }
         mrScore = 0; mrTimer = selectedTime; currentQIdx = 0;
         document.getElementById('mrTimeSelector').classList.add('hidden');
         document.getElementById('mrGameArea').classList.remove('hidden');
@@ -1146,7 +1146,7 @@ function generateGameQuestions(subj, count) {
     if (earnedC > 0 || earnedX > 0) {
         let current = window.loadCoins(); window.saveCoins(current + earnedC);
         if (typeof awardXPAndSync === 'function') awardXPAndSync(earnedX, '極速挑戰賽', mrScore);
-        showToast(`時間到！恭喜獲得 ${earnedC} 枚金幣 與 ${earnedX} 點 XP！`);
+        alert(`時間到！恭喜獲得 ${earnedC} 枚金幣 與 ${earnedX} 點 XP！`);
     }
 }
 
@@ -1229,7 +1229,7 @@ function generateGameQuestions(subj, count) {
     let rpgHp = 100, monsterHp = 100;
     function initRPG() {
         gameQuestions = generateGameQuestions(currentSubject, 20);
-        if(!gameQuestions.length) { showToast("無題目"); backToMenu(); return; }
+        if(!gameQuestions.length) { alert("無題目"); backToMenu(); return; }
         rpgHp = 100; monsterHp = 100; currentQIdx = 0;
         document.getElementById('heroHp').textContent = rpgHp;
         updateMonsterHp(100); renderRPGQuestion();
@@ -1241,7 +1241,7 @@ function generateGameQuestions(subj, count) {
             SoundEffect.play('win');
             let current = window.loadCoins(); window.saveCoins(current + 50);
             awardXPAndSync(100, '勇者鬥惡龍', 100);
-            showToast("🎉 恭喜！你擊敗了惡龍！獲得 50 金幣與 100 點 XP！"); 
+            alert("🎉 恭喜！你擊敗了惡龍！獲得 50 金幣與 100 點 XP！"); 
             backToMenu(); 
         }
     }
@@ -1265,7 +1265,7 @@ function generateGameQuestions(subj, count) {
                     SoundEffect.play('wrong');
                     rpgHp -= 20; document.getElementById('heroHp').textContent = rpgHp;
                     btn.classList.add('bg-red-100');
-                    if(rpgHp <= 0) { showToast("💀 勇者倒下了..."); backToMenu(); }
+                    if(rpgHp <= 0) { alert("💀 勇者倒下了..."); backToMenu(); }
                 }
             };
             con.appendChild(btn);
@@ -1279,7 +1279,7 @@ function generateGameQuestions(subj, count) {
     let bombStreak = 0, bombTarget = 5, bombTimerValue = 10;
     function initDefuseBomb() {
         gameQuestions = generateGameQuestions(currentSubject, 20);
-        if(!gameQuestions.length) { showToast("無題目"); backToMenu(); return; }
+        if(!gameQuestions.length) { alert("無題目"); backToMenu(); return; }
         bombStreak = 0; bombTimerValue = 10; currentQIdx = 0;
         document.getElementById('bombExplosion').classList.add('hidden');
         document.getElementById('bombSuccess').classList.add('hidden');
@@ -1339,7 +1339,7 @@ function generateGameQuestions(subj, count) {
     let wheelScore = 0, currentMultiplier = 1;
     function initLuckyWheel() {
         gameQuestions = generateGameQuestions(currentSubject, 15);
-        if(!gameQuestions.length) { showToast("無題目"); backToMenu(); return; }
+        if(!gameQuestions.length) { alert("無題目"); backToMenu(); return; }
         wheelScore = 0; currentQIdx = 0; document.getElementById('wheelScore').textContent = 0;
         resetWheelState();
     }
@@ -1373,9 +1373,9 @@ function generateGameQuestions(subj, count) {
                     document.getElementById('wheelScore').textContent = wheelScore;
                     const xpEarned = Math.floor(points / 20); 
                     awardXPAndSync(xpEarned, '幸運轉盤', points); 
-                    showToast(`🎉 答對！獲得 ${points} 分 與 ${xpEarned} 點 XP！`);
+                    alert(`🎉 答對！獲得 ${points} 分 與 ${xpEarned} 點 XP！`);
                     if(wheelScore % 1000 === 0) { let current = window.loadCoins(); window.saveCoins(current + 1); }
-                } else { SoundEffect.play('wrong'); showToast("💥 答錯了..."); }
+                } else { SoundEffect.play('wrong'); alert("💥 答錯了..."); }
                 currentQIdx++; resetWheelState();
             };
             con.appendChild(btn);
@@ -1560,12 +1560,12 @@ function generateGameQuestions(subj, count) {
                     document.getElementById('twLevel').textContent = twLevel;
                     document.getElementById('twChar').style.bottom = `${(twLevel-1)*2.5 + 0.25}rem`;
                     if(twLevel > 5) {
-                        SoundEffect.play('win'); showToast('🎉 登頂成功！獲得寶箱獎勵！');
+                        SoundEffect.play('win'); alert('🎉 登頂成功！獲得寶箱獎勵！');
                         let current = window.loadCoins(); window.saveCoins(current + 15);
                         awardXPAndSync(80, '知識塔', 200); backToMenu();
                     } else { currentQIdx++; renderTWQuestion(); }
                 } else {
-                    SoundEffect.play('wrong'); showToast('💥 跌落塔底！'); initTower();
+                    SoundEffect.play('wrong'); alert('💥 跌落塔底！'); initTower();
                 }
             };
             con.appendChild(btn);
@@ -1621,7 +1621,7 @@ function generateGameQuestions(subj, count) {
                         trActiveBtn.innerHTML = '<i class="fas fa-bone text-slate-300"></i>';
                         trActiveBtn.classList.replace('bg-amber-700', 'bg-slate-500');
                     }
-                } else { SoundEffect.play('wrong'); showToast('答錯了，體力耗盡無法開挖！'); }
+                } else { SoundEffect.play('wrong'); alert('答錯了，體力耗盡無法開挖！'); }
                 currentQIdx++;
             };
             con.appendChild(btn);
@@ -1655,7 +1655,7 @@ function generateGameQuestions(subj, count) {
                     let r1 = emojis[Math.floor(Math.random()*5)], r2 = emojis[Math.floor(Math.random()*5)], r3 = emojis[Math.floor(Math.random()*5)];
                     document.getElementById('sl1').innerText = r1; document.getElementById('sl2').innerText = r2; document.getElementById('sl3').innerText = r3;
                     if(r1 === r2 && r2 === r3) {
-                        SoundEffect.play('win'); showToast('🎰 JACKPOT! 獲得 50 枚金幣！');
+                        SoundEffect.play('win'); alert('🎰 JACKPOT! 獲得 50 枚金幣！');
                         let current = window.loadCoins(); window.saveCoins(current + 50);
                         awardXPAndSync(200, '幸運拉霸', 500);
                     } else { SoundEffect.play('correct'); }
