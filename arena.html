@@ -8,8 +8,245 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="1-1ce8683e.ico"> 
-    <link rel="stylesheet" href="assets/css/style.css">
     <script src="assets/js/auth.js"></script>
+    <style>
+    /* =========================================
+   1. 全域與基礎設定
+   ========================================= */
+body { 
+    font-family: 'Noto Sans TC', sans-serif; 
+    background-color: #f0f4f8; 
+    transition: background 1.2s ease, color 0.5s ease; 
+    min-height: 100vh; 
+    position: relative; 
+}
+.sidebar-transition { transition: transform 0.3s ease-in-out; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+@media (max-width: 300px) { .watch-hidden { display: none !important; } }
+
+/* =========================================
+   2. 各等級專屬背景主題
+   ========================================= */
+/* 1. 初心學徒 (基礎白灰) */
+body.theme-novice { background-color: #f8fafc !important; }
+
+/* 2. 潛力新秀 (青綠色) */
+body.theme-rookie { background-color: #dcfce7 !important; } 
+
+/* 3. 勤奮書生 (粉橘色) */
+body.theme-bronze { background-color: #ffedd5 !important; }
+
+/* 4. 白銀騎士 (銀灰色漸層) */
+body.theme-silver { background: linear-gradient(135deg, #f8fafc 0%, #cbd5e1 25%, #94a3b8 50%, #cbd5e1 75%, #f1f5f9 100%) !important; }
+
+/* 5. 黃金菁英 (尊貴閃耀金) */
+body.theme-gold { background: linear-gradient(135deg, #fef08a 0%, #eab308 100%) !important; }
+
+/* 6. 頂尖學者 (清爽藍) */
+body.theme-diamond { background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%) !important; }
+
+/* 7. 聖域大師 (競技紅) */
+body.theme-master { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%) !important; }
+
+/* 8. 榮耀宗師 (深紫紅色) */
+body.theme-grandmaster { background: linear-gradient(135deg, #701a75 0%, #be185d 100%) !important; color: white; }
+
+/* 9. 史詩英雄 (極光夜空) */
+body.theme-epic { background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%) !important; color: white; }
+
+/* 10. 傳奇領主 (暗金主題) */
+body.theme-legend { background: linear-gradient(135deg, #451a03 0%, #78350f 100%) !important; color: #fef3c7; }
+
+/* 11. 萬古神話 (深空流星背景) */
+body.theme-mythic { background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%) !important; color: #e0e7ff; }
+
+/* 12. 創世星神 (終極黑洞特效) */
+body.theme-celestial { background: radial-gradient(circle at center, #000000 0%, #170529 50%, #000000 100%) !important; color: #fde047; }
+
+
+/* =========================================
+   3. 毛玻璃與容器透明化 (支援所有主題)
+   ========================================= */
+/* 強制將白色區塊轉為磨砂玻璃質感 */
+body[class*="theme-"] .bg-white,
+body[class*="theme-"] .bg-slate-50,
+body[class*="theme-"] aside,
+body[class*="theme-"] #sidebar,
+body[class*="theme-"] .sidebar-content,
+body[class*="theme-"] nav,
+body[class*="theme-"] main,
+body[class*="theme-"] #leaderboardContainer,
+body[class*="theme-"] .ai-assistant-card {
+    background-color: rgba(255, 255, 255, 0.1) !important; 
+    backdrop-filter: blur(12px) !important; 
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05) !important;
+    transition: all 0.5s ease;
+}
+
+/* 修正手機版出現的白底或黑底 */
+body[class*="theme-"] section { background-color: transparent !important; }
+body[class*="theme-"] footer { background-color: rgba(255, 255, 255, 0.2) !important; }
+body[class*="theme-"] .sidebar-transition { background-color: rgba(15, 23, 42, 0.8) !important; }
+
+/* 卡片陰影強化 */
+body[class*="theme-"] .shadow-xl, 
+body[class*="theme-"] .shadow-lg {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+}
+
+
+/* =========================================
+   4. 深色模式專屬修正 (傳奇、神話等)
+   ========================================= */
+/* 讓字體變白，🚨 但絕對排除排行榜 (#leaderboardList)，以免破壞排名顏色 */
+body.theme-legend *:not(#leaderboardList *), 
+body.theme-mythic *:not(#leaderboardList *) {
+    color: #f8fafc !important; 
+}
+
+/* 讓列表底色半透明，🚨 同樣排除排行榜的列 */
+body.theme-legend li:not(#leaderboardList li), 
+body.theme-mythic li:not(#leaderboardList li) {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* AI 助教解答區深色化 */
+body.theme-legend .bg-gray-100, body.theme-mythic .bg-gray-100,
+body.theme-legend .bg-slate-100, body.theme-mythic .bg-slate-100 {
+    background-color: rgba(0, 0, 0, 0.3) !important; 
+    color: #cbd5e1 !important;
+}
+
+/* 側邊欄懸停效果 */
+body.theme-legend aside a:hover, 
+body.theme-mythic aside a:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+
+/* =========================================
+   5. 橘色主題 (theme-bronze) 專屬修正
+   ========================================= */
+/* 針對橘色主題文字強化可讀性 (深橘褐色) */
+body.theme-bronze h2, 
+body.theme-bronze h3, 
+body.theme-bronze p, 
+body.theme-bronze span:not(.text-\\[11px\\]),
+body.theme-bronze #playerName,
+body.theme-bronze .text-slate-800,
+body.theme-bronze div {
+    color: #7c2d12 !important; 
+}
+
+/* 強化按鈕與漸層 */
+body.theme-bronze .bg-orange-500 { background-color: #ea580c !important; }
+body.theme-bronze .profile-header-bg,
+body.theme-bronze .bg-gradient-to-r.from-blue-600 {
+    background: linear-gradient(to right, #f97316, #fb923c) !important; 
+}
+body.theme-bronze .relative.w-24.h-24 {
+    background-color: #fff7ed !important;
+    color: #f97316 !important;
+}
+
+
+/* =========================================
+   6. 🛡️ 防護機制 (防止被透明化/變色誤殺)
+   ========================================= */
+/* 救回側邊欄彩色圖示 */
+body[class*="theme-"] aside i.fas,
+body[class*="theme-"] aside i.fab,
+body[class*="theme-"] aside svg {
+    color: inherit !important; 
+}
+
+/* 救回排行榜上的「等級徽章 (Badge)」 */
+body[class*="theme-"] .text-\\[11px\\] {
+    background-color: inherit !important; 
+    color: inherit !important;
+    backdrop-filter: none !important;
+    border: none !important;
+}
+
+/* 救回前三名獎牌圖示顏色 */
+body[class*="theme-"] .fa-crown,
+body[class*="theme-"] .fa-medal,
+body[class*="theme-"] .fa-award {
+    color: inherit !important;
+}
+
+
+/* =========================================
+   7. 頭像與徽章樣式
+   ========================================= */
+.profile-avatar, .user-avatar, .user-avatar-container {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    padding: 2px;
+    display: inline-block;
+    overflow: hidden;
+}
+
+.rank-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-left: 8px;
+}
+.rank-mythic { 
+    background: linear-gradient(45deg, #6366f1, #a855f7, #ec4899); 
+    color: white; 
+    animation: pulse-gold 2s infinite;
+    box-shadow: 0 0 10px rgba(236, 72, 153, 0.5);
+}
+.rank-legend { 
+    background: linear-gradient(45deg, #f59e0b, #ef4444); 
+    color: white; 
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+.rank-master { background: #fee2e2; color: #b91c1c; border: 1px solid #f87171; }
+.rank-diamond { background: #e0f2fe; color: #0369a1; }
+
+
+/* =========================================
+   8. 動畫與特效 (流星、發光)
+   ========================================= */
+@keyframes pulse-gold {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+#star-container { 
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    pointer-events: none; z-index: 0; display: none; 
+}
+/* 只有在特定主題才顯示流星 */
+body.theme-mythic #star-container, 
+body.theme-celestial #star-container { 
+    display: block; 
+}
+
+.shooting-star { 
+    position: absolute; width: 4px; height: 4px; background: #fff; 
+    border-radius: 50%; animation: animateStar 3s linear infinite; opacity: 0; 
+}
+.shooting-star::before { 
+    content: ''; position: absolute; top: 50%; width: 300px; height: 1px; 
+    background: linear-gradient(90deg, #fff, transparent); transform: translateY(-50%); 
+}
+
+@keyframes animateStar {
+    0% { transform: rotate(315deg) translateX(0); opacity: 1; }
+    100% { transform: rotate(315deg) translateX(-1000px); opacity: 0; }
+}
+         </style>
     </head>
 <body class="h-[100dvh] flex flex-col lg:flex-row overflow-hidden">
 <div id="star-container"></div>
@@ -160,7 +397,13 @@
                         </div>
                     </div>
                 </div>
-
+             <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden h-fit">
+                    <h3 class="text-lg font-extrabold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-rocket text-indigo-500"></i> 等級特權與解鎖
+                    </h3>
+                    <ul id="unlockedFeaturesList" class="space-y-3">
+                        </ul>
+                </div>
                 
             </div>
             
@@ -663,9 +906,26 @@ async function initProfile() {
     }
 }
 
+// =========================================
+// 隱私保護：名字遮蔽函數
+// =========================================
+function maskName(name) {
+    if (!name) return "匿名";
+    if (name.length === 1) return name + "○";
+    if (name.length === 2) return name.substring(0, 1) + "○";
+    // 3個字以上，保留頭尾，中間用「○」取代
+    return name.substring(0, 1) + "○".repeat(name.length - 2) + name.substring(name.length - 1);
+}
+
+// =========================================
+// 排行榜讀取與渲染函數 (防覆蓋強化版)
+// =========================================
 async function loadLeaderboard() {
     const listContainer = document.getElementById('leaderboardList');
     const loadingMsg = document.getElementById('loadingMsg');
+
+    const currentUser = Auth.getCurrentUser();
+    const myUsername = (currentUser && currentUser.username !== 'guest') ? currentUser.username : null;
 
     try {
         const response = await fetch(`${GAS_URL}?action=get_leaderboard`);
@@ -675,46 +935,87 @@ async function loadLeaderboard() {
         listContainer.innerHTML = ""; 
 
         if (!topPlayers || topPlayers.length === 0 || topPlayers.error) {
-            listContainer.innerHTML = "<li class='text-center py-10 text-slate-400 font-medium bg-slate-50 rounded-2xl'>目前尚無排名紀錄</li>";
+            listContainer.innerHTML = "<li class='text-center py-10 !text-slate-400 font-medium !bg-slate-50 rounded-2xl'>目前尚無排名紀錄</li>";
             return;
         }
 
-        topPlayers.forEach((player, index) => {
-            const li = document.createElement('li');
+        const myIndex = myUsername ? topPlayers.findIndex(p => p.username === myUsername) : -1;
+        let indicesToRender = new Set();
+        for (let i = 0; i < Math.min(20, topPlayers.length); i++) indicesToRender.add(i);
+
+        if (myIndex > 19) {
+            for (let i = myIndex - 2; i <= myIndex + 2; i++) {
+                if (i >= 0 && i < topPlayers.length) indicesToRender.add(i);
+            }
+        }
+
+        const sortedIndices = Array.from(indicesToRender).sort((a, b) => a - b);
+        let lastIndex = -1;
+
+        sortedIndices.forEach(index => {
+            const player = topPlayers[index];
+            const isMe = (myUsername && player.username === myUsername);
             const rank = getRankInfo(player.xp); 
 
-            li.className = `flex items-center justify-between p-4 ${rank.bg} ${rank.text} hover:scale-[1.02] border border-transparent rounded-2xl transition-all duration-300 mb-3 shadow-sm`;
+            if (lastIndex !== -1 && index > lastIndex + 1) {
+                const divider = document.createElement('li');
+                // 加上 ! 防止顏色被蓋掉
+                divider.className = "text-center py-2 !text-slate-400 opacity-50";
+                divider.innerHTML = `<i class="fas fa-ellipsis-v"></i>`;
+                listContainer.appendChild(divider);
+            }
             
-            let rankDisplay = `<span class="font-bold text-xl">${index + 1}</span>`;
-            if (index === 0) rankDisplay = '<i class="fas fa-crown text-3xl text-yellow-400"></i>';
-            else if (index === 1) rankDisplay = '<i class="fas fa-medal text-3xl text-slate-300"></i>';
-            else if (index === 2) rankDisplay = '<i class="fas fa-award text-3xl text-amber-500"></i>';
+            // 🛡️ 核心修正：使用 !important 強制防護邊框與背景
+            let liBaseClass = `flex items-center justify-between p-4 rounded-2xl transition-all duration-300 mb-3 shadow-md border-2`;
+            
+            let rowBgClass = isMe ? "!bg-yellow-100" : rank.bg;
+            let highlightStyle = isMe 
+                ? `!border-yellow-500 ring-4 ring-yellow-400/50 scale-[1.03] z-10 relative` 
+                : `!border-transparent`;
 
+            // 🛡️ 文字對比修正：全部加上 ! 防止被全域白字蓋掉
+            let isLightBg = player.xp < 1000; 
+            let nameTextColor = isMe ? "!text-slate-900" : (isLightBg ? "!text-slate-900" : rank.text);
+            let xpTextColor = isMe ? "!text-slate-900" : (isLightBg ? "!text-slate-900" : "!text-white");
+
+            const rawName = player.name || player.username;
+            const displayedName = isMe ? rawName : (typeof maskName === 'function' ? maskName(rawName) : rawName);
+
+            // 移除文字陰影
+            let rankDisplay = `<span class="font-black text-xl ${nameTextColor}" style="text-shadow: none;">${index + 1}</span>`;
+            if (index === 0) rankDisplay = '<i class="fas fa-crown text-3xl !text-yellow-400 drop-shadow-sm"></i>';
+            else if (index === 1) rankDisplay = '<i class="fas fa-medal text-3xl !text-slate-300 drop-shadow-sm"></i>';
+            else if (index === 2) rankDisplay = '<i class="fas fa-award text-3xl !text-amber-500 drop-shadow-sm"></i>';
+
+            const li = document.createElement('li');
+            li.className = `${liBaseClass} ${rowBgClass} ${highlightStyle}`;
             li.innerHTML = `
                 <div class="flex items-center gap-4">
-                    <div class="w-12 text-center">${rankDisplay}</div>
+                    <div class="w-12 text-center drop-shadow-sm">${rankDisplay}</div>
                     <div>
-                        <div class="font-extrabold text-lg flex items-center gap-2">
-                            ${player.name || player.username}
+                        <div class="font-extrabold text-lg flex items-center gap-2 ${nameTextColor}" style="text-shadow: none;">
+                            ${displayedName}
+                            ${isMe ? '<span class="animate-pulse !bg-red-500 !text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm ml-1" style="text-shadow: none;">YOU</span>' : ''}
                         </div>
-                        <div class="text-[11px] font-black px-3 py-0.5 rounded-full inline-block mt-1 ${rank.badge}">
+                        <div class="text-[10px] font-black px-2.5 py-0.5 rounded-full inline-block mt-1 ${rank.badge} shadow-sm" style="text-shadow: none;">
                             ${rank.title}
                         </div>
                     </div>
                 </div>
                 <div class="text-right">
-                    <div class="font-black text-2xl">
-                        ${player.xp.toLocaleString()} <span class="text-[10px] opacity-70">XP</span>
+                    <div class="font-black text-2xl ${xpTextColor} tracking-tight" style="text-shadow: none;">
+                        ${player.xp.toLocaleString()} <span class="text-[10px] opacity-80">XP</span>
                     </div>
                 </div>
             `;
             listContainer.appendChild(li);
+            lastIndex = index;
         });
     } catch (error) {
-        loadingMsg.innerHTML = "<span class='text-red-500 font-bold'>伺服器連線失敗</span>";
+        console.error(error);
+        loadingMsg.innerHTML = "<span class='!text-red-500'>排行榜讀取失敗</span>";
     }
 }
-
 document.addEventListener('DOMContentLoaded', () => {
     SoundEngine.init();
     updateTicketUI();
@@ -765,6 +1066,10 @@ function handleStart() {
         }, 500);
     }
 }
+    // =========================================
+// 隱私保護：名字遮蔽函數
+// =========================================
+
     </script>
 </body>
 </html>
