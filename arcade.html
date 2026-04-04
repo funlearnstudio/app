@@ -43,53 +43,7 @@
         /* 遊戲區塊切換動畫 */
         .game-section { display: none; }
         .game-section.active { display: block; animation: fadeIn 0.3s ease-out; }
-    /* ...你原本的 CSS ... */
-
-    /* 新增 Toast 的自訂動畫 */
-    @keyframes toastIn {
-        0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
-        50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
-        100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    }
-
-    @keyframes toastOut {
-        0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-        100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
-    }
-
-    .animate-toast-in {
-        animation: toastIn 0.5s ease-out forwards;
-    }
-
-    .animate-toast-out {
-        animation: toastOut 0.4s ease-in forwards;
-    }
-         /* 遊戲感專屬動畫 */
-@keyframes gamePopIn {
-    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
-    60% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); } /* 微彈跳 */
-    80% { opacity: 1; transform: translate(-50%, -50%) scale(0.97); }
-    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-}
-
-@keyframes gamePopOut {
-    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-}
-
-@keyframes runOut {
-    0% { width: 100%; }
-    100% { width: 0%; }
-}
-
-.animate-game-in {
-    animation: gamePopIn 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-}
-
-.animate-game-out {
-    animation: gamePopOut 0.4s ease-in forwards;
-}
-</style>
+    </style>
     <script src="mockdata/users.js"></script>
     <script src="assets/js/auth.js"></script>
     <script src="assets/js/generator_engine.js"></script>
@@ -619,62 +573,6 @@
 </div>
     </main>
 <script>
-// ==========================================
-// 遊戲成就解鎖風 Toast (帶有時間能量條)
-// ==========================================
-window.alert = function(message, duration = 2500) {
-    const existingToast = document.getElementById('game-toast');
-    if (existingToast) existingToast.remove();
-
-    const toast = document.createElement('div');
-    toast.id = 'game-toast';
-    
-    // --- Tailwind 科技遊戲風樣式 ---
-    toast.className = [
-        "fixed top-1/2 left-1/2 z-[9999]",
-        "bg-slate-900/90 backdrop-blur-md", // 深色科技感半透明
-        "text-white", 
-        "rounded-2xl overflow-hidden",      // 隱藏突出的能量條
-        "shadow-[0_0_40px_rgba(99,102,241,0.4)]", // 靛青色發光陰影 (光暈效果)
-        "border border-indigo-500/50",      // 科技感邊框
-        "min-w-[320px] max-w-[90%]",
-        "opacity-0"
-    ].join(" ");
-    
-    // 判斷訊息內容給予不同的 Icon (簡單的正則判斷)
-    let icon = "🎮";
-    if(message.includes("金幣") || message.includes("JACKPOT")) icon = "💰";
-    else if(message.includes("時間到") || message.includes("結束")) icon = "⏰";
-    else if(message.includes("不足") || message.includes("錯誤")) icon = "❌";
-    else if(message.includes("對")) icon = "✨";
-
-    // 內部 HTML 結構：左邊 Icon，右邊文字，底下是能量條
-    toast.innerHTML = `
-        <div class="flex items-center px-6 py-5">
-            <div class="flex-shrink-0 text-4xl mr-4 drop-shadow-md">${icon}</div>
-            <div class="flex-1 font-bold text-xl tracking-wide leading-relaxed">
-                ${message}
-            </div>
-        </div>
-        <div class="h-1.5 w-full bg-slate-700/50">
-            <div class="h-full bg-gradient-to-r from-indigo-400 to-cyan-300" 
-                 style="animation: runOut ${duration}ms linear forwards;">
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(toast);
-
-    // 執行進場動畫
-    toast.classList.add('animate-game-in');
-
-    // 設定自動退場
-    setTimeout(() => {
-        toast.classList.remove('animate-game-in');
-        toast.classList.add('animate-game-out');
-        setTimeout(() => toast.remove(), 400); 
-    }, duration);
-};
     // ==========================================
     // 🎵 音效引擎 Web Audio API (無須外部檔案)
     // ==========================================
