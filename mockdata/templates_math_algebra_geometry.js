@@ -1,6 +1,5 @@
 (function(global){
     'use strict';
-
     // 1. 初始化倉庫
     window.__MATH_REPO__ = window.__MATH_REPO__ || {};
     console.log("🚀 [Math Engine] 動態生成 + 靜態 QAOT 整合版啟動...");
