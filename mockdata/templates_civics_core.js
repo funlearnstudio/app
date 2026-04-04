@@ -718,45 +718,50 @@
   { q: "300. 地區特色與產業中，科技園區通常帶來什麼？", a: "高科技產業聚集與就業機會", o: ["高科技產業聚集與就業機會","農業回流","沙漠化"], t: ["小五","經濟","產業發展"] }
 ];
 
-
-        
-
-    // 生成題目直到達到目標數量
+// ==========================================
+    // ⚙️ 修正版：嚴格鎖定年級，禁止亂跳
+    // ==========================================
     const TARGET = 300;
     let existingCount = Object.keys(window.__CIVICS_REPO__).length;
     let genIndex = 0;
 
     while (existingCount < TARGET) {
         const tpl = Utils.pick(templates);
-        // 產生少量變化（替換措辭或年級標籤）
-        const gradeVariants = ['小四','小五','小六',"國七","國八","國九","高一","高二","高三"];
-        const level = Utils.pick(tpl.t);
-        const altGrade = Utils.pick(gradeVariants);
+        // 🌟 移除隨機年級抽籤，改用時間戳記生成唯一 ID
         const id = `civ_auto_${Date.now().toString(36)}_${genIndex++}`;
 
-        // 製作選項（確保不重複）
+        // 製作選項
         const correct = tpl.a;
-        const distractors = tpl.o.slice(0,3);
+        const distractors = tpl.o.slice(0, 3);
         const opts = Utils.shuffle([correct, ...distractors]);
 
-        const finalTags = ["civics","公民", ...tpl.t];
-        // 若模板年級與隨機年級不同，加入該年級標籤以增加多樣性
-        if (!finalTags.includes(altGrade)) finalTags.push(altGrade);
+        // 🌟 關鍵修正：標籤只拿模板原本定義的，不再隨機塞入其他年級
+        const finalTags = ["civics", "公民", ...tpl.t];
 
         window.__CIVICS_REPO__[id] = {
+            id: id, // 加上 id 屬性
             func: (() => {
                 const questionText = `【公民】${tpl.q}`;
                 const options = opts;
                 const answerIndex = options.indexOf(correct);
-                const explanation = [`正確答案：${correct}`, `概念：${tpl.t.join(' / ')}`];
-                return () => ({ question: questionText, options, answer: answerIndex, explanation, subject: "civics", tags: finalTags });
+                // 這裡的解釋也使用原始標籤
+                const explanation = [`正確答案：${correct}`, `範圍：${tpl.t.join(' / ')}`];
+                
+                return () => ({ 
+                    question: questionText, 
+                    options: options, 
+                    answer: answerIndex, 
+                    explanation: explanation, 
+                    subject: "civics", 
+                    tags: finalTags 
+                });
             })(),
             tags: finalTags,
             subject: "civics"
         };
 
+        // 更新計數器
         existingCount = Object.keys(window.__CIVICS_REPO__).length;
     }
 
-    console.log(`✅ 公民題庫已擴充至 ${Object.keys(window.__CIVICS_REPO__).length} 題（目標 ${TARGET} 題）。`);
-})(window);
+    console.log(`✅ 公民題庫已修正！目前共 ${existingCount} 題，已嚴格依照原始標籤分類。`);
