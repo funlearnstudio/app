@@ -43,7 +43,28 @@
         /* 遊戲區塊切換動畫 */
         .game-section { display: none; }
         .game-section.active { display: block; animation: fadeIn 0.3s ease-out; }
-    </style>
+    /* ...你原本的 CSS ... */
+
+    /* 新增 Toast 的自訂動畫 */
+    @keyframes toastIn {
+        0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+        50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+        100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+
+    @keyframes toastOut {
+        0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+    }
+
+    .animate-toast-in {
+        animation: toastIn 0.5s ease-out forwards;
+    }
+
+    .animate-toast-out {
+        animation: toastOut 0.4s ease-in forwards;
+    }
+</style>
     <script src="mockdata/users.js"></script>
     <script src="assets/js/auth.js"></script>
     <script src="assets/js/generator_engine.js"></script>
@@ -573,35 +594,56 @@
 </div>
     </main>
 <script>
-    // ==========================================
-// 全局通用浮動提示框 (Toast) - 取代所有 showToast
+// ==========================================
+// 超吸睛！現代感玻璃擬態居中 Toast (取代 alert)
 // ==========================================
 window.showToast = function(message, duration = 2500) {
-    // 1. 如果畫面上已經有提示框，先移除掉，避免疊在一起
+    // 1. 避免重複彈出
     const existingToast = document.getElementById('game-toast');
     if (existingToast) existingToast.remove();
 
-    // 2. 建立新的提示框
+    // 2. 建立提示框容器
     const toast = document.createElement('div');
     toast.id = 'game-toast';
     
-    // 使用 Tailwind CSS 打造漂亮且通用的樣式 (白底、圓角、陰影、左側有科技感藍色邊框)
-    toast.className = "fixed top-20 left-1/2 transform -translate-x-1/2 bg-white text-slate-800 px-6 py-4 rounded-xl shadow-2xl font-bold text-lg z-[9999] transition-all duration-500 ease-out opacity-0 -translate-y-5 border-l-8 border-indigo-500 min-w-[280px] text-center";
+    // --- Tailwind CSS 樣式定義 (核心改動) ---
+    toast.className = [
+        // 定位：固定在螢幕正中間 (水平垂直皆居中)
+        "fixed top-1/2 left-1/2 z-[9999]",
+        
+        // 現代感外觀：玻璃擬態
+        "bg-white/80 backdrop-blur-lg",            // 半透明白底 + 磨砂玻璃 blur
+        "text-slate-900",                        // 深色文字
+        "px-10 py-6",                             // 加大的內邊距
+        "rounded-3xl",                           // 超大圓角，更有親和力
+        "shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]", // 更深邃的立體陰影
+        "border border-white/20",                // 細緻的半透明邊框
+        
+        // 排版：Flexbox 讓內容也居中
+        "flex items-center justify-center",
+        "min-w-[320px] max-w-[90%]",              // 設定最小與最大寬度
+        "text-center",
+        
+        // 字體與動畫初始狀態
+        "font-extrabold text-2xl tracking-tight", // 放大字體，更有張力
+        "opacity-0"                               // 預設隱藏 (由動畫控制顯示)
+    ].join(" ");
     
-    toast.innerHTML = message;
+    // 可以嘗試在 message 前面加上一個預設的星星圖示 ✨
+    toast.innerHTML = `<span class="mr-3 text-3xl">✨</span>${message}`;
     document.body.appendChild(toast);
 
-    // 3. 進場動畫
-    requestAnimationFrame(() => {
-        toast.classList.remove('opacity-0', '-translate-y-5');
-        toast.classList.add('opacity-100', 'translate-y-0');
-    });
+    // 3. 執行進場動畫 (套用步驟一定義的 CSS class)
+    toast.classList.add('animate-toast-in');
 
-    // 4. 退場動畫
+    // 4. 設定自動退場
     setTimeout(() => {
-        toast.classList.remove('opacity-100', 'translate-y-0');
-        toast.classList.add('opacity-0', '-translate-y-5');
-        setTimeout(() => toast.remove(), 500); 
+        // 執行退場動畫
+        toast.classList.remove('animate-toast-in');
+        toast.classList.add('animate-toast-out');
+        
+        // 動態結束後移除 DOM
+        setTimeout(() => toast.remove(), 400); 
     }, duration);
 };
     // ==========================================
