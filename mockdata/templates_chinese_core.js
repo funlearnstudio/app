@@ -5,7 +5,6 @@
     //  V8.0 QAOT 格式避難所版 (Safe Harbor Repository)
     //  已全面轉換為 { q, a, o, t } 結構，移除耗效能的動態選項計算
     // ------------------------------------------------------------------
-    
     console.log("🚀 [Chinese V8.0] QAOT 格式啟動中...");
 
     const chiData = [
