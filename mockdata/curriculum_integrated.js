@@ -2072,9 +2072,7 @@ civics: [
       }
     ]
   }
-    ]
-  }
-]
+ ]
  };
 
     // Mount to global scope
