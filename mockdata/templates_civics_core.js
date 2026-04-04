@@ -765,3 +765,4 @@
     }
 
     console.log(`✅ 公民題庫已修正！目前共 ${existingCount} 題，已嚴格依照原始標籤分類。`);
+})(window);
