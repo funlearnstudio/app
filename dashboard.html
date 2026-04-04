@@ -533,9 +533,21 @@ function renderCourses() {
     }
 
     // 4. 生成卡片
-    subjects.forEach((sub, idx) => {
-        const linkHref = `course_hub.html?subject=${sub.id}&grade=${encodeURIComponent(targetGrade)}&title=${encodeURIComponent(sub.name)}`;
-        
+   subjects.forEach((sub, idx) => {
+    // --- 🌟 關鍵邏輯：國小社會自動轉接公民題庫 ---
+    let finalSubjectId = sub.id;
+    
+    // 檢查是否為國小年級 (小四、小五、小六)
+    const isElementary = targetGrade.includes('小'); 
+    
+    // 如果是國小且科目是社會，將引擎 ID 換成 civics
+    if (isElementary && sub.id === 'social') {
+        finalSubjectId = 'civics';
+    }
+
+    // 生成連結：subject 使用轉換後的 ID，但 title 依然保留原本的「社會」
+    const linkHref = `course_hub.html?subject=${finalSubjectId}&grade=${encodeURIComponent(targetGrade)}&title=${encodeURIComponent(sub.name)}`;
+    // ------------------------------------------
         const html = `
             <a href="${linkHref}" class="course-card bg-white rounded-xl p-6 flex flex-col items-center text-center hover:bg-${sub.color}-50 group fade-in" style="animation-delay: ${idx * 0.05}s">
                 <div class="w-16 h-16 rounded-2xl bg-${sub.color}-100 text-${sub.color}-600 flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition">
