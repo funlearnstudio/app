@@ -3035,36 +3035,43 @@ const fixedMathQuestions = [
   {"q":"二項分佈：從 5 次獨立試驗中成功次數恰為 2 的機率（p=0.5）為何？","a":"C(5,2)(0.5)^5=10/32=5/16","o":["1/4","1/8","5/32"],"t":["高三","隨機變數"]}
 
 
-];
-// ==========================================
-    // ⚙️ PART 3: 統一註冊邏輯
+];// ==========================================
+    // ⚙️ PART 3: 統一註冊邏輯 (修改版：每種題型 2 題)
     // ==========================================
 
     const registerAll = () => {
-        // --- 註冊動態題目 (每個 Generator 產生 5 個實例) ---
+        // --- 註冊動態題目 (每個 Generator 產生 2 個實例) ---
         generators.forEach(gen => {
-            for(let i = 0; i < 5; i++) {
+            // 🌟 核心修改：從 i < 5 改為 i < 2
+            for(let i = 0; i < 2; i++) {
                 const uId = `${gen.id}_dyn_${i}`;
                 const entry = {
                     id: uId,
                     func: () => {
                         const d = gen.generate();
-                        // 確保 answer 索引正確
-                        const finalAnswer = (typeof d.answer === 'number') ? d.answer : d.options.indexOf(d.correctValue);
+                        
+                        // 確保 options 存在且打亂 (若 generator 內沒打亂的話)
+                        let shuffledOpts = d.o || d.options;
+                        let correctVal = d.a || d.correctValue;
+                        
+                        // 這裡再次確保每次產生的 2 題選項順序是隨機的
+                        shuffledOpts = Utils.shuffle(shuffledOpts);
+                        
                         return {
-                            ...d,
-                            answer: finalAnswer,
+                            question: d.q || d.question,
+                            options: shuffledOpts,
+                            answer: shuffledOpts.indexOf(correctVal), 
                             subject: "math",
-                            tags: gen.tags
+                            tags: gen.t || gen.tags || []
                         };
                     },
-                    tags: gen.tags,
+                    tags: gen.t || gen.tags || [],
                     subject: "math",
                     type: "basic"
                 };
                 window.__MATH_REPO__[uId] = entry;
                 if (window.RigorousGenerator?.registerTemplate) {
-                    window.RigorousGenerator.registerTemplate(uId, entry.func, gen.tags);
+                    window.RigorousGenerator.registerTemplate(uId, entry.func, entry.tags);
                 }
             }
         });
@@ -3077,11 +3084,12 @@ const fixedMathQuestions = [
             const entry = {
                 id: uId,
                 func: () => {
+                    // 🌟 確保靜態題目的選項也會被打亂
                     const shuffled = Utils.shuffle([item.a, ...item.o]);
                     return {
                         question: `【${item.t[2] || '練習'}】${item.q}`,
                         options: shuffled,
-                        answer: shuffled.indexOf(item.a), // 動態抓取正確答案位置，解決「亂出」問題
+                        answer: shuffled.indexOf(item.a), // 動態抓取正確答案位置
                         explanation: [`✅ 正確答案：${item.a}`],
                         subject: "math",
                         tags: finalTags
@@ -3097,7 +3105,7 @@ const fixedMathQuestions = [
             }
         });
 
-        console.log(`✅ [Math] 註冊完成：動態類別 ${generators.length} 個，靜態題目 ${fixedMathQuestions.length} 題。`);
+        console.log(`✅ [Math] 註冊完成：每種題型已產出 2 題。`);
     };
 
     // 確保在適當時機執行
