@@ -64,6 +64,31 @@
     .animate-toast-out {
         animation: toastOut 0.4s ease-in forwards;
     }
+         /* 遊戲感專屬動畫 */
+@keyframes gamePopIn {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+    60% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); } /* 微彈跳 */
+    80% { opacity: 1; transform: translate(-50%, -50%) scale(0.97); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes gamePopOut {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+}
+
+@keyframes runOut {
+    0% { width: 100%; }
+    100% { width: 0%; }
+}
+
+.animate-game-in {
+    animation: gamePopIn 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.animate-game-out {
+    animation: gamePopOut 0.4s ease-in forwards;
+}
 </style>
     <script src="mockdata/users.js"></script>
     <script src="assets/js/auth.js"></script>
@@ -595,54 +620,58 @@
     </main>
 <script>
 // ==========================================
-// 超吸睛！現代感玻璃擬態居中 Toast (取代 alert)
+// 遊戲成就解鎖風 Toast (帶有時間能量條)
 // ==========================================
 window.showToast = function(message, duration = 2500) {
-    // 1. 避免重複彈出
     const existingToast = document.getElementById('game-toast');
     if (existingToast) existingToast.remove();
 
-    // 2. 建立提示框容器
     const toast = document.createElement('div');
     toast.id = 'game-toast';
     
-    // --- Tailwind CSS 樣式定義 (核心改動) ---
+    // --- Tailwind 科技遊戲風樣式 ---
     toast.className = [
-        // 定位：固定在螢幕正中間 (水平垂直皆居中)
         "fixed top-1/2 left-1/2 z-[9999]",
-        
-        // 現代感外觀：玻璃擬態
-        "bg-white/80 backdrop-blur-lg",            // 半透明白底 + 磨砂玻璃 blur
-        "text-slate-900",                        // 深色文字
-        "px-10 py-6",                             // 加大的內邊距
-        "rounded-3xl",                           // 超大圓角，更有親和力
-        "shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]", // 更深邃的立體陰影
-        "border border-white/20",                // 細緻的半透明邊框
-        
-        // 排版：Flexbox 讓內容也居中
-        "flex items-center justify-center",
-        "min-w-[320px] max-w-[90%]",              // 設定最小與最大寬度
-        "text-center",
-        
-        // 字體與動畫初始狀態
-        "font-extrabold text-2xl tracking-tight", // 放大字體，更有張力
-        "opacity-0"                               // 預設隱藏 (由動畫控制顯示)
+        "bg-slate-900/90 backdrop-blur-md", // 深色科技感半透明
+        "text-white", 
+        "rounded-2xl overflow-hidden",      // 隱藏突出的能量條
+        "shadow-[0_0_40px_rgba(99,102,241,0.4)]", // 靛青色發光陰影 (光暈效果)
+        "border border-indigo-500/50",      // 科技感邊框
+        "min-w-[320px] max-w-[90%]",
+        "opacity-0"
     ].join(" ");
     
-    // 可以嘗試在 message 前面加上一個預設的星星圖示 ✨
-    toast.innerHTML = `<span class="mr-3 text-3xl">✨</span>${message}`;
+    // 判斷訊息內容給予不同的 Icon (簡單的正則判斷)
+    let icon = "🎮";
+    if(message.includes("金幣") || message.includes("JACKPOT")) icon = "💰";
+    else if(message.includes("時間到") || message.includes("結束")) icon = "⏰";
+    else if(message.includes("不足") || message.includes("錯誤")) icon = "❌";
+    else if(message.includes("對")) icon = "✨";
+
+    // 內部 HTML 結構：左邊 Icon，右邊文字，底下是能量條
+    toast.innerHTML = `
+        <div class="flex items-center px-6 py-5">
+            <div class="flex-shrink-0 text-4xl mr-4 drop-shadow-md">${icon}</div>
+            <div class="flex-1 font-bold text-xl tracking-wide leading-relaxed">
+                ${message}
+            </div>
+        </div>
+        <div class="h-1.5 w-full bg-slate-700/50">
+            <div class="h-full bg-gradient-to-r from-indigo-400 to-cyan-300" 
+                 style="animation: runOut ${duration}ms linear forwards;">
+            </div>
+        </div>
+    `;
+    
     document.body.appendChild(toast);
 
-    // 3. 執行進場動畫 (套用步驟一定義的 CSS class)
-    toast.classList.add('animate-toast-in');
+    // 執行進場動畫
+    toast.classList.add('animate-game-in');
 
-    // 4. 設定自動退場
+    // 設定自動退場
     setTimeout(() => {
-        // 執行退場動畫
-        toast.classList.remove('animate-toast-in');
-        toast.classList.add('animate-toast-out');
-        
-        // 動態結束後移除 DOM
+        toast.classList.remove('animate-game-in');
+        toast.classList.add('animate-game-out');
         setTimeout(() => toast.remove(), 400); 
     }, duration);
 };
