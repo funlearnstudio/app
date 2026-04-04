@@ -3,12 +3,13 @@
 
     // 1. 初始化倉庫
     window.__MATH_REPO__ = window.__MATH_REPO__ || {};
-    console.log("🚀 [Math Combined] 數學題庫 (動態生成 + QAOT 固定版) 啟動...");
+    console.log("🚀 [Math Engine] 動態生成 + 靜態 QAOT 整合版啟動...");
 
-    // 2. 共用工具集 (包含原本動態題需要的與 QAOT 需要的 shuffle)
+    // 2. 核心工具集 (供動態題與靜態題共用)
     const Utils = {
         rnd: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
         shuffle: (arr) => [...arr].sort(() => Math.random() - 0.5),
+        // 專為動態題產生干擾選項
         genOptions: (ans) => {
             let opts = new Set([ans]);
             while(opts.size < 4) {
@@ -20,7 +21,6 @@
         },
         formatOp: (val) => (val < 0 ? `- ${Math.abs(val)}` : `+ ${val}`)
     };
-
     const generators = [
 
     // 單元 1：整數的運算
@@ -2433,38 +2433,71 @@ const fixedMathQuestions = [
   { q: "499. 30.5 km = ? m", a: "30500 m", o: ["3050 m","305 m","305000 m"], t: ["數學","小六","單位深化","長度"] },
   { q: "500. 資料 12、13、14、15、16 的平均數為？", a: "14", o: ["13","15","12"], t: ["數學","小六","統計深化","平均數"] }
 ];
+// ==========================================
+    // ⚙️ PART 3: 統一註冊邏輯
+    // ==========================================
 
-    // 2. 執行固定題註冊 (參考物理檔案格式)
-    const processFixed = () => {
-        fixedMathQuestions.forEach((item, idx) => {
-            const id = `math_fixed_${idx}`;
-            const finalTags = ["math", "數學", ...(item.t || [])];
-            
-            const func = () => {
-                const options = Utils.shuffle([item.a, ...item.o]);
-                return {
-                    question: `【${item.t[2] || '數學'}】${item.q}`,
-                    options: options,
-                    answer: options.indexOf(item.a),
-                    explanation: [`✅ 正確答案：${item.a}`],
+    const registerAll = () => {
+        // --- 註冊動態題目 (每個 Generator 產生 5 個實例) ---
+        generators.forEach(gen => {
+            for(let i = 0; i < 5; i++) {
+                const uId = `${gen.id}_dyn_${i}`;
+                const entry = {
+                    id: uId,
+                    func: () => {
+                        const d = gen.generate();
+                        // 確保 answer 索引正確
+                        const finalAnswer = (typeof d.answer === 'number') ? d.answer : d.options.indexOf(d.correctValue);
+                        return {
+                            ...d,
+                            answer: finalAnswer,
+                            subject: "math",
+                            tags: gen.tags
+                        };
+                    },
+                    tags: gen.tags,
                     subject: "math",
-                    tags: finalTags
+                    type: "basic"
                 };
-            };
-
-            window.__MATH_REPO__[id] = { id, func, tags: finalTags, subject: "math", type: "basic" };
-
-            // 註冊到出題核心
-            if (window.RigorousGenerator?.registerTemplate) {
-                window.RigorousGenerator.registerTemplate(id, func, finalTags);
+                window.__MATH_REPO__[uId] = entry;
+                if (window.RigorousGenerator?.registerTemplate) {
+                    window.RigorousGenerator.registerTemplate(uId, entry.func, gen.tags);
+                }
             }
         });
+
+        // --- 註冊靜態題目 ---
+        fixedMathQuestions.forEach((item, idx) => {
+            const uId = `math_fixed_${idx}`;
+            const finalTags = ["math", "數學", ...(item.t || [])];
+            
+            const entry = {
+                id: uId,
+                func: () => {
+                    const shuffled = Utils.shuffle([item.a, ...item.o]);
+                    return {
+                        question: `【${item.t[2] || '練習'}】${item.q}`,
+                        options: shuffled,
+                        answer: shuffled.indexOf(item.a), // 動態抓取正確答案位置，解決「亂出」問題
+                        explanation: [`✅ 正確答案：${item.a}`],
+                        subject: "math",
+                        tags: finalTags
+                    };
+                },
+                tags: finalTags,
+                subject: "math",
+                type: "basic"
+            };
+            window.__MATH_REPO__[uId] = entry;
+            if (window.RigorousGenerator?.registerTemplate) {
+                window.RigorousGenerator.registerTemplate(uId, entry.func, finalTags);
+            }
+        });
+
+        console.log(`✅ [Math] 註冊完成：動態類別 ${generators.length} 個，靜態題目 ${fixedMathQuestions.length} 題。`);
     };
 
-    // 延遲執行確保環境就緒
-    setTimeout(() => {
-        processFixed();
-        console.log(`✅ 數學題庫匯入完成！(動態題: ${generators.length} 類, 固定題: ${fixedMathQuestions.length} 題)`);
-    }, 100);
+    // 確保在適當時機執行
+    setTimeout(registerAll, 200);
 
 })(window);
