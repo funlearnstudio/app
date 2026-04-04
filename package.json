@@ -3,5 +3,23 @@
   "version": "1.0.0",
   "scripts": {
     "build": "npx --yes javascript-obfuscator ./mockdata --output ./mockdata --compact true --string-array true --string-array-encoding base64 --string-array-threshold 1 --transform-object-keys true --unicode-escape-sequence true && npx --yes javascript-obfuscator ./assets/js --output ./assets/js --compact true --string-array true --string-array-encoding base64 --string-array-threshold 1 --transform-object-keys true --unicode-escape-sequence true"
+  },
+  "description": "雲端學院是一個結合 **「RPG 遊戲化」** 與 **「大數據分析」** 的無伺服器 (Serverless) 線上學習平台。前端部署於 Vercel，後端與資料庫則由 Google Apps Script (GAS) 與 Google 試算表驅動。平台提供完整的測驗、防弊、錯題檢討以及隨等級變換的動態佈景主題。",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/funlearnstudio/app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/funlearnstudio/app/issues"
+  },
+  "homepage": "https://github.com/funlearnstudio/app#readme",
+  "dependencies": {
+    "@tailwindcss/cli": "^4.2.2",
+    "tailwindcss": "^4.2.2"
   }
 }
