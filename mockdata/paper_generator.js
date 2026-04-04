@@ -43,7 +43,7 @@
         const mappedSub = subjectAlias[inputSub] || inputSub;
 
         // 💡 關鍵：定義「背景標籤」，這些標籤不參與精確單元過濾
-        const backgroundTags = ['國七', '國八', '國九', '公民', '歷史', '地理', '理化', '數學', '生物', '地科', '英文', '國文'];
+        const backgroundTags = ["小四","小五","小六",'國七', '國八', '國九','高一','高二','高三','社會', '自然', '公民', '歷史', '地理', '理化', '數學', '生物', '地科', '英文', '國文'];
         
         // 取得真正的「知識點標籤」(例如：性別、媒體素養)
         const coreKnowledgeTags = requestTags.filter(t => !backgroundTags.includes(t));
