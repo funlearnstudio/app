@@ -393,9 +393,9 @@ window.onload = function() {
             // 4. 載入課程資料 (確保對應到你的 curriculum_integrated.js 結構)
             if(window.initCurriculumData) window.initCurriculumData();
             
-            // 這裡修正為直接從 CurriculumLibrary 取值
-            const rawData = (window.CurriculumLibrary.data ? window.CurriculumLibrary.data[subject] : window.CurriculumLibrary[subject]) || [];
-            
+          // ✨ 修正：加上防呆機制，確保 CurriculumLibrary 存在才去讀取 .data
+            const lib = window.CurriculumLibrary || {}; 
+            const rawData = (lib.data ? lib.data[subject] : lib[subject]) || []; 
             // 5. 過濾與排序
             currentBooks = rawData.filter(book => book.stage === stage);
 
